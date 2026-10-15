@@ -10,10 +10,15 @@ Jeu mobile d'infiltration en vue du dessus. Tu es un assassin armé d'un couteau
   (invincibles de face : prends-les de dos ou gèle-les) → soldats → colosses blindés
   (fusil à pompe, gros dégâts mais lents) → commandos d'élite.
   Tous les 10 niveaux, leurs armes s'améliorent (renforcées → visée laser → armes en or).
-  Lampe torche, alerte « ! », hésitation « ? » quand un collègue tombe à portée de vue.
+  Lampe torche avec halo, alerte « ! », hésitation « ? » après un bruit, bulles de discussion
+  entre gardes, flèches rouges vers les ennemis hors écran.
 - **Pièges** : lasers rouges clignotants, mines de glace qui gèlent les gardes et, dès le niveau 12,
-  **mines explosives** : elles sautent quand quelqu'un marche dessus, tuent les gardes proches,
-  blessent le héros et **détruisent les murs** (traces de brûlure et fumée).
+  **mines explosives** (rouges) : le héros les déclenche en passant dessus, puis doit fuir ;
+  l'explosion tue les poursuivants, blesse le héros s'il est trop près et **détruit les murs**.
+- **Mine de glace** : déclenchée par le héros, elle gèle tout autour après un court délai,
+  y compris le héros s'il est resté trop près ; les gardes non gelés peuvent alors le tirer.
+- **Herbe** : les carrés de gazon se traversent et cachent le héros des lampes torches.
+- **Caisses de butin** (rester à côté pour les ouvrir) et **clés** : 3 clés ouvrent un coffre bonus.
 - **Décor** : salles reliées par des passages balisés jaune/noir, clôtures, conteneurs, piliers,
   carrés de gazon, sol en béton taché ; les gardes éliminés laissent une tache au sol.
 - **Interface** : compteur de cibles (viseur), points de vie en milliers et dégâts affichés,

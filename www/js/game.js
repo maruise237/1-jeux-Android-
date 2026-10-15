@@ -31,9 +31,9 @@
   // Enemy roster: tougher types with better gear unlock as levels go up.
   const GUARD_TYPES = {
     thug: { name: 'Voyous', weapon: 'pistol', range: 1.0, half: 0.5, dmg: 1.0, rate: 0.5, reaction: 0.5, look: { outfit: '#2547b8', detail: 'stripes', stripe: '#ffffff', skin: '#a8714a', hair: 'short', hairColor: '#f2c230', glove: '#a8714a', eyes: 'angry', gun: '#6b6f7c' } },
-    suit: { name: 'Gardes du corps', weapon: 'pistol', range: 1.05, half: 0.5, dmg: 1.05, rate: 0.45, reaction: 0.48, look: { outfit: '#2a2b33', detail: 'suit', skin: '#d9a77c', hair: 'slick', hairColor: '#111111', glove: '#d9a77c', eyes: 'shades', gun: '#2f323b' } },
-    prisoner: { name: 'Évadés armés', weapon: 'rifle', range: 1.15, half: 0.45, dmg: 1.1, rate: 0.5, reaction: 0.45, look: { outfit: '#f0f0f0', detail: 'prison', stripe: '#2a2a2a', sleeve: 'short', skin: '#d9a77c', hair: 'beanie', hat: '#2a2a2a', glove: '#d9a77c', eyes: 'angry', gun: '#e0922f' } },
-    soldier: { name: 'Soldats', weapon: 'rifle', range: 1.25, half: 0.42, dmg: 1.2, rate: 0.45, reaction: 0.4, look: { outfit: '#d7dde3', outfit2: '#5b616e', detail: 'vest', skin: '#d9a77c', hair: 'balaclava', hairColor: '#3a3d45', glove: '#3a3d45', eyes: 'angry', gun: '#4a5a3a' } },
+    suit: { name: 'Agents en imperméable', weapon: 'pistol', range: 1.05, half: 0.5, dmg: 1.05, rate: 0.45, reaction: 0.48, look: { outfit: '#8a6a4a', detail: 'coat', skin: '#d9a77c', hair: 'fedora', hat: '#6b4f35', band: '#2a1f16', glove: '#3a2a1e', gun: '#2f323b' } },
+    prisoner: { name: 'Évadés armés', weapon: 'rifle', range: 1.15, half: 0.45, dmg: 1.1, rate: 0.5, reaction: 0.45, look: { outfit: '#ef7d2c', detail: 'prison', stripe: '#d4651c', sleeve: 'short', skin: '#d9a77c', hair: 'beanie', hat: '#2a2a2a', glove: '#d9a77c', eyes: 'angry', gun: '#6b6f7c' } },
+    soldier: { name: 'Commandos', weapon: 'rifle', range: 1.25, half: 0.42, dmg: 1.2, rate: 0.45, reaction: 0.4, look: { outfit: '#2a2d33', outfit2: '#3c414b', detail: 'vest', skin: '#d9a77c', hair: 'balaclava', hairColor: '#1e2026', glove: '#1e2026', eyes: 'angry', gun: '#2f6fd6' } },
     heavy: { name: 'Colosses blindés', tip: 'Fusil à pompe : très dangereux de près, mais lents.', weapon: 'shotgun', range: 0.85, half: 0.75, dmg: 1.7, rate: 0.8, reaction: 0.4, look: { outfit: '#7a3d2a', detail: 'armor', accent: '#5b616e', skin: '#c98d5f', hair: 'helmet', helmet: '#c0392b', visor: '#20232e', glove: '#2a2a2a' } },
     shield: { name: 'Gardes à bouclier', tip: 'Invincibles de face : prends-les de dos ou gèle-les !', weapon: 'pistol', shield: true, range: 0.95, half: 0.5, dmg: 1.0, rate: 0.55, reaction: 0.5, look: { outfit: '#3a4a6a', detail: 'armor', accent: '#5b6b8a', skin: '#d9a77c', hair: 'helmet', helmet: '#2b3550', visor: '#9fd3ff', glove: '#1f232b', shield: true, shieldColor: '#6c7ea3', gun: '#2f323b' } },
     elite: { name: 'Commandos d\'élite', weapon: 'rifle', range: 1.35, half: 0.45, dmg: 1.4, rate: 0.45, reaction: 0.35, laser: true, look: { outfit: '#2b2f3a', detail: 'armor', accent: '#3d4452', skin: '#d9a77c', hair: 'helmet', helmet: '#1f232b', visor: '#ff3b3b', glove: '#1f232b', gun: '#1c1e24' } },
@@ -53,7 +53,7 @@
   // Every 10 levels the whole roster gets better weapons: steel -> black ops -> gold.
   const GEAR = [
     { name: '', dmg: 1, range: 1, gun: null },
-    { name: 'Armes renforcées', dmg: 1.1, range: 1.05, gun: '#1c1e24' },
+    { name: 'Armes renforcées', dmg: 1.1, range: 1.05, gun: null },
     { name: 'Armes de précision', dmg: 1.2, range: 1.1, gun: '#3a4a6a', laser: true },
     { name: 'Armes en or', dmg: 1.3, range: 1.15, gun: '#f5c542', laser: true },
   ];
@@ -70,7 +70,7 @@
 
   // ---------- Save ----------
   function loadSave() {
-    const base = { level: 1, gems: 0, owned: ['kenji'], selected: 'kenji', sfx: true, music: true, stars: {}, tips: {} };
+    const base = { level: 1, gems: 0, keys: 0, owned: ['kenji'], selected: 'kenji', sfx: true, music: true, stars: {}, tips: {} };
     try {
       const s = JSON.parse(localStorage.getItem(SAVE_KEY));
       if (s && typeof s === 'object') return Object.assign(base, s);
@@ -199,17 +199,23 @@
         const r = rnd();
         let type, w, h;
         if (r < 0.35) { type = 'crate'; w = 1; h = 1; }
-        else if (r < 0.45) { type = 'planter'; w = 2; h = 2; }
+        else if (r < 0.45) { type = 'planter'; w = 3; h = 3; }
         else if (r < 0.7) { type = 'metal'; w = 1; h = 1; }
         else { type = 'container'; if (rnd() < 0.5) { w = 2; h = 1; } else { w = 1; h = 2; } }
         const x = 1 + ri(W - 1 - w), y = 1 + ri(H - 4 - h);
         let ok = true;
         for (let yy = y; yy < y + h && ok; yy++) for (let xx = x; xx < x + w; xx++) if (g[yy][xx]) { ok = false; break; }
         if (!ok) continue;
-        for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) g[yy][xx] = 2;
+        if (type === 'planter') {
+          // grass is walkable (and hides the hero); only the stone in the middle is solid
+          for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) g[yy][xx] = 4;
+          g[y + 1][x + 1] = 2;
+        } else for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) g[yy][xx] = 2;
         rects.push({ x, y, w, h, type });
         k++;
       }
+      const hide = [];
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (g[y][x] === 4) { g[y][x] = 0; hide.push([x, y]); }
       const start = { x: Math.floor(W / 2), y: H - 2 };
       const { dist } = dijkstra(g, start.x, start.y);
       let open = 0;
@@ -348,8 +354,11 @@
         const c = pspots.splice(ri(pspots.length), 1)[0];
         pickups.push({ x: c.x + 0.5, y: c.y + 0.5, value: 5 });
       }
+      let key = null;
+      const kspots = pspots.filter(c => c.d >= 6);
+      if (n >= 2 && rnd() < 0.5 && kspots.length) { const c = kspots[ri(kspots.length)]; key = { x: c.x + 0.5, y: c.y + 0.5 }; }
       const themes = ['concrete', 'warehouse', 'lab'];
-      return { W, H, grid: g, rects, start, guards, lasers, mines, bombs, pickups, theme: themes[Math.floor((n - 1) / 3) % 3], seed: n * 31 + 7 + variant };
+      return { W, H, grid: g, rects, hide, key, start, guards, lasers, mines, bombs, pickups, theme: themes[Math.floor((n - 1) / 3) % 3], seed: n * 31 + 7 + variant };
     }
     throw new Error('level generation failed');
   }
@@ -357,8 +366,9 @@
   // ---------- State ----------
   let state = 'menu';
   let L = null, player = null, guards = [], lasers = [], mines = [], bombs = [], pickups = [], decals = [];
+  let hideSet = new Set(), keyItem = null, spawnT = 0;
   let fx = null, levelGems = 0, shake = 0, endTimer = 0, hurtFlash = 0, time = 0, slowmo = 1;
-  let marker = null, gemSoundCd = 0, mapCanvas = null;
+  let marker = null, gemSoundCd = 0, mapCanvas = null, levelKey = 0;
   const cam = { x: 0, y: 0 };
   const resetFx = () => ({ parts: [], gems: [], texts: [], rings: [], tracers: [], ripples: [], slashes: [], smoke: [], fireballs: [] });
   fx = resetFx();
@@ -374,7 +384,7 @@
     player = {
       x: L.start.x + 0.5, y: L.start.y + 0.5, angle: -Math.PI / 2, speed: BASE_SPEED * (1 + hero.spd),
       hp: maxHp, maxHp, look: hero.look, path: null, pi: 0, walk: 0, chase: null, repath: 0,
-      spotted: false, hurtCd: 0, attack: 0, dust: 0,
+      spotted: false, hurtCd: 0, attack: 0, dust: 0, frozen: 0,
     };
     const gSpeed = Math.min(1.35 + n * 0.025, MAX_GUARD_SPEED);
     const baseRange = Math.min(3.0 + n * 0.04, 3.8);
@@ -393,12 +403,15 @@
       };
     });
     lasers = L.lasers.map(l => ({ ...l }));
-    mines = L.mines.map(m => ({ ...m, used: false }));
+    mines = L.mines.map(m => ({ ...m, used: false, state: 'armed', fuse: 0 }));
+    hideSet = new Set((L.hide || []).map(([x, y]) => y * W + x));
+    keyItem = L.key ? { ...L.key, taken: false } : null;
+    spawnT = 1.6;
     bombs = (L.bombs || []).map(b => ({ ...b, state: 'armed', fuse: 0 }));
     decals = [];
-    pickups = L.pickups.map(p => ({ ...p, taken: false }));
+    pickups = L.pickups.map(p => ({ ...p, taken: false, open: 0 }));
     fx = resetFx();
-    levelGems = 0; shake = 0; endTimer = 0; hurtFlash = 0; time = 0; slowmo = 1; marker = null;
+    levelGems = 0; levelKey = 0; shake = 0; endTimer = 0; hurtFlash = 0; time = 0; slowmo = 1; marker = null;
     buildMap();
     updateCamera(0, true);
     state = 'playing';
@@ -412,8 +425,9 @@
     else if (newType) tip = `⚠ Nouveaux ennemis : <b>${GUARD_TYPES[newType].name}</b> !` + (GUARD_TYPES[newType].tip ? '<br>' + GUARD_TYPES[newType].tip : '');
     else if (n === 1) tip = 'Touche le sol pour te déplacer.<br>Touche un garde pour l\'éliminer par surprise !';
     else if (lasers.length && !save.tips.laser) { tip = 'Attention aux lasers rouges !<br>Passe quand ils sont éteints.'; save.tips.laser = 1; }
-    else if (bombs.length && !save.tips.bomb) { tip = 'Mine explosive 💥 : elle saute quand quelqu\'un marche dessus.<br>Attire les gardes dessus, mais reste loin !'; save.tips.bomb = 1; }
-    else if (mines.length && !save.tips.mine) { tip = 'Marche sur la mine de glace ❄<br>pour geler les gardes autour.'; save.tips.mine = 1; }
+    else if (bombs.length && !save.tips.bomb) { tip = 'Mine explosive 💥 : passe dessus et fuis vite !<br>L\'explosion détruit les murs et tue tes poursuivants.'; save.tips.bomb = 1; }
+    else if (mines.length && !save.tips.mine) { tip = 'Mine de glace ❄ : passe dessus quand on te poursuit,<br>elle gèle tout autour… toi aussi si tu restes près !'; save.tips.mine = 1; }
+    else if (hideSet.size && !save.tips.grass) { tip = 'Cache-toi dans l\'herbe 🌿 :<br>les gardes ne te voient pas.'; save.tips.grass = 1; }
     for (const t of types) save.tips['enemy_' + t] = 1;
     showTip(tip);
     persist();
@@ -443,9 +457,11 @@
     if (moveTo(e, e.path[e.pi], speed, dt)) e.pi++;
     return e.pi >= e.path.length;
   }
+  const inGrass = p => hideSet.has(Math.floor(p.y) * W + Math.floor(p.x));
   function canSee(gd, p) {
     if (gd.frozen > 0) return false;
     const dx = p.x - gd.x, dy = p.y - gd.y, d = Math.hypot(dx, dy);
+    if (p === player && inGrass(p) && d > 1.1) return false;
     if (d > gd.range) return false;
     if (Math.abs(angleDiff(gd.angle, Math.atan2(dy, dx))) > gd.half) return false;
     return sightLine(gd, p);
@@ -472,8 +488,13 @@
         }
       }
     }
-    const moving = p.path && p.pi < p.path.length;
-    followPath(p, p.speed, dt);
+    if (p.frozen > 0) {
+      p.frozen -= dt;
+      p.path = null; p.chase = null; marker = null;
+      if (p.frozen <= 0) sfx.shatter();
+    }
+    const moving = p.frozen <= 0 && p.path && p.pi < p.path.length;
+    if (p.frozen <= 0) followPath(p, p.speed, dt);
     if (moving) {
       p.walk += dt * 14;
       p.dust -= dt;
@@ -486,14 +507,25 @@
     p.attack = Math.max(0, p.attack - dt);
     p.hurtCd = Math.max(0, p.hurtCd - dt);
 
+    // loot crates open after standing next to them for a moment
     for (const pk of pickups) {
-      if (pk.taken || Math.hypot(pk.x - p.x, pk.y - p.y) > 0.5) continue;
-      pk.taken = true;
-      sfx.pickup();
-      spawnGems(pk.x, pk.y, pk.value);
-      fx.texts.push({ x: pk.x, y: pk.y - 0.3, text: '+' + pk.value, color: '#5ee7ff', t: 1, max: 1 });
+      if (pk.taken) continue;
+      if (Math.hypot(pk.x - p.x, pk.y - p.y) < 0.95) pk.open += dt; else pk.open = Math.max(0, pk.open - dt * 2);
+      if (pk.open >= 0.8) {
+        pk.taken = true;
+        sfx.pickup();
+        spawnGems(pk.x, pk.y, pk.value);
+        fx.texts.push({ x: pk.x, y: pk.y - 0.3, text: '+' + pk.value, color: '#5ee7ff', t: 1, max: 1, big: true });
+      }
     }
-    for (const m of mines) if (!m.used && Math.hypot(m.x - p.x, m.y - p.y) < 0.5) triggerFreeze(m);
+    if (keyItem && !keyItem.taken && Math.hypot(keyItem.x - p.x, keyItem.y - p.y) < 0.55) {
+      keyItem.taken = true; levelKey = 1; sfx.pickup();
+      fx.texts.push({ x: keyItem.x, y: keyItem.y - 0.3, text: '🔑 ' + Math.min(3, save.keys + 1) + '/3', color: '#ffd34d', t: 1.3, max: 1.3, big: true });
+    }
+    // freeze mine: arms when the hero runs over it, then freezes everything around (the hero too if still close)
+    for (const m of mines) {
+      if (m.state === 'armed' && Math.hypot(m.x - p.x, m.y - p.y) < 0.5) { m.state = 'fuse'; m.fuse = 0.6; sfx.beep(); }
+    }
     for (const l of lasers) {
       if (p.hurtCd <= 0 && laserOn(l) && hitsLaser(l, p)) { sfx.laser(); damage(20); p.hurtCd = 0.7; }
     }
@@ -666,11 +698,21 @@
     fx.texts.push({ x: gd.x, y: gd.y - 0.5, text: 'BLOQUÉ !', color: '#ffd34d', t: 1, max: 1 });
   }
 
+  function updateMines(dt) {
+    for (const m of mines) {
+      if (m.state !== 'fuse') continue;
+      const before = m.fuse;
+      m.fuse -= dt;
+      if (Math.floor(before * 10) !== Math.floor(m.fuse * 10)) sfx.beep();
+      if (m.fuse <= 0) triggerFreeze(m);
+    }
+  }
+
   function updateBombs(dt) {
     for (const b of bombs) {
       if (b.state === 'armed') {
-        const who = [player, ...guards.filter(g => g.alive)].some(e => Math.hypot(e.x - b.x, e.y - b.y) < 0.45);
-        if (who && state === 'playing') { b.state = 'fuse'; b.fuse = 0.7; sfx.beep(); }
+        // only the hero sets it off; the short fuse lets him run while his pursuers get caught
+        if (state === 'playing' && Math.hypot(player.x - b.x, player.y - b.y) < 0.45) { b.state = 'fuse'; b.fuse = 0.7; sfx.beep(); }
       } else if (b.state === 'fuse') {
         const before = b.fuse;
         b.fuse -= dt;
@@ -695,6 +737,9 @@
       fx.parts.push({ x: b.x, y: b.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0.5, max: 0.5, r: 0.05, c: i % 2 ? '#ffb02e' : '#ff6a1e' });
     }
     decals.push({ kind: 'scorch', x: b.x, y: b.y, r: R * 0.9, seed: Math.random() * 10 });
+    for (let i = 0; i < 14; i++) {
+      fx.smoke.push({ x: b.x + (Math.random() - 0.5) * 0.4, y: b.y, vx: (Math.random() - 0.5) * 0.15, vy: -0.9 - i * 0.25, r: 0.3 + i * 0.03, t: -i * 0.08, max: 3.2, column: true });
+    }
     // break interior walls caught in the blast
     let broke = false;
     for (let y = Math.floor(b.y - R); y <= Math.ceil(b.y + R); y++) for (let x = Math.floor(b.x - R); x <= Math.ceil(b.x + R); x++) {
@@ -719,6 +764,17 @@
     }
   }
 
+  // idle guards standing together chat with little emoticon bubbles
+  const CHAT = [':D', ':)', '8)', ':P', ';)', ':O'];
+  function updateChatter(dt) {
+    for (const gd of guards) {
+      gd.chatT = Math.max(0, (gd.chatT || 0) - dt);
+      if (!gd.alive || gd.frozen > 0 || gd.state !== 'patrol' || gd.chatT > 0) continue;
+      const mate = guards.find(o => o !== gd && o.alive && o.state === 'patrol' && Math.hypot(o.x - gd.x, o.y - gd.y) < 2.2);
+      if (mate && Math.random() < dt * 0.6) { gd.chat = CHAT[Math.floor(Math.random() * CHAT.length)]; gd.chatT = 1.6; }
+    }
+  }
+
   function spawnGems(x, y, n) {
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2, s = 2 + Math.random() * 3.5;
@@ -726,17 +782,23 @@
     }
   }
 
+  const FREEZE_R = 2.3;
   function triggerFreeze(m) {
-    m.used = true;
+    m.used = true; m.state = 'used';
     sfx.freeze(); vibrate(60);
-    fx.rings.push({ x: m.x, y: m.y, t: 0, max: 0.55, r: 2.9 });
+    fx.rings.push({ x: m.x, y: m.y, t: 0, max: 0.55, r: FREEZE_R });
+    decals.push({ kind: 'frost', x: m.x, y: m.y, r: FREEZE_R, t: 6 });
     for (let i = 0; i < 26; i++) {
       const a = Math.random() * Math.PI * 2, s = 2 + Math.random() * 4;
       fx.parts.push({ x: m.x, y: m.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, t: 0.7, max: 0.7, r: 0.07, c: '#d6f6ff', shard: true, rot: a });
     }
     shake = Math.max(shake, 0.2);
     for (const gd of guards) {
-      if (gd.alive && Math.hypot(gd.x - m.x, gd.y - m.y) < 2.9) { gd.frozen = 4.5; gd.state = 'patrol'; gd.path = null; }
+      if (gd.alive && Math.hypot(gd.x - m.x, gd.y - m.y) < FREEZE_R) { gd.frozen = 4.5; gd.state = 'patrol'; gd.path = null; }
+    }
+    if (state === 'playing' && Math.hypot(player.x - m.x, player.y - m.y) < FREEZE_R) {
+      player.frozen = 2.5;
+      fx.texts.push({ x: player.x, y: player.y - 0.6, text: 'GELÉ !', color: '#8fe3ff', t: 1.2, max: 1.2, big: true });
     }
   }
 
@@ -774,7 +836,7 @@
     fx.ripples = fx.ripples.filter(r => r.t < 0.4);
     for (const t of fx.tracers) t.t -= dt;
     fx.tracers = fx.tracers.filter(t => t.t > 0);
-    for (const sm of fx.smoke) { sm.t += dt; sm.x += sm.vx * dt; sm.y += sm.vy * dt; sm.vx *= 0.97; sm.vy *= 0.97; }
+    for (const sm of fx.smoke) { sm.t += dt; if (sm.t < 0) continue; sm.x += sm.vx * dt; sm.y += sm.vy * dt; sm.vx *= 0.97; sm.vy *= sm.column ? 0.995 : 0.97; }
     fx.smoke = fx.smoke.filter(sm => sm.t < sm.max);
     for (const f of fx.fireballs) f.t += dt;
     fx.fireballs = fx.fireballs.filter(f => f.t < f.max);
@@ -795,10 +857,13 @@
     if (state === 'playing' || state === 'won' || state === 'lost') {
       for (const gd of guards) updateGuard(gd, dt);
       updateBombs(dt);
+      updateMines(dt);
+      updateChatter(dt);
       updateFx(dt);
       updateHud();
     }
     updateCamera(rawDt, false);
+    spawnT = Math.max(0, spawnT - rawDt);
     shake = Math.max(0, shake - rawDt);
     hurtFlash = Math.max(0, hurtFlash - rawDt);
   }
@@ -861,7 +926,8 @@
   }
 
   function drawMine(m) {
-    const pulse = 0.5 + Math.sin(time * 5) * 0.5;
+    const pulse = 0.5 + Math.sin(time * (m.state === 'fuse' ? 35 : 5)) * 0.5;
+    if (m.state === 'fuse') { ctx.strokeStyle = `rgba(150,230,255,${0.5 + pulse * 0.4})`; ctx.lineWidth = 0.05; art.circle(ctx, m.x, m.y, FREEZE_R * (1 - m.fuse / 0.6)); ctx.stroke(); }
     ctx.fillStyle = `rgba(94,231,255,${0.15 + pulse * 0.2})`;
     art.circle(ctx, m.x, m.y, 0.42 + pulse * 0.06); ctx.fill();
     art.circle(ctx, m.x, m.y, 0.3);
@@ -976,7 +1042,25 @@
     ctx.drawImage(mapCanvas, 0, 0, W, H);
 
     // persistent decals (scorch marks, rubble, blood)
+    // grass glows when the hero hides in it
+    if (player && inGrass(player)) {
+      const pl = L.rects.find(r => r.type === 'planter' && player.x >= r.x && player.x < r.x + r.w && player.y >= r.y && player.y < r.y + r.h);
+      if (pl) {
+        ctx.fillStyle = `rgba(200,255,90,${0.32 + Math.sin(time * 5) * 0.06})`;
+        ctx.fillRect(pl.x + 0.11, pl.y + 0.11, pl.w - 0.22, pl.h - 0.22);
+      }
+    }
     for (const d of decals) {
+      if (d.kind === 'frost') {
+        d.t -= 1 / 60;
+        if (d.t > 0) {
+          const a = Math.min(1, d.t / 2) * 0.45;
+          const gr = ctx.createRadialGradient(d.x, d.y, 0.1, d.x, d.y, d.r);
+          gr.addColorStop(0, `rgba(220,248,255,${a})`); gr.addColorStop(0.8, `rgba(160,225,255,${a * 0.6})`); gr.addColorStop(1, 'rgba(160,225,255,0)');
+          ctx.fillStyle = gr; art.circle(ctx, d.x, d.y, d.r); ctx.fill();
+        }
+        continue;
+      }
       if (d.kind === 'scorch') art.drawScorch(ctx, d);
       else if (d.kind === 'rubble') {
         ctx.fillStyle = '#6f6d48';
@@ -992,12 +1076,30 @@
     }
     // ground layer
     for (const b of bombs) if (b.state !== 'done') drawBomb(b);
-    for (const m of mines) if (!m.used) drawMine(m);
+    for (const m of mines) if (m.state !== 'used') drawMine(m);
     for (const pk of pickups) {
       if (pk.taken) continue;
-      const bob = Math.sin(time * 4 + pk.x) * 0.06;
-      ctx.fillStyle = 'rgba(94,231,255,0.25)'; art.circle(ctx, pk.x, pk.y, 0.32); ctx.fill();
-      art.drawGem(ctx, pk.x, pk.y - 0.05 + bob, 0.2, Math.sin(time * 2) * 0.2);
+      art.rrect(ctx, pk.x - 0.3, pk.y - 0.3, 0.6, 0.6, 0.1);
+      ctx.fillStyle = '#3d4654'; ctx.fill(); ctx.lineWidth = 0.045; ctx.strokeStyle = art.OUT; ctx.stroke();
+      art.rrect(ctx, pk.x - 0.22, pk.y - 0.22, 0.44, 0.44, 0.06);
+      ctx.fillStyle = `rgb(${90 + Math.sin(time * 4 + pk.x) * 30 | 0},220,90)`; ctx.fill();
+      art.drawGem(ctx, pk.x, pk.y, 0.15, 0);
+      if (Math.sin(time * 3 + pk.y) > 0.92) { ctx.fillStyle = '#ffffff'; ctx.fillRect(pk.x + 0.08, pk.y - 0.2, 0.05, 0.05); }
+      if (pk.open > 0) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 0.07; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.arc(pk.x, pk.y, 0.5, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, pk.open / 0.8)); ctx.stroke();
+      }
+    }
+    if (keyItem && !keyItem.taken) {
+      const kx = keyItem.x, ky = keyItem.y + Math.sin(time * 3) * 0.05;
+      ctx.save(); ctx.translate(kx, ky); ctx.rotate(-0.5);
+      ctx.fillStyle = 'rgba(255,211,77,0.3)'; art.circle(ctx, 0, 0, 0.36); ctx.fill();
+      ctx.strokeStyle = art.OUT; ctx.lineWidth = 0.13; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(-0.05, 0); ctx.lineTo(0.3, 0); ctx.moveTo(0.22, 0); ctx.lineTo(0.22, 0.1); ctx.moveTo(0.3, 0); ctx.lineTo(0.3, 0.12); ctx.stroke();
+      ctx.strokeStyle = '#ffd34d'; ctx.lineWidth = 0.07; ctx.stroke();
+      art.circle(ctx, -0.14, 0, 0.12); ctx.fillStyle = '#ffd34d'; ctx.fill(); ctx.lineWidth = 0.04; ctx.strokeStyle = art.OUT; ctx.stroke();
+      art.circle(ctx, -0.14, 0, 0.05); ctx.fillStyle = '#a86d0a'; ctx.fill();
+      ctx.restore();
     }
     // fallen guards fade away, leaving only the stain
     for (const gd of guards) {
@@ -1010,7 +1112,7 @@
     sctx.setTransform(1, 0, 0, 1, 0, 0);
     sctx.globalCompositeOperation = 'source-over';
     sctx.clearRect(0, 0, shadeCanvas.width, shadeCanvas.height);
-    sctx.fillStyle = 'rgba(8,10,30,0.32)';
+    sctx.fillStyle = 'rgba(8,10,30,0.08)';
     sctx.fillRect(0, 0, shadeCanvas.width, shadeCanvas.height);
     worldTransform(sctx, sx, sy);
     sctx.globalCompositeOperation = 'destination-out';
@@ -1023,15 +1125,20 @@
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.drawImage(shadeCanvas, 0, 0);
     worldTransform(ctx, sx, sy);
-    ctx.globalCompositeOperation = 'lighter';
     for (const [gd, poly] of polys) {
-      const c = gd.state === 'alert' ? '255,60,50' : '255,236,190';
+      const c = gd.state === 'alert' ? '255,90,80' : '255,255,250';
       const grad = ctx.createRadialGradient(gd.x, gd.y, 0.1, gd.x, gd.y, gd.range);
-      grad.addColorStop(0, `rgba(${c},${gd.state === 'alert' ? 0.4 : 0.22})`);
-      grad.addColorStop(1, `rgba(${c},0.03)`);
-      tracePoly(ctx, gd, poly); ctx.fillStyle = grad; ctx.fill();
+      grad.addColorStop(0, `rgba(${c},0.5)`); grad.addColorStop(0.7, `rgba(${c},0.34)`); grad.addColorStop(1, `rgba(${c},0.18)`);
+      ctx.save();
+      tracePoly(ctx, gd, poly); ctx.clip();
+      ctx.fillStyle = grad; ctx.fill();
+      // round spot of light where the beam lands
+      const sx2 = gd.x + Math.cos(gd.angle) * gd.range * 0.78, sy2 = gd.y + Math.sin(gd.angle) * gd.range * 0.78;
+      const spot = ctx.createRadialGradient(sx2, sy2, 0.05, sx2, sy2, gd.range * 0.42);
+      spot.addColorStop(0, `rgba(${c},0.42)`); spot.addColorStop(0.85, `rgba(${c},0.3)`); spot.addColorStop(1, `rgba(${c},0)`);
+      ctx.fillStyle = spot; art.circle(ctx, sx2, sy2, gd.range * 0.42); ctx.fill();
+      ctx.restore();
     }
-    ctx.globalCompositeOperation = 'source-over';
 
     for (const l of lasers) drawLaser(l);
     drawPathLine();
@@ -1068,8 +1175,16 @@
     }
     if (player.chase && player.chase.alive) drawChaseMarker(player.chase);
     const blink = player.hurtCd > 0 && Math.sin(time * 50) > 0;
+    if (spawnT > 0) {
+      const k = 1 - spawnT / 1.6;
+      ctx.strokeStyle = `rgba(80,200,255,${0.9 * (1 - k)})`; ctx.lineWidth = 0.1;
+      art.circle(ctx, player.x, player.y, 0.62 + Math.sin(time * 8) * 0.04); ctx.stroke();
+      ctx.strokeStyle = `rgba(200,240,255,${0.6 * (1 - k)})`; ctx.lineWidth = 0.04; ctx.stroke();
+    }
     if (!(state === 'lost' && endTimer < 0.6)) {
-      art.drawCharacter(ctx, player.look, player.x, player.y, player.angle, { weapon: 'knife', walk: player.walk, attack: player.attack > 0, alpha: blink ? 0.5 : 1, scale: CHAR_SCALE });
+      const hidden = inGrass(player);
+      art.drawCharacter(ctx, player.look, player.x, player.y, player.angle, { weapon: 'knife', walk: player.walk, attack: player.attack > 0, alpha: (blink ? 0.5 : 1) * (hidden ? 0.45 : 1), scale: CHAR_SCALE, noShadow: hidden });
+      if (player.frozen > 0) { ctx.save(); ctx.translate(player.x, player.y); ctx.scale(CHAR_SCALE, CHAR_SCALE); art.drawIce(ctx, 0, 0, player.frozen); ctx.restore(); }
     }
 
     // effects
@@ -1108,12 +1223,42 @@
       ctx.fillStyle = gr; art.circle(ctx, f.x, f.y, f.r * (0.4 + k * 0.7)); ctx.fill();
     }
     for (const sm of fx.smoke) {
+      if (sm.t < 0) continue;
       const k = sm.t / sm.max;
       ctx.fillStyle = `rgba(70,72,78,${0.55 * (1 - k)})`;
       art.circle(ctx, sm.x, sm.y, sm.r * (1 + k * 1.6)); ctx.fill();
     }
 
     // screen-space overlays
+    for (const gd of guards) {
+      if (!gd.alive || gd.chatT <= 0 || gd.alertT > 0 || gd.qT > 0 || !gd.chat) continue;
+      const s2 = toScreen(gd.x + 0.35, gd.y - 0.75);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.globalAlpha = Math.min(1, gd.chatT * 3);
+      art.rrect(ctx, s2.x + sx - 17, s2.y + sy - 11, 34, 22, 9); ctx.fillStyle = '#ffffff'; ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = '#1c1a2b'; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(s2.x + sx - 8, s2.y + sy + 10); ctx.lineTo(s2.x + sx - 14, s2.y + sy + 18); ctx.lineTo(s2.x + sx - 1, s2.y + sy + 10); ctx.fillStyle = '#ffffff'; ctx.fill();
+      ctx.font = '15px "Lilita One", system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#1c1a2b'; ctx.fillText(gd.chat, s2.x + sx, s2.y + sy + 1);
+      ctx.globalAlpha = 1;
+    }
+    if (state === 'playing') {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const cx0 = cw / 2, cy0 = HUD_H + (ch - HUD_H) / 2, m = 22;
+      for (const gd of guards) {
+        if (!gd.alive) continue;
+        const s3 = toScreen(gd.x, gd.y);
+        if (s3.x > 0 && s3.x < cw && s3.y > HUD_H && s3.y < ch) continue;
+        const a = Math.atan2(s3.y - cy0, s3.x - cx0);
+        const kx = (cw / 2 - m) / Math.abs(Math.cos(a) || 1e-6), ky = ((ch - HUD_H) / 2 - m) / Math.abs(Math.sin(a) || 1e-6);
+        const k = Math.min(kx, ky);
+        const px = cx0 + Math.cos(a) * k, py = cy0 + Math.sin(a) * k;
+        ctx.save(); ctx.translate(px, py); ctx.rotate(a);
+        ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(-8, -10); ctx.lineTo(-8, 10); ctx.closePath();
+        ctx.fillStyle = gd.state === 'alert' ? '#ff2a2a' : '#e8344a'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#1c1a2b'; ctx.stroke();
+        ctx.restore();
+      }
+    }
     for (const gd of guards) {
       if (!gd.alive || (gd.alertT <= 0 && gd.qT <= 0)) continue;
       const s = toScreen(gd.x, gd.y - 0.9);
@@ -1151,7 +1296,7 @@
   let pointerDown = false, lastTile = -1;
   function toWorld(e) { return { x: e.clientX / ts + cam.x, y: (e.clientY - HUD_H) / ts + cam.y }; }
   function onPointer(e, isDown) {
-    if (state !== 'playing') return;
+    if (state !== 'playing' || player.frozen > 0) return;
     const w = toWorld(e);
     if (isDown) {
       let target = null, best = 1.0;
@@ -1238,13 +1383,45 @@
     return c;
   }
 
+  // ---------- Missions (repeatable, rewarded in gems) ----------
+  const MISSIONS = [
+    { id: 'stealth', text: 'Termine un niveau sans être repéré', reward: 200 },
+    { id: 'nodmg', text: 'Termine un niveau sans dégâts subis', reward: 200 },
+    { id: 'kills', text: 'Élimine 25 gardes', goal: 25, reward: 150 },
+  ];
+  function missionState(id) {
+    save.missions = save.missions || {};
+    return (save.missions[id] = save.missions[id] || { progress: 0, done: false });
+  }
+  function renderMissions() {
+    const box = $('missions');
+    box.innerHTML = '';
+    for (const m of MISSIONS) {
+      const st = missionState(m.id);
+      const row = document.createElement('div'); row.className = 'mission';
+      const txt = document.createElement('div'); txt.className = 'mtext'; txt.textContent = m.text;
+      if (m.goal) { const sm = document.createElement('small'); sm.textContent = `${Math.min(st.progress, m.goal)}/${m.goal}`; txt.appendChild(sm); }
+      const btn = document.createElement('button');
+      btn.className = 'btn ' + (st.done ? 'btn-yellow' : 'btn-blue');
+      btn.innerHTML = `<i class="gem-ico" style="width:14px;height:14px"></i> ${m.reward}`;
+      btn.disabled = !st.done;
+      btn.onclick = () => {
+        if (!st.done) return;
+        save.gems += m.reward; st.done = false; st.progress = 0; persist();
+        sfx.pickup(); $('menu-gems').textContent = save.gems; renderMissions();
+      };
+      row.append(txt, btn); box.appendChild(row);
+    }
+  }
+
   function showMenu() {
+    renderMissions();
     state = 'menu';
     $('menu-gems').textContent = save.gems;
     $('btn-play-level').textContent = 'NIVEAU ' + save.level;
     const holder = $('menu-hero');
     holder.innerHTML = '';
-    holder.appendChild(heroPortrait(currentHero().look, 170));
+    holder.appendChild(heroPortrait(currentHero().look, 130));
     $('menu-hero-name').textContent = currentHero().name;
     refreshToggles();
     showScreen('menu');
@@ -1301,9 +1478,16 @@
     const k = player.hp / player.maxHp;
     const stars = won ? (!player.spotted ? 3 : k >= 0.5 ? 2 : 1) : 0;
     const bonus = won ? 5 * stars + 2 * n : 0;
-    const total = levelGems + bonus;
+    let chest = 0;
+    if (won && levelKey) { save.keys = (save.keys || 0) + 1; if (save.keys >= 3) { save.keys = 0; chest = 100 + n * 5; } }
+    const total = levelGems + bonus + chest;
     save.gems += total;
     if (won) { save.stars[n] = Math.max(save.stars[n] || 0, stars); save.level++; }
+    if (won && !player.spotted) missionState('stealth').done = true;
+    if (won && player.hp >= player.maxHp) missionState('nodmg').done = true;
+    const ks = missionState('kills');
+    ks.progress += guards.filter(g => !g.alive).length;
+    if (ks.progress >= 25) ks.done = true;
     persist();
     lastGemShown = -1;
     const box = $('result');
@@ -1314,7 +1498,7 @@
     starEls.forEach(s => s.classList.remove('on'));
     $('result-stars').classList.toggle('hidden', !won);
     starEls.forEach((s, i) => { if (i < stars) setTimeout(() => { s.classList.add('on'); sfx.star(i); }, 350 + i * 300); });
-    $('result-bonus').textContent = won ? `Butin ${levelGems} + bonus ${bonus}` : `Butin conservé : ${levelGems}`;
+    $('result-bonus').textContent = won ? `Butin ${levelGems} + bonus ${bonus}` + (chest ? ` + coffre 🔑 ${chest}` : '') : `Butin conservé : ${levelGems}`;
     const el = $('result-gems');
     const t0 = performance.now();
     let lastShown = 0;
@@ -1375,6 +1559,6 @@
     tick(n, dt = 1 / 60) { for (let i = 0; i < n; i++) update(dt); },
     get level() { return L; }, get time() { return time; },
     get state() { return state; }, get guards() { return guards; }, get player() { return player; },
-    get mines() { return mines; }, get lasers() { return lasers; }, get bombs() { return bombs; },
+    get mines() { return mines; }, get hideSet() { return hideSet; }, inGrass: p => inGrass(p), get lasers() { return lasers; }, get bombs() { return bombs; },
   };
 })();

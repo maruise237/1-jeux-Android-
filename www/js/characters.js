@@ -103,6 +103,14 @@ window.KT = window.KT || {};
         g.strokeStyle = shade(c.outfit, -0.4); g.lineWidth = 0.025;
         g.beginPath(); g.moveTo(0.1, -0.09); g.lineTo(0.3, -0.09); g.moveTo(0.1, 0.09); g.lineTo(0.3, 0.09); g.stroke();
         break;
+      case 'coat':
+        g.fillStyle = shade(c.outfit, -0.3);
+        poly(g, [[0.25, 0], [0.04, -0.2], [0.1, -0.05]]); g.fill();
+        poly(g, [[0.25, 0], [0.04, 0.2], [0.1, 0.05]]); g.fill();
+        g.strokeStyle = shade(c.outfit, -0.45); g.lineWidth = 0.05;
+        g.beginPath(); g.moveTo(-0.2, -0.42); g.lineTo(-0.2, 0.42); g.stroke();
+        g.fillStyle = '#c9a24a'; g.fillRect(-0.225, -0.04, 0.05, 0.08);
+        break;
       case 'cape':
         g.fillStyle = c.accent;
         rrect(g, -0.04, -0.06, 0.32, 0.12, 0.03); g.fill();
@@ -398,7 +406,7 @@ window.KT = window.KT || {};
       g.beginPath(); g.moveTo(hx + 0.08, -0.02); g.lineTo(hx - 0.18, -0.02); g.stroke();
     }
     // face (hidden by full helmets / caps)
-    if (!['helmet', 'hood', 'cap'].includes(c.hair)) drawFace(g, c, hx, o);
+    if (!['helmet', 'hood', 'cap', 'fedora'].includes(c.hair)) drawFace(g, c, hx, o);
 
     if (c.hair === 'cap') {
       g.save(); circle(g, hx, 0, R + 0.005); g.clip();
@@ -408,6 +416,14 @@ window.KT = window.KT || {};
       circle(g, hx, 0, R); g.lineWidth = 0.045; g.strokeStyle = OUT; g.stroke();
       ellipse(g, hx + 0.19, 0, 0.1, 0.17); fs(g, shade(c.cap, -0.15), 0.035);
       circle(g, hx - 0.03, 0, 0.03); g.fillStyle = shade(c.cap, 0.3); g.fill();
+    }
+    if (c.hair === 'fedora') {
+      ellipse(g, hx - 0.01, 0, 0.26, 0.27); fs(g, ball(g, hx - 0.01, 0, 0.27, shade(c.hat, -0.05)), 0.04);
+      ellipse(g, hx - 0.03, 0, 0.17, 0.19); fs(g, ball(g, hx - 0.03, 0, 0.19, c.hat), 0.035);
+      g.strokeStyle = c.band || '#2a1f16'; g.lineWidth = 0.035;
+      g.beginPath(); g.ellipse(hx - 0.03, 0, 0.17, 0.19, 0, 0, TAU); g.stroke();
+      g.strokeStyle = shade(c.hat, -0.35); g.lineWidth = 0.02;
+      g.beginPath(); g.moveTo(hx - 0.16, 0); g.lineTo(hx + 0.1, 0); g.stroke();
     }
     if (c.hair === 'helmet') {
       circle(g, hx, 0, 0.225); fs(g, ball(g, hx, 0, 0.225, c.helmet), 0.045);
@@ -442,7 +458,7 @@ window.KT = window.KT || {};
       circle(g, hx, 0, R); g.lineWidth = 0.045; g.strokeStyle = OUT; g.stroke();
     }
     // hair shine
-    if (!['bald', 'mohawk', 'helmet', 'hood', 'balaclava'].includes(c.hair)) {
+    if (!['bald', 'mohawk', 'helmet', 'hood', 'balaclava', 'fedora'].includes(c.hair)) {
       g.strokeStyle = 'rgba(255,255,255,0.35)'; g.lineWidth = 0.025; g.lineCap = 'round';
       g.beginPath(); g.arc(hx - 0.04, 0, 0.13, -1.9, -1.2); g.stroke();
     } else if (c.hair === 'bald' || c.hair === 'mohawk') {
@@ -467,6 +483,15 @@ window.KT = window.KT || {};
     g.lineJoin = 'round'; g.lineCap = 'round';
     drawFeet(g, c, walk, o.dead);
     if (c.detail === 'cape') drawCape(g, c, walk);
+    if (c.detail === 'coat') {
+      const sw2 = Math.sin(walk) * 0.03;
+      g.beginPath();
+      g.moveTo(-0.08, -0.4); g.quadraticCurveTo(-0.42, -0.42 + sw2, -0.46, 0);
+      g.quadraticCurveTo(-0.42, 0.42 - sw2, -0.08, 0.4); g.closePath();
+      fs(g, lin(g, -0.46, 0, -0.08, 0, [[0, shade(c.outfit, -0.35)], [1, shade(c.outfit, -0.1)]]));
+      g.strokeStyle = shade(c.outfit, -0.45); g.lineWidth = 0.02;
+      g.beginPath(); g.moveTo(-0.3, 0); g.lineTo(-0.44, 0); g.stroke();
+    }
     if (!o.dead && (w === 'rifle' || w === 'shotgun')) drawLongGun(g, c, w);
     drawTorso(g, c);
     drawArm(g, c, { x: -0.02, y: -0.31 }, lh, -1);

@@ -90,15 +90,15 @@ button { font-family: inherit; color: inherit; border: 0; cursor: pointer; }
 /* ---------- menu ---------- */
 .menu-top { position: absolute; top: calc(env(safe-area-inset-top) + 14px); left: 16px; right: 16px; display: flex; justify-content: space-between; align-items: center; }
 .toggles { display: flex; gap: 10px; }
-.brand { margin-top: 40px; color: var(--yellow); font-size: 16px; letter-spacing: .35em; text-shadow: 0 2px 0 var(--ink); }
+.brand { margin-top: 58px; color: var(--yellow); font-size: 16px; letter-spacing: .35em; text-shadow: 0 2px 0 var(--ink); }
 .title { margin: -6px 0 0; display: flex; flex-direction: column; line-height: .9; transform: rotate(-3deg); }
 .title span {
-  font-size: 64px; font-weight: 400;
+  font-size: 54px; font-weight: 400;
   text-shadow: 0 5px 0 var(--ink), 3px 0 0 var(--ink), -3px 0 0 var(--ink), 0 -3px 0 var(--ink), 3px 3px 0 var(--ink), -3px 3px 0 var(--ink), 3px -3px 0 var(--ink), -3px -3px 0 var(--ink), 0 10px 0 rgba(0,0,0,.35);
 }
 .title span:first-child { color: #fff; }
 .title span:last-child { color: var(--yellow); }
-.hero-stage { position: relative; width: 210px; height: 200px; display: flex; align-items: center; justify-content: center; }
+.hero-stage { position: relative; width: 170px; height: 150px; display: flex; align-items: center; justify-content: center; }
 .spot { position: absolute; inset: 20px; border-radius: 50%; background: radial-gradient(rgba(255,240,200,.45), transparent 70%); }
 #menu-hero { position: relative; animation: idle 2.4s ease-in-out infinite; }
 @keyframes idle { 50% { transform: translateY(-6px) rotate(3deg); } }
@@ -186,3 +186,15 @@ footer { color: rgba(255,255,255,.45); font-size: 13px; letter-spacing: .1em; }
 #result-sub { margin: 0; font-size: 18px; color: #d6dcff; text-shadow: 0 2px 0 var(--ink); }
 .result-gems { display: flex; align-items: center; gap: 10px; font-size: 48px; text-shadow: 0 4px 0 var(--ink), 2px 0 0 var(--ink), -2px 0 0 var(--ink); color: #7fe3ff; }
 #result-bonus { margin: -8px 0 6px; font-size: 16px; color: rgba(255,255,255,.7); }
+
+/* ---------- missions ---------- */
+#missions { display: flex; flex-direction: column; gap: 8px; width: min(320px, 86vw); }
+.mission { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 14px; background: rgba(20,22,48,.85); border: 3px solid var(--ink); text-align: left; }
+.mission .mtext { flex: 1; font-size: 15px; line-height: 1.15; text-shadow: 0 2px 0 var(--ink); }
+.mission .mtext small { display: block; color: #9aa4d8; font-size: 12px; }
+.mission button { width: auto; padding: 8px 10px; font-size: 14px; border-radius: 10px; }
+.mission button:disabled { filter: grayscale(1) brightness(.7); }
+
+#menu { gap: 12px; justify-content: flex-start; }
+#menu .btn.big { padding: 12px 18px 10px; }
+.mission { padding: 6px 10px; }

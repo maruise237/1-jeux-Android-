@@ -267,7 +267,10 @@ KT.art = (() => {
     for (let y = 0; y < L.H; y++) for (let x = 0; x < L.W; x++) {
       if (L.grid[y][x] === 1 || L.grid[y][x] === 3) g.fillRect(x + 0.12, y + 0.16, 1, 1);
     }
-    for (const r of rects) { rrect(g, r.x + 0.12, r.y + 0.18, r.w - 0.04, r.h - 0.04, 0.1); g.fill(); }
+    for (const r of rects) {
+      if (r.type === 'planter') continue;
+      rrect(g, r.x + 0.12, r.y + 0.18, r.w - 0.04, r.h - 0.04, 0.1); g.fill();
+    }
     drawWalls(g, L);
     for (const r of rects) drawObstacle(g, r);
     return c;

@@ -47,7 +47,8 @@ await page.evaluate(() => {
       const hit = l.h ? Math.abs(pt.y - l.c) < 0.45 && pt.x > l.a - 0.2 && pt.x < l.b + 0.2 : Math.abs(pt.x - l.c) < 0.45 && pt.y > l.a - 0.2 && pt.y < l.b + 0.2;
       return hot && hit;
     });
-    const nearBomb = pt => (s.bombs || []).some(b => b.state !== 'done' && Math.hypot(b.x - pt.x, b.y - pt.y) < (b.state === 'fuse' ? 2.4 : 0.85));
+    const nearBomb = pt => (s.bombs || []).some(b => b.state !== 'done' && Math.hypot(b.x - pt.x, b.y - pt.y) < (b.state === 'fuse' ? 2.4 : 0.85))
+      || s.mines.some(m => m.state !== 'used' && Math.hypot(m.x - pt.x, m.y - pt.y) < (m.state === 'fuse' ? 2.6 : 0.8));
     const unsafe = pt => seen(pt) || near(pt) || onLaser(pt) || nearBomb(pt);
     const pathUnsafe = (path, look = 1.4) => {
       let prev = { x: P.x, y: P.y }, acc = 0;
@@ -62,35 +63,6 @@ await page.evaluate(() => {
       }
       return false;
     };
-    // freeze mine when a shield guard stands next to it
-    for (const m of s.mines) {
-      if (m.used) continue;
-      if (G.some(g => g.shield && g.frozen <= 0 && Math.hypot(g.x - m.x, g.y - m.y) < 2.3)) {
-        const path = s.findPath(P, Math.floor(m.x), Math.floor(m.y));
-        if (path && !pathUnsafe(path)) { P.chase = null; P.path = path; P.pi = 0; return; }
-      }
-    }
-    if (window.__goal) {
-      const gl = window.__goal, c = { x: gl.x + 0.5, y: gl.y + 0.5 };
-      const reached = Math.hypot(c.x - P.x, c.y - P.y) < 0.3;
-      if (!reached && !unsafe(c) && P.path && !seen(P) && !pathUnsafe(P.path.slice(P.pi), 1.0)) return;
-      window.__goal = null;
-    }
-    // spotted: charge the shooter if close enough, otherwise run out of sight
-    const shooters = G.filter(g => g.frozen <= 0 && s.canSee(g, P));
-    if (shooters.length) {
-      const g = shooters.sort((a, b) => Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y))[0];
-      const d = Math.hypot(g.x - P.x, g.y - P.y);
-      if (d < 3 && !g.shield && shooters.length === 1) { P.chase = g; P.repath = 0; return; }
-      let spot = null, ss = 1e9;
-      for (let y = 1; y < H() - 1; y++) for (let x = 1; x < W - 1; x++) {
-        if (s.isWallTile(x, y)) continue;
-        const c = { x: x + 0.5, y: y + 0.5 }, dp = Math.hypot(c.x - P.x, c.y - P.y);
-        if (dp < 0.8 || dp > 5 || unsafe(c)) continue;
-        if (dp < ss) { ss = dp; spot = { x, y }; }
-      }
-      if (spot) { const path = s.findPath(P, spot.x, spot.y); if (path && path.length) { P.chase = null; P.path = path; P.pi = 0; window.__goal = { ...spot, t: 0 }; return; } }
-    }
     // pick the best victim: frozen, or back turned, closest first
     let best = null, bs = 1e9;
     for (const g of G) {
