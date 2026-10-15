@@ -124,8 +124,9 @@ KT.audio = (() => {
       noise({ t: 0.13, v: 0.5, type: 'bandpass', f: 7000, f2: 1500, q: 0.8 });
       tone({ type: 'sine', f: 170, f2: 45, t: 0.22, v: 0.7 });
     },
-    gem() {
-      const p = 1 + Math.random() * 0.2;
+    // consecutive gems climb in pitch, so a big pile of loot rings up like a jackpot
+    gem(streak = 0) {
+      const p = (1 + Math.min(streak, 20) * 0.035) * (1 + Math.random() * 0.05);
       tone({ type: 'triangle', f: 1300 * p, f2: 2100 * p, t: 0.08, v: 0.14 });
       tone({ type: 'sine', f: 2600 * p, t: 0.12, v: 0.05, at: later(0.03) });
     },
@@ -155,6 +156,14 @@ KT.audio = (() => {
       tone({ type: 'sine', f: 150, f2: 50, t: 0.18, v: 0.5 });
     },
     laser() { play('zap', { v: 0.8 }) || tone({ type: 'sawtooth', f: 200, f2: 110, t: 0.3, v: 0.16 }); },
+    // opening shot: a soft rising whoosh, then a bright ping when the ring lands on the hero
+    whoosh() { noise({ t: 0.6, v: 0.18, type: 'bandpass', f: 400, f2: 2400, q: 0.9 }); },
+    spawn() {
+      tone({ type: 'sine', f: 520, f2: 1040, t: 0.18, v: 0.16 });
+      tone({ type: 'triangle', f: 1560, t: 0.25, v: 0.08, at: later(0.08) });
+    },
+    // loot ring filling: short ticks that climb with the progress
+    fillTick(k = 0) { tone({ type: 'triangle', f: 700 + k * 900, t: 0.05, v: 0.1 }); },
     pickup() { play('chest', { v: 0.6, rate: 1.3 }); play('confirm', { v: 0.5 }); [880, 1175, 1568].forEach((f, i) => tone({ type: 'triangle', f, t: 0.12, v: 0.12, at: later(i * 0.06) })); },
     win() {
       play('levelup', { v: 0.5, at: later(0.5) });

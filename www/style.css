@@ -229,6 +229,11 @@ button { font-family: inherit; color: inherit; border: 0; cursor: pointer; }
 .wheel-box canvas { width: 100%; height: 100%; }
 .wheel-pin { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 16px solid transparent; border-right: 16px solid transparent; border-top: 30px solid #ff3b4f; filter: drop-shadow(0 3px 0 var(--ink)); }
 #wheel-result { margin: 0; font-size: 22px; color: var(--yellow); min-height: 28px; text-shadow: 0 2px 0 var(--ink); }
+.wheel-pin { transform-origin: 50% 0; }
+.wheel-pin.flick { animation: pin-flick 0.12s ease-out; }
+@keyframes pin-flick { 0% { transform: translateX(-50%) rotate(0); } 40% { transform: translateX(-50%) rotate(-22deg); } 100% { transform: translateX(-50%) rotate(0); } }
+#wheel-result.pop { animation: result-pop 0.45s cubic-bezier(.2,1.6,.4,1); }
+@keyframes result-pop { 0% { transform: scale(0.3); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 #banner.clear .banner-title { color: #7dff5a; }
 
 @media (prefers-reduced-motion: reduce) {
