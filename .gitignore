@@ -4,3 +4,4 @@ android/.gradle/
 *.keystore
 *.jks
 keystore.properties
+signature/
