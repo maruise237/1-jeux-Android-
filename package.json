@@ -1,0 +1,20 @@
+{
+  "name": "shadow-strike",
+  "version": "1.0.0",
+  "description": "Shadow Strike — jeu mobile d'infiltration par KamTech Studio",
+  "private": true,
+  "author": "KamTech Studio",
+  "scripts": {
+    "start": "npx serve www",
+    "android:add": "npx cap add android",
+    "android:sync": "npx cap sync android",
+    "android:open": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/core": "^8.5.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.3"
+  }
+}
