@@ -110,6 +110,30 @@
     { name: 'Armes en or', dmg: 1.3, range: 1.15, gun: '#f5c542', laser: true },
   ];
   const gearTier = n => Math.min(GEAR.length - 1, Math.floor((n - 1) / 10));
+
+  // From level 31 every block of 10 has a rhythm: x1 breather (where new maps appear), x5 hard,
+  // x9 very hard, x0 boss. Harder levels are announced and pay more.
+  const levelRank = n => n < 31 ? 0 : n % 10 === 5 ? 1 : n % 10 === 9 ? 2 : 0;
+  const RANKS = [null, { label: 'DIFFICILE', mult: 1.5, txt: '×1,5' }, { label: 'TRÈS DIFFICILE', mult: 2, txt: '×2' }];
+  // After 60, one small step every 10 levels, capped at 100: longer lasers, a mine, a shield, a guard.
+  const lateTier = n => Math.max(0, Math.min(4, Math.floor((n - 51) / 10)));
+  // New maps, built from the same pieces: one appears every 10 levels from 51, then joins the rotation.
+  const MAPS = {
+    garden: { name: 'Le Jardin', at: 51, theme: 'garden' },
+    docks: { name: 'Les Docks', at: 61, theme: 'warehouse' },
+    lab: { name: 'Le Laboratoire', at: 71, theme: 'lab' },
+    court: { name: 'La Cour', at: 81, theme: 'concrete' },
+    minefield: { name: 'Le Champ de mines', at: 91, theme: 'warehouse' },
+    hq: { name: 'Le QG', at: 100, theme: 'interior' },
+  };
+  function mapKind(n) {
+    for (const k in MAPS) if (MAPS[k].at === n) return k;
+    if (n < 52) return 'classic';
+    const r = art.mulberry32(n * 4567 + 89)();
+    if (n % 10 === 0 && n > 100 && r < 0.5) return 'hq';
+    const open = Object.keys(MAPS).filter(k => k !== 'hq' && MAPS[k].at < n);
+    return r < 0.4 ? 'classic' : open[Math.min(open.length - 1, Math.floor((r - 0.4) / 0.6 * open.length))];
+  }
   const lookCache = {};
   function guardLook(type, tier) {
     const key = type + tier;
@@ -153,6 +177,7 @@
     if (typeof save.knife !== 'string' || !save.knives.includes(save.knife)) save.knife = 'hero';
     if (!save.outfits || typeof save.outfits !== 'object' || Array.isArray(save.outfits)) save.outfits = {};
     if (!save.outfit || typeof save.outfit !== 'object' || Array.isArray(save.outfit)) save.outfit = {};
+    if (!save.fails || typeof save.fails !== 'object' || !Number.isFinite(save.fails.lv) || !Number.isFinite(save.fails.n)) save.fails = null;
   }
   function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* ignore */ } }
   const currentHero = () => HEROES.find(h => h.id === save.selected) || HEROES[0];
@@ -244,6 +269,71 @@
     const m = V - 19 + ((n - (V - 19)) % 20);
     return { n: m, variant: VERIFIED[m - 1] || 0 };
   }
+  // Obstacles of the special maps (same pieces as the classic ones: walls, crates, grass, containers, metal).
+  function layoutMap(kind, g, rects, rnd, ri) {
+    const place = (x, y, w, h, type) => {
+      if (x < 1 || y < 1 || x + w > W - 1 || y + h > H - 4) return false;
+      for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) if (g[yy][xx]) return false;
+      if (type === 'planter') { for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) g[yy][xx] = 4; g[y + 1][x + 1] = 2; }
+      else for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) g[yy][xx] = 2;
+      rects.push({ x, y, w, h, type });
+      return true;
+    };
+    const scatter = (count, types) => {
+      for (let k = 0, tries = 0; k < count && tries < 200; tries++) {
+        const type = types[ri(types.length)];
+        const [w, h] = type === 'planter' ? [3, 3] : type === 'container' ? (rnd() < 0.5 ? [2, 1] : [1, 2]) : [1, 1];
+        if (place(1 + ri(W - 1 - w), 1 + ri(H - 4 - h), w, h, type)) k++;
+      }
+    };
+    const wallRow = (y, a, b, gaps, gapW) => {
+      for (let x = a; x <= b; x++) g[y][x] = 1;
+      for (const gx of gaps) for (let k = 0; k < gapW; k++) if (gx + k >= a && gx + k <= b) g[y][gx + k] = 0;
+    };
+    const k19 = H / 19;
+    if (kind === 'garden') {
+      // few walls, lots of tall grass: the map is played from bush to bush
+      const y = 5 + ri(H - 13);
+      wallRow(y, 1 + ri(2), W - 2 - ri(2), [2 + ri(3), 6 + ri(2)], 2);
+      scatter(Math.round(6 * k19), ['planter']);
+      scatter(Math.round(3 * k19), ['crate', 'metal']);
+    } else if (kind === 'docks') {
+      // rows of containers make long lanes
+      for (const x of [2, 5, 8]) {
+        for (let y = 2 + ri(2); y < H - 6;) {
+          const len = 2 + ri(3);
+          for (let k = 0; k < len && y + k < H - 5; k += 2) { if (len - k >= 2) place(x, y + k, 1, 2, 'container'); else place(x, y + k, 1, 1, 'metal'); }
+          y += len + 1 + ri(2);
+        }
+      }
+      scatter(Math.round(2 * k19), ['crate']);
+    } else if (kind === 'lab' || kind === 'hq') {
+      // rooms joined by narrow doors (the lasers settle in the doorways)
+      for (let y = 4 + ri(2); y < H - 6; y += 5 + ri(2)) {
+        wallRow(y, 1, W - 2, rnd() < 0.5 ? [1 + ri(3), 6 + ri(3)] : [3 + ri(4)], 2);
+        const yn = Math.min(H - 6, y + 5);
+        if (rnd() < 0.7) { const x = 3 + ri(5); for (let yy = y + 1; yy < yn - 1; yy++) g[yy][x] = 1; }
+      }
+      scatter(Math.round(3 * k19), kind === 'hq' ? ['planter', 'container', 'crate'] : ['metal', 'metal', 'crate']);
+    } else if (kind === 'court') {
+      // a wide square ringed by pillars, grass in the corners, a low wall that hides the entrance
+      const cy = Math.floor(H / 2) - 2;
+      for (const dy of [-4, -2, 0, 2, 4]) { place(2, cy + dy, 1, 1, 'metal'); place(8, cy + dy, 1, 1, 'metal'); }
+      for (const x of [4, 6]) { place(x, cy - 5, 1, 1, 'metal'); place(x, cy + 5, 1, 1, 'metal'); }
+      place(1, 1, 3, 3, 'planter'); place(7, 1, 3, 3, 'planter');
+      wallRow(H - 7, 1, W - 2, [1 + ri(2), 7 + ri(2)], 2);
+      scatter(Math.round(2 * k19), ['crate', 'container']);
+    } else if (kind === 'minefield') {
+      // zigzag corridors: each wall leaves the way open on alternate sides
+      let left = rnd() < 0.5;
+      for (let y = 4; y < H - 7; y += 4) {
+        wallRow(y, 1, W - 2, [left ? 1 : W - 3, ...(rnd() < 0.35 ? [4 + ri(2)] : [])], 2);
+        left = !left;
+      }
+      scatter(Math.round(2 * k19), ['crate', 'metal']);
+    }
+  }
+
   function generateLevel(n, variantOverride) {
     const lay = variantOverride == null ? layoutOf(n) : { n, variant: variantOverride };
     const prevH = H, prevGrid = grid;
@@ -254,6 +344,7 @@
     const rnd = art.mulberry32(n * 7919 + 13 + variant * 104729);
     const ri = k => Math.floor(rnd() * k);
     const pick = arr => arr[ri(arr.length)];
+    const kind = mapKind(n), rank = levelRank(n), tier = lateTier(n);
     for (let attempt = 0; attempt < 300; attempt++) {
       const g = [];
       for (let y = 0; y < H; y++) {
@@ -261,6 +352,9 @@
         for (let x = 0; x < W; x++) row.push(x === 0 || y === 0 || x === W - 1 || y === H - 1 ? 1 : 0);
         g.push(row);
       }
+      const rects = [];
+      if (kind !== 'classic') layoutMap(kind, g, rects, rnd, ri);
+      else {
       const wallRows = [];
       const nWalls = 1 + Math.floor((H - 15) / 7) + (rnd() < 0.55 ? 1 : 0);
       for (let k = 0; k < nWalls; k++) {
@@ -281,7 +375,6 @@
         const x = 3 + ri(W - 6), y0 = 2 + ri(H - 10), len = 3 + ri(3);
         for (let y = y0; y < Math.min(H - 5, y0 + len); y++) g[y][x] = 1;
       }
-      const rects = [];
       const nObs = Math.round((7 + Math.min(n, 9)) * H / 19);
       for (let k = 0, tries = 0; k < nObs && tries < 300; tries++) {
         const r = rnd();
@@ -302,6 +395,7 @@
         rects.push({ x, y, w, h, type });
         k++;
       }
+      }
       const hide = [];
       for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (g[y][x] === 4) { g[y][x] = 0; hide.push([x, y]); }
       const start = { x: Math.floor(W / 2), y: H - 2 };
@@ -318,7 +412,9 @@
       const far = cells.filter(c => c.d >= 7);
       // never more than one guard per 16 open tiles, so there are always shadows to hide in
       // relief level after each boss (levels 11, 21, 31...): two guards fewer
-      const nGuards = Math.min(n <= 2 ? n + 1 : 3 + Math.floor((n - 1) / 4) - (n > 10 && n % 10 === 1 ? 2 : 0), n >= 45 ? 10 : 9, Math.floor(open / 16));
+      const cap = (n >= 45 ? 10 : 9) + (rank ? 1 : 0) + (tier >= 4 ? 1 : 0);
+      const nGuards = Math.min(n <= 2 ? n + 1 : 3 + Math.floor((n - 1) / 4) - (n > 10 && n % 10 === 1 ? 2 : 0), cap, Math.floor(open / 16));
+      const shieldCap = maxShields(n) + (tier >= 3 ? 1 : 0) + (rank === 2 ? 1 : 0);
       if (far.length < nGuards * 3) continue;
       // posts are spread over the whole map (best of several random picks, farthest from the others),
       // so guards never start bunched up in one corner
@@ -372,7 +468,7 @@
           if (seg) route.push(...seg);
         }
         let type = pick(pool);
-        if (type === 'shield') { if (shields < maxShields(n)) shields++; else type = pick(nonShield); }
+        if (type === 'shield') { if (shields < shieldCap) shields++; else type = pick(nonShield); }
         return { post: p, route, startAngle: rnd() * Math.PI * 2, type };
       });
       // safety: guards never patrol where they can see the spawn, and always move (so they turn their backs)
@@ -403,6 +499,13 @@
         guards[bi].type = 'boss';
         for (const gd of guards) if (gd.follow === bi) delete gd.follow;
         if (guards[bi].follow != null) delete guards[bi].follow;
+        if (kind === 'hq') {
+          // the boss of the HQ walks with two elite bodyguards
+          const esc = guards.map((gd, i) => i).filter(i => i !== bi && guards[i].type !== 'shield' && guards[i].follow == null && !guards.some(o => o.follow === i))
+            .sort((a, b) => Math.hypot(guards[a].post.x - guards[bi].post.x, guards[a].post.y - guards[bi].post.y) - Math.hypot(guards[b].post.x - guards[bi].post.x, guards[b].post.y - guards[bi].post.y))
+            .slice(0, 2);
+          for (const i of esc) Object.assign(guards[i], { type: 'elite', follow: bi, post: guards[bi].post, route: guards[bi].route, startAngle: guards[bi].startAngle });
+        }
       }
       const allSafe = guards.every(routeSafe);
       // safety: at the start, most of the map must be in the shadows
@@ -419,6 +522,11 @@
         })) lit++;
       }
       if (!allSafe || lit > cells.length * 0.35) continue;
+      // from level 33, some levels have a guard asleep at his post: he sees nothing until a noise wakes him
+      if (n >= 33 && rnd() < 0.45) {
+        const cand = guards.filter((gd, i) => gd.type !== 'boss' && gd.type !== 'shield' && gd.follow == null && !guards.some(o => o.follow === i));
+        if (cand.length) pick(cand).sleep = true;
+      }
 
       const lasers = [];
       if (n >= 4) {
@@ -443,11 +551,13 @@
             y = e;
           }
         }
-        const want = n >= 40 ? 3 : n >= 10 ? 2 : 1;
+        // never more than 4 lasers: the lab bonus and the very-hard bonus do not stack
+        const want = Math.min(4, (n >= 40 ? 3 : n >= 10 ? 2 : 1) + (rank === 2 ? 1 : 0) + (kind === 'lab' ? 1 : 0));
+        const onT = Math.min(1.2 + 0.015 * n, 2.0) + (tier >= 1 ? 0.2 : 0) + (rank === 1 ? 0.15 : 0);
         for (let tries = 0; tries < 30 && lasers.length < want && cands.length; tries++) {
           const c = cands.splice(ri(cands.length), 1)[0];
           if (c.cells.some(([x, y]) => isPost(x, y))) continue;
-          lasers.push({ h: c.h, a: c.a, b: c.b, c: c.c, period: 3.2, on: Math.min(1.2 + 0.015 * n, 2.0), phase: rnd() * 3.2, cells: c.cells });
+          lasers.push({ h: c.h, a: c.a, b: c.b, c: c.c, period: 3.2, on: onT, phase: rnd() * 3.2, cells: c.cells });
         }
       }
       const onLaser = (x, y) => lasers.some(l => l.cells.some(([cx, cy]) => cx === x && cy === y));
@@ -456,7 +566,7 @@
       const mines = [];
       if (n >= 3 || shields > 0) {
         const spots = free.filter(c => c.d >= 4 && c.d <= 13);
-        const want = n >= 8 || shields > 1 ? 2 : 1;
+        const want = (n >= 8 || shields > 1 ? 2 : 1) + (tier >= 2 ? 1 : 0) + (rank === 2 ? 1 : 0);
         for (let q = 0; q < want && spots.length; q++) {
           const c = spots.splice(ri(spots.length), 1)[0];
           mines.push({ x: c.x + 0.5, y: c.y + 0.5 });
@@ -468,7 +578,7 @@
         const routePts = guards.flatMap(gd => gd.route);
         const spots = free.filter(c => c.d >= 6 && !mines.some(m => Math.floor(m.x) === c.x && Math.floor(m.y) === c.y)
           && routePts.some(q => Math.hypot(q.x - c.x - 0.5, q.y - c.y - 0.5) < 1.6));
-        for (let q = 0, want = n >= 25 ? 2 : 1; q < want && spots.length; q++) {
+        for (let q = 0, want = (n >= 25 ? 2 : 1) + (kind === 'minefield' ? 2 : 0); q < want && spots.length; q++) {
           const c = spots.splice(ri(spots.length), 1)[0];
           bombs.push({ x: c.x + 0.5, y: c.y + 0.5 });
         }
@@ -483,7 +593,7 @@
       const kspots = pspots.filter(c => c.d >= 6);
       if (n >= 2 && rnd() < 0.5 && kspots.length) { const c = kspots[ri(kspots.length)]; key = { x: c.x + 0.5, y: c.y + 0.5 }; }
       const themes = ['interior', 'warehouse', 'garden', 'concrete', 'lab'];
-      return { W, H, grid: g, rects, hide, key, start, guards, lasers, mines, bombs, pickups, theme: themes[Math.floor((n - 1) / 5) % themes.length], seed: n * 31 + 7 + variant };
+      return { W, H, grid: g, rects, hide, key, start, guards, lasers, mines, bombs, pickups, theme: kind !== 'classic' ? MAPS[kind].theme : themes[Math.floor((n - 1) / 5) % themes.length], seed: n * 31 + 7 + variant, n, kind, rank };
     }
     throw new Error('level generation failed');
   }
@@ -493,7 +603,7 @@
   let L = null, player = null, guards = [], lasers = [], mines = [], bombs = [], pickups = [], decals = [];
   let hideSet = new Set(), keyItem = null, spawnT = 0;
   let fx = null, levelGems = 0, shake = 0, endTimer = 0, hurtFlash = 0, time = 0, slowmo = 1, hitStop = 0, combo = 0, comboT = -9, heartT = 0;
-  let marker = null, gemSoundCd = 0, mapCanvas = null, levelKey = 0;
+  let marker = null, gemSoundCd = 0, mapCanvas = null, levelKey = 0, flashPar = 0;
   // loot counter floating above the hero: counts up as each gem is absorbed, then fades
   let introT = 0, loot = { n: 0, t: 9, pop: 0 }, gemStreak = 0, gemGap = 9, spawnLanded = false;
   const calmMotion = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } })();
@@ -524,6 +634,14 @@
     const baseRange = Math.min(3.25 + n * 0.04, 3.8);
     const baseDmg = 20 + Math.min(n, 14);
     const tier = gearTier(n), G = GEAR[tier];
+    // From level 31 guards answer the hero's real strength (health and speed bought or trained):
+    // they close about a third of the gap, at most +35 % damage and 15 % quicker reactions, never faster legs.
+    // After three failures on the same level they quietly ease off by 10 % until it is beaten.
+    const power = (maxHp / BASE_HP) * (1 + 0.5 * (player.speed / BASE_SPEED - 1));
+    const adapt = Math.max(0, Math.min(1, (power - 1) / 2.7)) * Math.max(0, Math.min(1, (n - 30) / 10));
+    const ease = save.fails && save.fails.lv === n && save.fails.n >= 3 ? 0.9 : 1;
+    const dmgMul = (1 + 0.35 * adapt) * ease, reactMul = (1 - 0.15 * adapt) / ease;
+    flashPar = n >= 6 ? Math.round((12 + 6 * L.guards.length + 0.4 * L.H) / 5) * 5 : 0;
     guards = L.guards.map((def, gi) => {
       const T = GUARD_TYPES[def.type];
       const route = def.route;
@@ -531,8 +649,8 @@
         x: def.post.x + 0.5, y: def.post.y + 0.5, angle: def.startAngle, route, ri: 0,
         state: 'patrol', path: null, pi: 0, timer: 0, reaction: 0, cooldown: 0, alive: true, lastSeen: null,
         speed: gSpeed * (def.type === 'heavy' ? 0.85 : def.type === 'boss' ? 0.8 : 1), range: Math.min(baseRange * T.range * G.range, MAX_RANGE), half: T.half,
-        damage: Math.min(Math.round(baseDmg * T.dmg * G.dmg * (def.type === 'heavy' && tier >= 2 ? 1.15 : 1)), (T.weapon === 'shotgun' || T.weapon === 'cannon') ? MAX_HIT_SHOTGUN : MAX_HIT), shield: !!T.shield, rate: T.rate * (sharp ? 0.85 : 1), type: def.type, look: guardLook(def.type, tier), weapon: def.type === 'heavy' && tier >= 2 ? 'cannon' : T.weapon,
-        reactTime: T.reaction, sharp, laser: !!(T.laser || (G.laser && T.weapon !== 'shotgun')),
+        damage: Math.round(10 * dmgMul * Math.min(Math.round(baseDmg * T.dmg * G.dmg * (def.type === 'heavy' && tier >= 2 ? 1.15 : 1)), (T.weapon === 'shotgun' || T.weapon === 'cannon') ? MAX_HIT_SHOTGUN : MAX_HIT)) / 10, shield: !!T.shield, rate: T.rate * (sharp ? 0.85 : 1), type: def.type, look: guardLook(def.type, tier), weapon: def.type === 'heavy' && tier >= 2 ? 'cannon' : T.weapon,
+        reactTime: T.reaction * reactMul, sharp, sleep: !!def.sleep, zz: Math.random() * 3, laser: !!(T.laser || (G.laser && T.weapon !== 'shotgun')),
         frozen: 0, walk: 0, muzzle: 0, alertT: 0, qT: 0, deadT: 0, follow: def.follow,
         boss: def.type === 'boss', hp: def.type === 'boss' ? 3 + Math.floor(n / 30) : 1, stun: 0, scale: def.type === 'boss' ? 1.45 : 1,
       };
@@ -558,8 +676,11 @@
     buildHud();
     levelsThisSession++;
     online.track('level_start', n, { hero: hero.id });
-    if (guards.some(g => g.boss)) { showBanner('COMBAT DE BOSS', `Abats le Colosse et ses gardes`); sfx.alert(); }
-    else showBanner('NIVEAU ' + n, `Élimine ${guards.length} gardes`);
+    const map = L.kind && L.kind !== 'classic' ? MAPS[L.kind] : null, rk = RANKS[L.rank || 0];
+    const mapTxt = map ? (map.at === n ? `Nouvelle carte : ${map.name}` : map.name) : '';
+    if (guards.some(g => g.boss)) { showBanner('COMBAT DE BOSS', mapTxt || 'Abats le Colosse et ses gardes', map && map.at === n ? 'newmap' : ''); sfx.alert(); }
+    else if (rk) showBanner('NIVEAU ' + n, `${rk.label} · butin ${rk.txt}`, 'hard');
+    else showBanner('NIVEAU ' + n, mapTxt || `Élimine ${guards.length} gardes`, map && map.at === n ? 'newmap' : '');
     let tip = null;
     const types = [...new Set(guards.map(g => g.type))];
     const newType = types.find(t => t !== 'thug' && !save.tips['enemy_' + t]);
@@ -602,7 +723,7 @@
   }
   const inGrass = p => hideSet.has(Math.floor(p.y) * W + Math.floor(p.x));
   function canSee(gd, p) {
-    if (gd.frozen > 0 || gd.stun > 0) return false;
+    if (gd.frozen > 0 || gd.stun > 0 || gd.sleep) return false;
     const dx = p.x - gd.x, dy = p.y - gd.y, d = Math.hypot(dx, dy);
     if (p === player && inGrass(p) && d > 1.1) return false;
     if (d > gd.range) return false;
@@ -722,6 +843,7 @@
       if (gd.frozen <= 0) { gd.state = 'look'; gd.timer = 0.8; gd.lookBase = gd.angle; gd.lookT = 0; }
       return;
     }
+    if (gd.sleep) { gd.zz += dt; return; }
     const ox = gd.x, oy = gd.y;
     stepGuard(gd, dt);
     if (Math.hypot(gd.x - ox, gd.y - oy) > 0.001) gd.walk += dt * 10;
@@ -736,6 +858,7 @@
     const near = guards.filter(o => o !== except && o.alive && o.frozen <= 0 && o.stun <= 0 && o.state !== 'alert'
       && Math.hypot(o.x - x, o.y - y) <= radius).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y));
     for (const o of near) {
+      if (o.sleep) { o.sleep = false; o.qT = 1.4; } // any noise close enough wakes a sleeping guard
       if (o.state === 'suspect' || o.state === 'search' || o.state === 'look') { heard = true; continue; }
       if (sent >= 2) { o.glance = { a: Math.atan2(y - o.y, x - o.x), t: 0.9 }; continue; }
       if (!findPath(o, Math.floor(x), Math.floor(y))) continue;
@@ -1656,7 +1779,7 @@
 
     // darkness with flashlight cones cut out
     const vh = (ch - HUD_H) / ts, vw = cw / ts;
-    const polys = guards.filter(g => g.alive && g.frozen <= 0
+    const polys = guards.filter(g => g.alive && g.frozen <= 0 && !g.sleep
       && Math.abs(g.y - (cam.y + vh / 2)) < vh / 2 + g.range + 1 && Math.abs(g.x - (cam.x + vw / 2)) < vw / 2 + g.range + 1)
       .map(g => [g, visionPolygon(g)]);
     sctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -1845,6 +1968,15 @@
       }
     }
     for (const gd of guards) {
+      if (!gd.alive || !gd.sleep) continue;
+      // sleeping guard: two little z rising over his head
+      const s = toScreen(gd.x, gd.y - 0.8);
+      for (let k = 0; k < 2; k++) {
+        const t = (gd.zz * 0.6 + k * 0.5) % 1;
+        screenText('z', s.x + sx + 6 + t * 10, s.y + sy - t * 18, 15 + 7 * t, `rgba(220,230,255,${1 - t})`, { stroke: '#1c1a2b' });
+      }
+    }
+    for (const gd of guards) {
       if (!gd.alive || (gd.alertT <= 0 && gd.qT <= 0)) continue;
       const s = toScreen(gd.x, gd.y - 0.9);
       const pop = Math.min(1, (gd.alertT > 0 ? 1.2 - gd.alertT : 1 - gd.qT) * 8);
@@ -1973,10 +2105,19 @@
 
   function buildHud() {
     $('hud-level').textContent = 'NIVEAU ' + save.level;
+    $('hud-level').classList.toggle('hard', !!(L && L.rank));
     updateHud();
   }
   let lastGemShown = -1;
+  let lastFlash = '';
   function updateHud() {
+    const fe = $('hud-flash');
+    let ft = '';
+    if (flashPar && state === 'playing') {
+      const left = Math.max(0, Math.ceil(flashPar - time));
+      ft = left ? `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}` : 'raté';
+    }
+    if (ft !== lastFlash) { lastFlash = ft; fe.classList.toggle('hidden', !ft); fe.classList.toggle('over', ft === 'raté'); fe.querySelector('span').textContent = ft; }
     const keys = (save.keys || 0) + levelKey;
     $('hud-keys').classList.toggle('hidden', keys === 0);
     const kh = '<i class="key-ico"></i>' + Math.min(keys, 3) + '/3';
@@ -2043,7 +2184,8 @@
     renderMissions();
     state = 'menu';
     $('menu-gems').textContent = save.gems;
-    $('btn-play-level').textContent = 'NIVEAU ' + save.level;
+    const rkm = RANKS[levelRank(save.level)];
+    $('btn-play-level').innerHTML = 'NIVEAU ' + save.level + (rkm ? ` <b class="chip-hard">${rkm.label}</b>` : '');
     const ch2 = currentHero(), lv2 = heroLevel(ch2.id);
     const holder = $('menu-hero');
     holder.innerHTML = '';
@@ -2271,10 +2413,16 @@
     const k = player.hp / player.maxHp;
     const stars = won ? (!player.spotted ? 3 : k >= 0.5 ? 2 : 1) : 0;
     const bonus = won ? 5 * stars + 2 * n : 0;
+    const rk = RANKS[(L && L.rank) || 0];
+    // flash challenge: finish under the par time for extra diamonds
+    const flash = won && flashPar && time <= flashPar ? 10 + n : 0;
+    // three failures in a row on the same level: guards ease off next time (see startLevel)
+    if (won) save.fails = null;
+    else save.fails = save.fails && save.fails.lv === n ? { lv: n, n: save.fails.n + 1 } : { lv: n, n: 1 };
     let chest = 0;
     if (won && levelKey) { save.keys = (save.keys || 0) + 1; if (save.keys >= 3) { save.keys = 0; chest = 100 + n * 5; } }
     // dying forfeits the diamonds picked up during the level: only a finished mission pays
-    const total = won ? levelGems + bonus + chest : 0;
+    const total = won ? Math.round((levelGems + bonus) * (rk ? rk.mult : 1)) + chest + flash : 0;
     save.gems += total;
     const killed = guards.filter(g => !g.alive);
     const xpGain = killed.length * 10 + killed.filter(g => g.boss).length * 60 + (won ? 25 : 0);
@@ -2302,7 +2450,7 @@
     $('result-stars').classList.toggle('hidden', !won);
     starEls.forEach((s, i) => { if (i < stars) setTimeout(() => { s.classList.add('on'); sfx.star(i); }, 350 + i * 300); });
     $('result-bonus').innerHTML = fr((won
-      ? `Butin ${levelGems}, bonus ${bonus}` + (chest ? `, coffre ${chest}` : '')
+      ? `Butin ${levelGems}, bonus ${bonus}` + (rk ? `, ${rk.label.toLowerCase()} ${rk.txt}` : '') + (chest ? `, coffre ${chest}` : '') + (flash ? `<br>Défi éclair réussi : +${flash}` : '')
       : 'Butin perdu : seule une mission terminée rapporte.')
       + (xpGain ? `<br>+${xpGain} XP` : '') + (leveled ? `, ${hero.name} passe au niveau ${heroLevel(hero.id)}` : ''));
     const el = $('result-gems');

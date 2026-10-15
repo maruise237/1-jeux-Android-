@@ -2,7 +2,8 @@
 // Plays every level with an automated bot using the weakest hero and keeps, for each level,
 // the first layout variant the bot manages to win. Writes www/js/levels.js.
 //
-// Usage: npm run verify-levels [-- --from 1 --to 60]
+// Usage: npm run verify-levels [-- --from 1 --to 120]
+//        npm run verify-levels -- --from 31 --to 120 --max   (re-plays the verified layouts with a maxed-out hero)
 // Needs Chromium: set CHROMIUM_PATH, or install one with `npx playwright install chromium`.
 import { chromium } from 'playwright-core';
 import http from 'node:http';
@@ -12,8 +13,12 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'www');
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? +process.argv[i + 1] : d; };
-const FROM = arg('from', 1), TO = arg('to', 60), VARIANTS = arg('variants', 25), TRIES = arg('tries', 6);
+const MAX = process.argv.includes('--max');
+const FROM = arg('from', 1), TO = arg('to', 120), VARIANTS = arg('variants', 25), TRIES = arg('tries', 6);
 const outFile = path.join(root, 'js', 'levels.js');
+// --out <file>: write results elsewhere (to run two ranges in parallel and merge afterwards)
+const outArg = process.argv.indexOf('--out');
+const writeFile = outArg > 0 ? path.resolve(process.argv[outArg + 1]) : outFile;
 
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2' };
 const server = http.createServer((req, res) => {
@@ -40,7 +45,7 @@ await page.evaluate(() => {
     const P = s.player, G = s.guards.filter(g => g.alive);
     if (!G.length) return;
     const seen = pt => G.some(g => g.frozen <= 0 && s.canSee(g, pt));
-    const near = pt => G.some(g => g.frozen <= 0 && Math.hypot(g.x - pt.x, g.y - pt.y) < 1.2 && Math.abs(s.angleDiff(g.angle, Math.atan2(pt.y - g.y, pt.x - g.x))) < 1.2);
+    const near = pt => G.some(g => g.frozen <= 0 && !g.sleep && Math.hypot(g.x - pt.x, g.y - pt.y) < 1.2 && Math.abs(s.angleDiff(g.angle, Math.atan2(pt.y - g.y, pt.x - g.x))) < 1.2);
     const onLaser = pt => s.lasers.some(l => {
       const ph = (s.time + l.phase) % l.period;
       const hot = ph < l.on + 0.25 || ph > l.period - 0.7;
@@ -93,16 +98,21 @@ await page.evaluate(() => {
     if (spot) { const path = s.findPath(P, spot.x, spot.y); if (path && path.length) { P.path = path; P.pi = 0; window.__goal = { ...spot, t: 0 }; } }
   }
 
-  window.__playLevel = (lv, variant, tries) => {
+  window.__playLevel = (lv, variant, tries, max) => {
     window.__variantOverride = variant;
     for (let k = 1; k <= tries; k++) {
-      s.save.level = lv; s.save.selected = 'kenji'; s.save.xp = {}; s.startLevel(); window.__goal = null;
+      // weakest hero by default; --max: best hero, level 20, every upgrade, best knife (guards adapt to it)
+      s.save.level = lv; s.save.fails = null;
+      if (max) { s.save.owned = ['kenji', 'kami']; s.save.selected = 'kami'; s.save.xp = { kami: 1e9 }; for (const u in s.save.upg) s.save.upg[u] = 5; s.save.knives = ['hero', 'plasma']; s.save.knife = 'plasma'; }
+      else { s.save.selected = 'kenji'; s.save.xp = {}; for (const u in s.save.upg) s.save.upg[u] = 0; s.save.knife = 'hero'; }
+      s.startLevel(); window.__goal = null;
       window.__noise = k === 1 ? 0 : 1.5;
       const delay = k === 1 ? 0 : Math.random() * 4;
       let t = 0;
       while (s.state === 'playing' && t < 240) { if (t >= delay) botStep(); s.tick(6); t += 0.1; }
+      window.__winT = s.time;
       s.tick(200);
-      if (s.save.level === lv + 1) { window.__variantOverride = undefined; return { won: true, tries: k, hp: Math.round(s.player.hp) }; }
+      if (s.save.level === lv + 1) { window.__variantOverride = undefined; return { won: true, tries: k, hp: Math.round(s.player.hp), secs: Math.round(window.__winT || 0), guards: s.guards.length, kind: s.level.kind, rank: s.level.rank }; }
     }
     window.__variantOverride = undefined;
     return { won: false };
@@ -110,6 +120,17 @@ await page.evaluate(() => {
 });
 
 let failures = 0;
+if (MAX) {
+  // keep the layouts found for the weakest hero; only check that a maxed hero (with adapted guards) wins them too
+  for (let lv = FROM; lv <= TO; lv++) {
+    const r = await page.evaluate(([lv, v, t]) => window.__playLevel(lv, v, t, true), [lv, verified[lv - 1] || 0, TRIES]);
+    if (!r.won) failures++;
+    console.log(`niveau ${lv} (héros max): ${r.won ? `gagné (essai ${r.tries}, ${r.hp} PV, ${r.secs} s)` : 'PERDU'}`);
+  }
+  await browser.close(); server.close();
+  console.log(failures ? `${failures} niveau(x) perdus avec le héros max` : `Héros max : niveaux ${FROM}-${TO} gagnés.`);
+  process.exit(failures ? 1 : 0);
+}
 for (let lv = FROM; lv <= TO; lv++) {
   let found = -1, info = null;
   for (let v = 0; v < VARIANTS && found < 0; v++) {
@@ -117,8 +138,8 @@ for (let lv = FROM; lv <= TO; lv++) {
     if (r.won) { found = v; info = r; }
   }
   if (found < 0) { failures++; console.log(`niveau ${lv}: AUCUNE variante gagnée par le robot`); verified[lv - 1] = 0; }
-  else { console.log(`niveau ${lv}: variante ${found} gagnée (essai ${info.tries}, ${info.hp} PV restants)`); verified[lv - 1] = found; }
-  fs.writeFileSync(outFile, `'use strict';\n// Generated by tools/verify-levels.mjs: layout variant per level, each beaten by the bot with the weakest hero.\nwindow.KT = window.KT || {};\nKT.verifiedVariants = ${JSON.stringify(verified)};\n`);
+  else { console.log(`niveau ${lv}: variante ${found} gagnée (essai ${info.tries}, ${info.hp} PV restants, ${info.secs} s, ${info.guards} gardes, carte ${info.kind}${info.rank ? ', rang ' + info.rank : ''})`); verified[lv - 1] = found; }
+  fs.writeFileSync(writeFile, `'use strict';\n// Generated by tools/verify-levels.mjs: layout variant per level, each beaten by the bot with the weakest hero.\nwindow.KT = window.KT || {};\nKT.verifiedVariants = ${JSON.stringify(Array.from(verified, v => v ?? 0))};\n`);
 }
 await browser.close();
 server.close();
