@@ -103,6 +103,10 @@ KT.audio = (() => {
     },
     lose() { [392, 330, 262, 196].forEach((f, i) => tone({ type: 'sawtooth', f, t: 0.3, v: 0.1, at: later(i * 0.16) })); },
     star(i) { tone({ type: 'triangle', f: 880 * Math.pow(1.26, i), t: 0.2, v: 0.2 }); tone({ type: 'sine', f: 1760 * Math.pow(1.26, i), t: 0.3, v: 0.06 }); },
+    clang() {
+      noise({ t: 0.18, v: 0.45, type: 'bandpass', f: 4200, q: 6 });
+      [1250, 1870, 2730].forEach((f, i) => tone({ type: 'square', f, t: 0.25, v: 0.06 / (i + 1) }));
+    },
     coin() { tone({ type: 'square', f: 1600, f2: 2000, t: 0.04, v: 0.05 }); },
   };
 

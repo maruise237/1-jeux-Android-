@@ -5,11 +5,17 @@ Jeu mobile d'infiltration en vue du dessus. Tu es un assassin armé d'un couteau
 
 - **Déplacement** : touche le sol (ou glisse le doigt), un chemin pointillé s'affiche.
 - **Élimination** : touche un garde, ton héros le traque et l'élimine par surprise.
-- **Gardes** : 5 types (pistolet, fusil, fusil à pompe…) avec lampe torche, alerte « ! »,
-  recherche « ? » et réaction au bruit quand un collègue tombe.
+- **Ennemis qui montent en puissance** :
+  voyous (pistolet) → gardes du corps → évadés armés (fusil) → **gardes à bouclier**
+  (invincibles de face : prends-les de dos ou gèle-les) → soldats → colosses blindés
+  (fusil à pompe, gros dégâts mais lents) → commandos d'élite.
+  Tous les 10 niveaux, leurs armes s'améliorent (renforcées → visée laser → armes en or).
+  Lampe torche, alerte « ! », hésitation « ? » quand un collègue tombe à portée de vue.
 - **Pièges** : lasers rouges clignotants, mines de glace qui gèlent les gardes.
 - **Butin** : explosion de gemmes 💎 aspirées vers le héros, bonus et 1 à 3 étoiles par mission.
 - **10 héros** à débloquer (+Vitesse / +Vie), dont Kami, le héros KamTech.
+- **Héros détaillés** : visages, coiffures, tenues, couteaux de combat (lame dorée, de glace,
+  rouge ou verte pour les héros premium).
 - **Sons et musique** synthétisés en direct (aucun fichier audio), vibrations, tremblement d'écran.
 - **Niveaux infinis**, 3 décors (béton, brique, dalles), difficulté progressive.
 - **Aucune publicité, aucun achat intégré.**
@@ -22,6 +28,33 @@ Ouvre `www/index.html` dans Chrome, ou lance :
 
 ```bash
 npm start
+```
+
+## Difficile, mais toujours gagnable
+
+La difficulté augmente (plus de gardes, meilleurs équipements, cartes plus grandes),
+avec des plafonds pour ne jamais rendre un niveau impossible :
+
+- les gardes sont toujours **plus lents que le héros le plus lent** ;
+- aucun tir ne tue d'un coup : le héros de base **survit toujours à 2 tirs** ;
+- les gardes ont un **temps de réaction** (0,35 s minimum) pour qu'on puisse s'échapper ;
+- le point de départ n'est **jamais visible** par une patrouille, et au moins
+  **65 % de la carte est dans l'ombre** au départ ;
+- au plus **un garde pour 16 cases libres**, et la carte s'agrandit avec les niveaux ;
+- une **mine de glace est garantie** dès qu'il y a des gardes à bouclier.
+
+En plus, chaque niveau publié est **vérifié automatiquement** : un robot joue tous les
+niveaux de 1 à 60 avec le héros de base (le plus faible). Si le robot ne gagne pas,
+une autre disposition de carte est essayée jusqu'à en trouver une gagnable
+(`www/js/levels.js`). Au-delà du niveau 60, toutes les difficultés sont à leur plafond :
+le jeu réutilise des cartes vérifiées, avec l'équipement ennemi qui continue d'évoluer.
+
+Après toute modification de l'équilibrage, relance la vérification :
+
+```bash
+npm install
+npx playwright install chromium   # une seule fois
+npm run verify-levels
 ```
 
 ## Léger par conception

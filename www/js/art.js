@@ -26,7 +26,6 @@ KT.art = (() => {
   }
   function ellipse(g, x, y, rx, ry) { g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); }
   function circle(g, x, y, r) { g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); }
-  function line(g, a, b) { g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke(); }
   function fillStroke(g, fill, lw = 0.05) { g.fillStyle = fill; g.fill(); g.lineWidth = lw; g.strokeStyle = OUT; g.stroke(); }
 
   function rgb(hex) { const n = parseInt(hex.slice(1), 16); return [n >> 16, n >> 8 & 255, n & 255]; }
@@ -49,115 +48,6 @@ KT.art = (() => {
       greyCache.set(L, o);
     }
     return greyCache.get(L);
-  }
-
-  // ---------- Characters ----------
-  function drawHead(g, c) {
-    const hx = 0.02;
-    switch (c.hair) {
-      case 'bald':
-        circle(g, hx, 0, 0.19); fillStroke(g, c.skin);
-        break;
-      case 'mohawk':
-        circle(g, hx, 0, 0.19); fillStroke(g, c.skin);
-        ellipse(g, hx - 0.01, 0, 0.2, 0.065); fillStroke(g, c.hairColor, 0.035);
-        break;
-      case 'helmet':
-        circle(g, hx, 0, 0.215); fillStroke(g, c.hairColor);
-        g.lineWidth = 0.03; g.strokeStyle = shade(c.hairColor, -0.35);
-        circle(g, hx - 0.02, 0, 0.13); g.stroke();
-        ellipse(g, hx + 0.16, 0, 0.05, 0.13); g.fillStyle = '#20232e'; g.fill();
-        break;
-      case 'hood':
-        circle(g, hx - 0.02, 0, 0.235); fillStroke(g, shade(c.hairColor, -0.1));
-        ellipse(g, hx + 0.08, 0, 0.13, 0.155); fillStroke(g, c.mask || '#f2f2f2', 0.035);
-        g.fillStyle = OUT;
-        ellipse(g, hx + 0.13, -0.06, 0.025, 0.04); g.fill();
-        ellipse(g, hx + 0.13, 0.06, 0.025, 0.04); g.fill();
-        break;
-      case 'cap':
-        ellipse(g, hx + 0.17, 0, 0.09, 0.16); fillStroke(g, shade(c.cap || c.hairColor, -0.15), 0.035);
-        circle(g, hx, 0, 0.19); fillStroke(g, c.cap || c.hairColor);
-        break;
-      case 'pigtails':
-        circle(g, hx - 0.06, -0.23, 0.095); fillStroke(g, c.hairColor, 0.035);
-        circle(g, hx - 0.06, 0.23, 0.095); fillStroke(g, c.hairColor, 0.035);
-        circle(g, hx, 0, 0.19); fillStroke(g, c.hairColor);
-        break;
-      case 'long':
-        ellipse(g, hx - 0.13, 0, 0.2, 0.21); fillStroke(g, shade(c.hairColor, -0.1));
-        circle(g, hx, 0, 0.19); fillStroke(g, c.hairColor);
-        break;
-      default:
-        circle(g, hx, 0, 0.19); fillStroke(g, c.hairColor);
-    }
-    if (!['bald', 'mohawk', 'helmet', 'hood', 'cap'].includes(c.hair)) {
-      ellipse(g, hx + 0.13, 0, 0.06, 0.11); g.fillStyle = c.skin; g.fill();
-    }
-    g.fillStyle = 'rgba(255,255,255,0.28)';
-    ellipse(g, hx - 0.05, -0.07, 0.07, 0.04); g.fill();
-  }
-
-  function drawGun(g, w, c) {
-    const len = w === 'shotgun' ? 0.7 : 0.82;
-    const col = c.gun || (w === 'shotgun' ? '#5b4636' : '#e0922f');
-    rrect(g, 0.05, 0.03, len, 0.1, 0.03); fillStroke(g, col, 0.04);
-    rrect(g, 0.05 + len * 0.55, 0.0, len * 0.45, 0.06, 0.02); fillStroke(g, '#3a3d48', 0.03);
-    g.fillStyle = 'rgba(255,255,255,0.3)'; g.fillRect(0.1, 0.045, len * 0.4, 0.02);
-  }
-
-  function drawCharacter(g, L, x, y, ang, o = {}) {
-    const c = o.dead ? greyLook(L) : L;
-    const s = o.scale || 1;
-    g.save();
-    g.translate(x, y);
-    g.scale(s, s);
-    if (o.alpha != null) g.globalAlpha *= o.alpha;
-    if (!o.noShadow) { g.fillStyle = 'rgba(0,0,0,0.22)'; ellipse(g, 0.05, 0.1, 0.42, 0.38); g.fill(); }
-    g.rotate(ang);
-    if (o.dead) g.scale(0.92, 1.08);
-    g.lineJoin = 'round'; g.lineCap = 'round';
-
-    const w = o.weapon || 'knife';
-    const sw = Math.sin(o.walk || 0) * (w === 'knife' ? 0.09 : 0.03);
-    let lh, rh;
-    if (w === 'knife') { lh = { x: 0.2 - sw, y: -0.32 }; rh = { x: 0.3 + sw, y: 0.3 }; }
-    else if (w === 'pistol') { lh = { x: 0.38, y: 0.02 }; rh = { x: 0.42, y: 0.14 }; }
-    else { lh = { x: 0.52, y: 0.06 }; rh = { x: 0.2, y: 0.12 }; }
-    if (o.attack) { rh = { x: 0.56, y: 0.05 }; lh = { x: 0.05, y: -0.36 }; }
-
-    if (w === 'rifle' || w === 'shotgun') drawGun(g, w, c);
-
-    const arms = [[{ x: -0.02, y: -0.3 }, lh], [{ x: -0.02, y: 0.3 }, rh]];
-    for (const [sh, h] of arms) {
-      g.strokeStyle = OUT; g.lineWidth = 0.21; line(g, sh, h);
-      g.strokeStyle = shade(c.outfit, -0.08); g.lineWidth = 0.13; line(g, sh, h);
-      if (c.stripe) { g.strokeStyle = c.stripe; g.lineWidth = 0.035; line(g, sh, { x: (sh.x + h.x) / 2, y: (sh.y + h.y) / 2 }); }
-    }
-
-    ellipse(g, -0.03, 0, 0.25, 0.41); fillStroke(g, c.outfit);
-    g.fillStyle = 'rgba(255,255,255,0.18)';
-    ellipse(g, 0.04, -0.12, 0.12, 0.2); g.fill();
-    if (c.stripe) {
-      g.strokeStyle = c.stripe; g.lineWidth = 0.05;
-      g.beginPath(); g.moveTo(-0.2, -0.28); g.lineTo(-0.2, 0.28); g.stroke();
-    }
-
-    if (w === 'pistol') {
-      rrect(g, rh.x, rh.y - 0.05, 0.3, 0.08, 0.02); fillStroke(g, c.gun || '#cfd3dc', 0.035);
-    }
-    if (w === 'knife') {
-      rrect(g, rh.x + 0.02, rh.y - 0.035, 0.12, 0.07, 0.02); fillStroke(g, '#4a2f1d', 0.03);
-      g.beginPath();
-      g.moveTo(rh.x + 0.13, rh.y - 0.05);
-      g.lineTo(rh.x + 0.46, rh.y - 0.02);
-      g.lineTo(rh.x + 0.13, rh.y + 0.05);
-      g.closePath(); fillStroke(g, '#e8eef6', 0.03);
-    }
-    for (const h of [lh, rh]) { circle(g, h.x, h.y, 0.095); fillStroke(g, c.glove, 0.04); }
-
-    drawHead(g, c);
-    g.restore();
   }
 
   function drawIce(g, x, y, t) {
@@ -312,15 +202,5 @@ KT.art = (() => {
     return c;
   }
 
-  // Character portrait for menus (facing up).
-  function drawPortrait(canvas, look, opts = {}) {
-    const g = canvas.getContext('2d');
-    const s = canvas.width;
-    g.setTransform(1, 0, 0, 1, 0, 0);
-    g.clearRect(0, 0, s, s);
-    g.setTransform(s / 1.35, 0, 0, s / 1.35, s / 2 - s * 0.04, s / 2 + s * 0.1);
-    drawCharacter(g, look, 0, 0, -Math.PI / 2 - 0.35, { weapon: 'knife', walk: opts.walk || 0.6, noShadow: true, dead: opts.locked });
-  }
-
-  return { drawCharacter, drawIce, drawGem, renderMap, drawPortrait, rrect, circle, ellipse, shade, mulberry32, OUT };
+  return { drawIce, drawGem, renderMap, rrect, circle, ellipse, shade, greyLook, mulberry32, OUT };
 })();

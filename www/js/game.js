@@ -3,37 +3,69 @@
 (() => {
   const { art, audio } = KT;
   const sfx = audio.sfx;
-  const W = 11, H = 19;
+  const W = 11;
+  let H = 19; // map height grows with the level (see levelHeight)
+  const levelHeight = n => 19 + Math.min(Math.floor((n - 1) / 3), 11);
   const SAVE_KEY = 'kamtech-shadowstrike-save-v2';
-  const BASE_SPEED = 3.0, BASE_HP = 100, PLAYER_R = 0.3, CHAR_SCALE = 1.3;
+  const BASE_SPEED = 3.6, BASE_HP = 100, PLAYER_R = 0.3, CHAR_SCALE = 1.3;
+  // Difficulty ceilings: levels get harder but always stay winnable.
+  const MAX_RANGE = 4.2;         // flashlight reach (tiles)
+  const MAX_GUARD_SPEED = 1.8;   // always well below the slowest hero (3.6)
+  const MAX_HIT = 34, MAX_HIT_SHOTGUN = 45; // a base hero (100 HP) always survives 2 hits
 
   const HEROES = [
-    { id: 'kenji', name: 'Kenji', label: 'Standard', spd: 0, hp: 0, price: 0, look: { outfit: '#3b8f4a', glove: '#2b2b33', skin: '#e8b48a', hair: 'short', hairColor: '#5a3a22' } },
-    { id: 'nova', name: 'Nova', label: 'Standard', spd: 0, hp: 0, price: 60, look: { outfit: '#e0a020', glove: '#2b2b33', skin: '#c98d5f', hair: 'long', hairColor: '#1f1a1a' } },
-    { id: 'rex', name: 'Rex', label: '+20% Vitesse', spd: 0.2, hp: 0, price: 150, look: { outfit: '#d6463a', glove: '#222222', skin: '#f0c7a0', hair: 'mohawk', hairColor: '#1e1e1e' } },
-    { id: 'lila', name: 'Lila', label: '+20% Vie', spd: 0, hp: 0.2, price: 150, look: { outfit: '#8e5ad6', glove: '#3a2350', skin: '#f3cfb0', hair: 'pigtails', hairColor: '#38d6d0' } },
-    { id: 'blaze', name: 'Blaze', label: '+30% Vitesse', spd: 0.3, hp: 0, price: 350, look: { outfit: '#ff7a1a', glove: '#2b2b33', skin: '#a86f48', hair: 'cap', hairColor: '#2a2a2a', cap: '#1d4fd6' } },
-    { id: 'onyx', name: 'Onyx', label: '+40% Vie', spd: 0, hp: 0.4, price: 350, look: { outfit: '#2b2d3a', glove: '#c0392b', skin: '#7a4b2e', hair: 'bald', hairColor: '#000000', stripe: '#c0392b' } },
-    { id: 'viper', name: 'Viper', label: '+40% Vitesse', spd: 0.4, hp: 0, price: 700, look: { outfit: '#1fa37a', glove: '#0f3d30', skin: '#e8b48a', hair: 'hood', hairColor: '#1fa37a', mask: '#e6f5ee' } },
-    { id: 'frost', name: 'Frost', label: '+60% Vie', spd: 0, hp: 0.6, price: 700, look: { outfit: '#6fd3ff', glove: '#e9762b', skin: '#bfe9ff', hair: 'short', hairColor: '#e9f8ff' } },
-    { id: 'phantom', name: 'Phantom', label: '+50% Vitesse +30% Vie', spd: 0.5, hp: 0.3, price: 1400, look: { outfit: '#d6245c', glove: '#222222', skin: '#f0c7a0', hair: 'hood', hairColor: '#d6245c', mask: '#f4f4f4' } },
-    { id: 'kami', name: 'Kami', label: '+60% Vitesse +80% Vie', spd: 0.6, hp: 0.8, price: 3000, look: { outfit: '#f5c542', glove: '#1c1a2b', skin: '#e8b48a', hair: 'helmet', hairColor: '#1c1a2b', stripe: '#1c1a2b' } },
+    { id: 'kenji', name: 'Kenji', label: 'Standard', spd: 0, hp: 0, price: 0, look: { outfit: '#3b8f4a', outfit2: '#24552e', detail: 'vest', sleeve: 'short', skin: '#e8b48a', hair: 'spiky', hairColor: '#4a2f1d', headband: '#d63a3a', glove: '#2b2b33' } },
+    { id: 'nova', name: 'Nova', label: 'Standard', spd: 0, hp: 0, price: 60, look: { outfit: '#f0b42a', detail: 'stripes', stripe: '#1c1a2b', skin: '#c98d5f', hair: 'bun', hairColor: '#1f1a1a', glove: '#2b2b33' } },
+    { id: 'rex', name: 'Rex', label: '+20% Vitesse', spd: 0.2, hp: 0, price: 150, look: { outfit: '#d6463a', detail: 'jacket', sleeve: 'short', skin: '#f0c7a0', hair: 'mohawk', hairColor: '#2e8bff', glove: '#222222', eyes: 'angry' } },
+    { id: 'lila', name: 'Lila', label: '+20% Vie', spd: 0, hp: 0.2, price: 150, look: { outfit: '#8e5ad6', detail: 'stripes', stripe: '#38d6d0', skin: '#f3cfb0', hair: 'pigtails', hairColor: '#38d6d0', accent: '#ff4f8b', glove: '#3a2350' } },
+    { id: 'blaze', name: 'Blaze', label: '+30% Vitesse', spd: 0.3, hp: 0, price: 350, look: { outfit: '#ff7a1a', outfit2: '#2a2a33', detail: 'vest', skin: '#a86f48', hair: 'cap', cap: '#1d4fd6', glove: '#2b2b33' } },
+    { id: 'onyx', name: 'Onyx', label: '+40% Vie', spd: 0, hp: 0.4, price: 350, look: { outfit: '#2b2d3a', detail: 'armor', accent: '#c0392b', sleeve: 'short', skin: '#7a4b2e', hair: 'bald', hairColor: '#1a1a1a', glove: '#c0392b', eyes: 'angry' } },
+    { id: 'viper', name: 'Viper', label: '+40% Vitesse', spd: 0.4, hp: 0, price: 700, look: { blade: 'venom', outfit: '#1fa37a', detail: 'stripes', stripe: '#0f3d30', hair: 'hood', hairColor: '#1fa37a', mask: '#e6f5ee', skin: '#e8b48a', glove: '#0f3d30' } },
+    { id: 'frost', name: 'Frost', label: '+60% Vie', spd: 0, hp: 0.6, price: 700, look: { blade: 'ice', outfit: '#6fd3ff', detail: 'armor', accent: '#e9f8ff', skin: '#bfe9ff', hair: 'spiky', hairColor: '#e9f8ff', glove: '#e9762b' } },
+    { id: 'phantom', name: 'Phantom', label: '+50% Vitesse +30% Vie', spd: 0.5, hp: 0.3, price: 1400, look: { blade: 'crimson', outfit: '#d6245c', detail: 'stripes', stripe: '#1c1a2b', hair: 'hood', hairColor: '#d6245c', mask: '#f4f4f4', skin: '#f0c7a0', glove: '#222222' } },
+    { id: 'kami', name: 'Kami', label: '+60% Vitesse +80% Vie', spd: 0.6, hp: 0.8, price: 3000, look: { blade: 'gold', outfit: '#1c1a2b', detail: 'cape', accent: '#f5c542', skin: '#e8b48a', hair: 'helmet', helmet: '#f5c542', visor: '#1c1a2b', glove: '#f5c542' } },
   ];
+  for (const h of HEROES) h.look.id = 'hero-' + h.id;
+  window.__heroLooks = HEROES.map(h => h.look);
 
+  // Enemy roster: tougher types with better gear unlock as levels go up.
   const GUARD_TYPES = {
-    thug: { weapon: 'pistol', range: 1.0, half: 0.5, dmg: 1.0, rate: 0.5, look: { outfit: '#2547b8', stripe: '#ffffff', glove: '#a8714a', skin: '#a8714a', hair: 'short', hairColor: '#f2c230' } },
-    suit: { weapon: 'pistol', range: 1.05, half: 0.5, dmg: 1.0, rate: 0.45, look: { outfit: '#2a2b33', glove: '#d9a77c', skin: '#d9a77c', hair: 'short', hairColor: '#111111' } },
-    prisoner: { weapon: 'rifle', range: 1.15, half: 0.45, dmg: 1.1, rate: 0.5, look: { outfit: '#e8e8e8', stripe: '#2a2a2a', glove: '#d9a77c', skin: '#d9a77c', hair: 'cap', hairColor: '#222222', cap: '#2a2a2a' } },
-    soldier: { weapon: 'rifle', range: 1.25, half: 0.42, dmg: 1.2, rate: 0.45, look: { outfit: '#d7dde3', glove: '#3a3d45', skin: '#d9a77c', hair: 'helmet', hairColor: '#4a4f5a' } },
-    heavy: { weapon: 'shotgun', range: 0.8, half: 0.75, dmg: 1.7, rate: 0.85, look: { outfit: '#7a3d2a', glove: '#2a2a2a', skin: '#c98d5f', hair: 'helmet', hairColor: '#c0392b' } },
+    thug: { name: 'Voyous', weapon: 'pistol', range: 1.0, half: 0.5, dmg: 1.0, rate: 0.5, reaction: 0.5, look: { outfit: '#2547b8', detail: 'stripes', stripe: '#ffffff', skin: '#a8714a', hair: 'short', hairColor: '#f2c230', glove: '#a8714a', eyes: 'angry', gun: '#6b6f7c' } },
+    suit: { name: 'Gardes du corps', weapon: 'pistol', range: 1.05, half: 0.5, dmg: 1.05, rate: 0.45, reaction: 0.48, look: { outfit: '#2a2b33', detail: 'suit', skin: '#d9a77c', hair: 'slick', hairColor: '#111111', glove: '#d9a77c', eyes: 'shades', gun: '#2f323b' } },
+    prisoner: { name: 'Évadés armés', weapon: 'rifle', range: 1.15, half: 0.45, dmg: 1.1, rate: 0.5, reaction: 0.45, look: { outfit: '#f0f0f0', detail: 'prison', stripe: '#2a2a2a', sleeve: 'short', skin: '#d9a77c', hair: 'beanie', hat: '#2a2a2a', glove: '#d9a77c', eyes: 'angry', gun: '#e0922f' } },
+    soldier: { name: 'Soldats', weapon: 'rifle', range: 1.25, half: 0.42, dmg: 1.2, rate: 0.45, reaction: 0.4, look: { outfit: '#d7dde3', outfit2: '#5b616e', detail: 'vest', skin: '#d9a77c', hair: 'balaclava', hairColor: '#3a3d45', glove: '#3a3d45', eyes: 'angry', gun: '#4a5a3a' } },
+    heavy: { name: 'Colosses blindés', tip: 'Fusil à pompe : très dangereux de près, mais lents.', weapon: 'shotgun', range: 0.85, half: 0.75, dmg: 1.7, rate: 0.8, reaction: 0.4, look: { outfit: '#7a3d2a', detail: 'armor', accent: '#5b616e', skin: '#c98d5f', hair: 'helmet', helmet: '#c0392b', visor: '#20232e', glove: '#2a2a2a' } },
+    shield: { name: 'Gardes à bouclier', tip: 'Invincibles de face : prends-les de dos ou gèle-les !', weapon: 'pistol', shield: true, range: 0.95, half: 0.5, dmg: 1.0, rate: 0.55, reaction: 0.5, look: { outfit: '#3a4a6a', detail: 'armor', accent: '#5b6b8a', skin: '#d9a77c', hair: 'helmet', helmet: '#2b3550', visor: '#9fd3ff', glove: '#1f232b', shield: true, shieldColor: '#6c7ea3', gun: '#2f323b' } },
+    elite: { name: 'Commandos d\'élite', weapon: 'rifle', range: 1.35, half: 0.45, dmg: 1.4, rate: 0.45, reaction: 0.35, laser: true, look: { outfit: '#2b2f3a', detail: 'armor', accent: '#3d4452', skin: '#d9a77c', hair: 'helmet', helmet: '#1f232b', visor: '#ff3b3b', glove: '#1f232b', gun: '#1c1e24' } },
   };
   function guardPool(n) {
-    const p = ['thug'];
-    if (n >= 3) p.push('suit');
-    if (n >= 6) p.push('prisoner');
-    if (n >= 10) p.push('soldier');
-    if (n >= 15) p.push('heavy');
-    return p;
+    if (n <= 2) return ['thug'];
+    if (n <= 5) return ['thug', 'thug', 'suit'];
+    if (n <= 9) return ['thug', 'suit', 'prisoner', 'shield'];
+    if (n <= 14) return ['suit', 'prisoner', 'soldier', 'shield'];
+    if (n <= 19) return ['prisoner', 'soldier', 'heavy', 'shield'];
+    if (n <= 24) return ['soldier', 'heavy', 'elite', 'shield'];
+    return ['heavy', 'elite', 'elite', 'shield'];
+  }
+  // Shields are strong, so their number is capped to keep every level winnable.
+  const maxShields = n => (n < 7 ? 0 : n < 15 ? 1 : n < 25 ? 2 : 3);
+
+  // Every 10 levels the whole roster gets better weapons: steel -> black ops -> gold.
+  const GEAR = [
+    { name: '', dmg: 1, range: 1, gun: null },
+    { name: 'Armes renforcées', dmg: 1.1, range: 1.05, gun: '#1c1e24' },
+    { name: 'Armes de précision', dmg: 1.2, range: 1.1, gun: '#3a4a6a', laser: true },
+    { name: 'Armes en or', dmg: 1.3, range: 1.15, gun: '#f5c542', laser: true },
+  ];
+  const gearTier = n => Math.min(GEAR.length - 1, Math.floor((n - 1) / 10));
+  const lookCache = {};
+  function guardLook(type, tier) {
+    const key = type + tier;
+    if (!lookCache[key]) {
+      const T = GUARD_TYPES[type];
+      lookCache[key] = { ...T.look, id: 'guard-' + key, gun: GEAR[tier].gun || T.look.gun };
+    }
+    return lookCache[key];
   }
 
   // ---------- Save ----------
@@ -114,8 +146,24 @@
   }
 
   // ---------- Level generation ----------
-  function generateLevel(n) {
-    const rnd = art.mulberry32(n * 7919 + 13);
+  // Levels 1..VERIFIED.length use a layout variant that the automated bot (tools/verify-levels.mjs)
+  // has beaten with the weakest hero. Past that, every difficulty setting is already at its ceiling,
+  // so verified layouts from the last 20 levels are reused (enemy gear keeps evolving).
+  const VERIFIED = KT.verifiedVariants || [];
+  function layoutOf(n) {
+    const V = VERIFIED.length;
+    if (n <= V || V < 40) return { n, variant: VERIFIED[n - 1] || 0 };
+    const m = V - 19 + ((n - (V - 19)) % 20);
+    return { n: m, variant: VERIFIED[m - 1] || 0 };
+  }
+  function generateLevel(n, variantOverride) {
+    const lay = variantOverride == null ? layoutOf(n) : { n, variant: variantOverride };
+    const prevH = H, prevGrid = grid;
+    H = levelHeight(lay.n);
+    try { return buildLevel(lay.n, lay.variant); } finally { H = prevH; grid = prevGrid; }
+  }
+  function buildLevel(n, variant) {
+    const rnd = art.mulberry32(n * 7919 + 13 + variant * 104729);
     const ri = k => Math.floor(rnd() * k);
     const pick = arr => arr[ri(arr.length)];
     for (let attempt = 0; attempt < 300; attempt++) {
@@ -126,7 +174,7 @@
         g.push(row);
       }
       const wallRows = [];
-      const nWalls = 1 + (rnd() < 0.55 ? 1 : 0);
+      const nWalls = 1 + Math.floor((H - 15) / 7) + (rnd() < 0.55 ? 1 : 0);
       for (let k = 0; k < nWalls; k++) {
         const y = 4 + ri(H - 11);
         if (wallRows.some(r => Math.abs(r - y) < 4)) continue;
@@ -145,7 +193,7 @@
         for (let y = y0; y < Math.min(H - 5, y0 + len); y++) g[y][x] = 1;
       }
       const rects = [];
-      const nObs = 7 + Math.min(n, 9);
+      const nObs = Math.round((7 + Math.min(n, 9)) * H / 19);
       for (let k = 0, tries = 0; k < nObs && tries < 300; tries++) {
         const r = rnd();
         let type, w, h;
@@ -173,7 +221,8 @@
       const cells = [];
       for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (!g[y][x]) cells.push({ x, y, d: dist[y * W + x] });
       const far = cells.filter(c => c.d >= 7);
-      const nGuards = Math.min(2 + Math.ceil(n * 0.5), 8);
+      // never more than one guard per 16 open tiles, so there are always shadows to hide in
+      const nGuards = Math.min(3 + Math.floor((n - 1) / 4), 9, Math.floor(open / 16));
       if (far.length < nGuards * 3) continue;
       const posts = [];
       for (let tries = 0; tries < 500 && posts.length < nGuards; tries++) {
@@ -185,15 +234,59 @@
 
       const patrolCells = cells.filter(c => c.d >= 5);
       const pool = guardPool(n);
-      const guards = posts.map(p => {
+      const nonShield = pool.filter(t => t !== 'shield');
+      let shields = 0;
+      grid = g;
+      const startPt = { x: start.x + 0.5, y: start.y + 0.5 };
+      // a point is unsafe if a guard standing there could see the spawn point
+      const seesStart = q => Math.hypot(q.x - startPt.x, q.y - startPt.y) < MAX_RANGE + 0.6 && sightLine(q, startPt);
+      let guards = posts.map(p => {
         const wps = [p];
         const k = 1 + ri(2);
-        for (let q = 0; q < k; q++) {
-          const near = patrolCells.filter(c => Math.abs(c.x - p.x) + Math.abs(c.y - p.y) <= 6);
-          wps.push(pick(near));
+        for (let q = 0, tries = 0; q < k && tries < 20; tries++) {
+          const near = patrolCells.filter(c => Math.abs(c.x - p.x) + Math.abs(c.y - p.y) <= 6 && (c.x !== p.x || c.y !== p.y));
+          if (!near.length) break;
+          wps.push(pick(near)); q++;
         }
-        return { post: p, waypoints: wps, startAngle: rnd() * Math.PI * 2, type: pick(pool) };
+        const route = [];
+        for (let j = 0; j < wps.length; j++) {
+          const a = wps[j], b = wps[(j + 1) % wps.length];
+          const seg = findPath({ x: a.x + 0.5, y: a.y + 0.5 }, b.x, b.y);
+          if (seg) route.push(...seg);
+        }
+        let type = pick(pool);
+        if (type === 'shield') { if (shields < maxShields(n)) shields++; else type = pick(nonShield); }
+        return { post: p, route, startAngle: rnd() * Math.PI * 2, type };
       });
+      // safety: guards never patrol where they can see the spawn, and always move (so they turn their backs)
+      const routeSafe = gd => {
+        if (gd.route.length < 2) return false;
+        let prev = { x: gd.post.x + 0.5, y: gd.post.y + 0.5 };
+        for (const q of [...gd.route, prev]) {
+          const steps = Math.ceil(Math.hypot(q.x - prev.x, q.y - prev.y) / 0.5);
+          for (let i = 0; i <= steps; i++) {
+            const t = steps ? i / steps : 0;
+            if (seesStart({ x: prev.x + (q.x - prev.x) * t, y: prev.y + (q.y - prev.y) * t })) return false;
+          }
+          prev = q;
+        }
+        return true;
+      };
+      const allSafe = guards.every(routeSafe);
+      // safety: at the start, most of the map must be in the shadows
+      let lit = 0;
+      for (const c of cells) {
+        const q = { x: c.x + 0.5, y: c.y + 0.5 };
+        if (guards.some(gd => {
+          const o = { x: gd.post.x + 0.5, y: gd.post.y + 0.5 };
+          const d = Math.hypot(q.x - o.x, q.y - o.y);
+          if (d > MAX_RANGE || d < 0.01) return d < 0.01;
+          let da = Math.atan2(q.y - o.y, q.x - o.x) - gd.startAngle;
+          da = Math.atan2(Math.sin(da), Math.cos(da));
+          return Math.abs(da) < 0.6 && sightLine(o, q);
+        })) lit++;
+      }
+      if (!allSafe || lit > cells.length * 0.35) continue;
 
       const lasers = [];
       if (n >= 4) {
@@ -229,9 +322,9 @@
       const free = cells.filter(c => !isPost(c.x, c.y) && !onLaser(c.x, c.y));
 
       const mines = [];
-      if (n >= 3) {
+      if (n >= 3 || shields > 0) {
         const spots = free.filter(c => c.d >= 4 && c.d <= 13);
-        const want = n >= 8 ? 2 : 1;
+        const want = n >= 8 || shields > 1 ? 2 : 1;
         for (let q = 0; q < want && spots.length; q++) {
           const c = spots.splice(ri(spots.length), 1)[0];
           mines.push({ x: c.x + 0.5, y: c.y + 0.5 });
@@ -244,7 +337,7 @@
         pickups.push({ x: c.x + 0.5, y: c.y + 0.5, value: 5 });
       }
       const themes = ['concrete', 'brick', 'hex'];
-      return { W, H, grid: g, rects, start, guards, lasers, mines, pickups, theme: themes[Math.floor((n - 1) / 3) % 3], seed: n * 31 + 7 };
+      return { W, H, grid: g, rects, start, guards, lasers, mines, pickups, theme: themes[Math.floor((n - 1) / 3) % 3], seed: n * 31 + 7 + variant };
     }
     throw new Error('level generation failed');
   }
@@ -261,7 +354,8 @@
   function startLevel() {
     audio.init();
     const n = save.level;
-    L = generateLevel(n);
+    L = generateLevel(n, window.__variantOverride);
+    H = L.H;
     grid = L.grid;
     const hero = currentHero();
     const maxHp = Math.round(BASE_HP * (1 + hero.hp));
@@ -270,22 +364,19 @@
       hp: maxHp, maxHp, look: hero.look, path: null, pi: 0, walk: 0, chase: null, repath: 0,
       spotted: false, hurtCd: 0, attack: 0, dust: 0,
     };
-    const gSpeed = 1.35 + Math.min(n * 0.03, 0.75);
-    const baseRange = 3.6 + Math.min(n * 0.05, 1.2);
+    const gSpeed = Math.min(1.35 + n * 0.025, MAX_GUARD_SPEED);
+    const baseRange = Math.min(3.0 + n * 0.04, 3.8);
     const baseDmg = 16 + Math.min(n, 14);
+    const tier = gearTier(n), G = GEAR[tier];
     guards = L.guards.map(def => {
       const T = GUARD_TYPES[def.type];
-      const route = [];
-      for (let k = 0; k < def.waypoints.length; k++) {
-        const a = def.waypoints[k], b = def.waypoints[(k + 1) % def.waypoints.length];
-        const seg = findPath({ x: a.x + 0.5, y: a.y + 0.5 }, b.x, b.y);
-        if (seg) route.push(...seg);
-      }
+      const route = def.route;
       return {
         x: def.post.x + 0.5, y: def.post.y + 0.5, angle: def.startAngle, route, ri: 0,
         state: 'patrol', path: null, pi: 0, timer: 0, reaction: 0, cooldown: 0, alive: true, lastSeen: null,
-        speed: gSpeed * (def.type === 'heavy' ? 0.85 : 1), range: baseRange * T.range, half: T.half,
-        damage: Math.round(baseDmg * T.dmg), rate: T.rate, type: def.type, look: T.look, weapon: T.weapon,
+        speed: gSpeed * (def.type === 'heavy' ? 0.85 : 1), range: Math.min(baseRange * T.range * G.range, MAX_RANGE), half: T.half,
+        damage: Math.min(Math.round(baseDmg * T.dmg * G.dmg), T.weapon === 'shotgun' ? MAX_HIT_SHOTGUN : MAX_HIT), shield: !!T.shield, rate: T.rate, type: def.type, look: guardLook(def.type, tier), weapon: T.weapon,
+        reactTime: T.reaction, laser: !!(T.laser || (G.laser && T.weapon !== 'shotgun')),
         frozen: 0, walk: 0, muzzle: 0, alertT: 0, qT: 0, deadT: 0,
       };
     });
@@ -301,9 +392,14 @@
     buildHud();
     showBanner('NIVEAU ' + n, `Élimine ${guards.length} gardes`);
     let tip = null;
-    if (n === 1) tip = 'Touche le sol pour te déplacer.<br>Touche un garde pour l\'éliminer par surprise !';
+    const types = [...new Set(guards.map(g => g.type))];
+    const newType = types.find(t => t !== 'thug' && !save.tips['enemy_' + t]);
+    if (tier > 0 && !save.tips['gear' + tier]) { tip = `⚠ Les ennemis s'équipent : <b>${G.name}</b> !<br>Plus de dégâts et plus de portée.`; save.tips['gear' + tier] = 1; }
+    else if (newType) tip = `⚠ Nouveaux ennemis : <b>${GUARD_TYPES[newType].name}</b> !` + (GUARD_TYPES[newType].tip ? '<br>' + GUARD_TYPES[newType].tip : '');
+    else if (n === 1) tip = 'Touche le sol pour te déplacer.<br>Touche un garde pour l\'éliminer par surprise !';
     else if (lasers.length && !save.tips.laser) { tip = 'Attention aux lasers rouges !<br>Passe quand ils sont éteints.'; save.tips.laser = 1; }
     else if (mines.length && !save.tips.mine) { tip = 'Marche sur la mine de glace ❄<br>pour geler les gardes autour.'; save.tips.mine = 1; }
+    for (const t of types) save.tips['enemy_' + t] = 1;
     showTip(tip);
     persist();
   }
@@ -384,10 +480,14 @@
     }
     for (const m of mines) if (!m.used && Math.hypot(m.x - p.x, m.y - p.y) < 0.5) triggerFreeze(m);
     for (const l of lasers) {
-      if (p.hurtCd <= 0 && laserOn(l) && hitsLaser(l, p)) { sfx.laser(); damage(30); p.hurtCd = 0.7; }
+      if (p.hurtCd <= 0 && laserOn(l) && hitsLaser(l, p)) { sfx.laser(); damage(20); p.hurtCd = 0.7; }
     }
+    p.blockCd = Math.max(0, (p.blockCd || 0) - dt);
     for (const gd of guards) {
-      if (state === 'playing' && gd.alive && Math.hypot(gd.x - p.x, gd.y - p.y) < 0.62) kill(gd);
+      if (state !== 'playing' || !gd.alive || Math.hypot(gd.x - p.x, gd.y - p.y) >= 0.62) continue;
+      const fromFront = Math.abs(angleDiff(gd.angle, Math.atan2(p.y - gd.y, p.x - gd.x))) < 1.15;
+      if (gd.shield && gd.frozen <= 0 && fromFront) blocked(gd);
+      else kill(gd);
     }
   }
 
@@ -408,7 +508,7 @@
 
   function stepGuard(gd, dt) {
     if (state === 'playing' && canSee(gd, player)) {
-      if (gd.state !== 'alert') { gd.state = 'alert'; gd.reaction = 0.35; gd.alertT = 1.2; sfx.alert(); player.spotted = true; }
+      if (gd.state !== 'alert') { gd.state = 'alert'; gd.reaction = gd.reactTime; gd.alertT = 1.2; sfx.alert(); player.spotted = true; }
       gd.lastSeen = { x: player.x, y: player.y };
       turnTo(gd, Math.atan2(player.y - gd.y, player.x - gd.x), dt * 10);
       gd.reaction -= dt; gd.cooldown -= dt;
@@ -420,8 +520,17 @@
       gd.path = findPath(gd, Math.floor(gd.lastSeen.x), Math.floor(gd.lastSeen.y)) || [];
       gd.pi = 0;
     }
+    if (gd.state === 'suspect') {
+      turnTo(gd, Math.atan2(gd.lastSeen.y - gd.y, gd.lastSeen.x - gd.x), dt * 3);
+      gd.timer -= dt;
+      if (gd.timer <= 0) {
+        gd.state = 'search';
+        gd.path = findPath(gd, Math.floor(gd.lastSeen.x), Math.floor(gd.lastSeen.y)) || []; gd.pi = 0;
+      }
+      return;
+    }
     if (gd.state === 'search') {
-      if (followPath(gd, gd.speed * 1.3, dt)) { gd.state = 'look'; gd.timer = 1.6; }
+      if (followPath(gd, gd.speed * 1.25, dt)) { gd.state = 'look'; gd.timer = 1.6; }
       return;
     }
     if (gd.state === 'look') {
@@ -495,12 +604,36 @@
     vibrate(30);
     for (const o of guards) {
       if (!o.alive || o.frozen > 0 || o.state !== 'patrol') continue;
-      if (Math.hypot(o.x - gd.x, o.y - gd.y) < 2.6) {
-        o.state = 'search'; o.qT = 1;
-        o.path = findPath(o, Math.floor(gd.x), Math.floor(gd.y)) || []; o.pi = 0;
+      // only guards that could see the spot get suspicious, and they hesitate before checking it
+      if (Math.hypot(o.x - gd.x, o.y - gd.y) < 2.6 && sightLine(o, gd)) {
+        o.state = 'suspect'; o.timer = 0.8; o.qT = 1.2;
+        o.lastSeen = { x: gd.x, y: gd.y };
       }
     }
     if (guards.every(g => !g.alive)) finish(true);
+  }
+
+  // Hitting a shield from the front bounces the player back and alerts the guard.
+  function blocked(gd) {
+    const p = player;
+    if (p.blockCd > 0) return;
+    p.blockCd = 0.6;
+    const dx = p.x - gd.x, dy = p.y - gd.y, d = Math.hypot(dx, dy) || 1;
+    for (let k = 0.8; k > 0; k -= 0.1) {
+      const nx = p.x + dx / d * k, ny = p.y + dy / d * k;
+      if (clearLine(p, { x: nx, y: ny }, PLAYER_R * 0.9)) { p.x = nx; p.y = ny; break; }
+    }
+    p.path = null; p.chase = null; marker = null; p.spotted = true;
+    gd.angle = Math.atan2(p.y - gd.y, p.x - gd.x);
+    gd.state = 'alert'; gd.reaction = gd.reactTime; gd.alertT = 1.2;
+    sfx.clang(); vibrate(50);
+    shake = Math.max(shake, 0.2);
+    const sx = gd.x + Math.cos(gd.angle) * 0.5, sy = gd.y + Math.sin(gd.angle) * 0.5;
+    for (let i = 0; i < 12; i++) {
+      const a = gd.angle + (Math.random() - 0.5) * 2, v = 2 + Math.random() * 3;
+      fx.parts.push({ x: sx, y: sy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0.3, max: 0.3, r: 0.045, c: '#ffe27a' });
+    }
+    fx.texts.push({ x: gd.x, y: gd.y - 0.5, text: 'BLOQUÉ !', color: '#ffd34d', t: 1, max: 1 });
   }
 
   function spawnGems(x, y, n) {
@@ -597,6 +730,7 @@
     shadeCanvas.width = canvas.width; shadeCanvas.height = canvas.height;
     const fit = Math.min(cw / W, (ch - HUD_H) / H);
     ts = Math.max(fit, Math.min(cw / 9, (ch - HUD_H) / 13));
+    art.setResolution(ts * dpr * CHAR_SCALE);
     if (L) { buildMap(); updateCamera(0, true); }
   }
   function buildMap() { mapCanvas = art.renderMap(L, ts * dpr); }
@@ -780,6 +914,17 @@
     for (const r of fx.ripples) {
       ctx.strokeStyle = `rgba(255,255,255,${0.7 * (1 - r.t / 0.4)})`; ctx.lineWidth = 0.05;
       art.circle(ctx, r.x, r.y, 0.15 + r.t * 1.6); ctx.stroke();
+    }
+
+    // laser sights
+    for (const gd of guards) {
+      if (!gd.alive || !gd.laser || gd.frozen > 0) continue;
+      const tip = gunTip(gd), c = Math.cos(gd.angle), sn = Math.sin(gd.angle);
+      let d = 0;
+      while (d < gd.range && !isWallAt(tip.x + c * d, tip.y + sn * d)) d += 0.05;
+      ctx.strokeStyle = gd.state === 'alert' ? 'rgba(255,40,40,0.9)' : 'rgba(255,40,40,0.45)'; ctx.lineWidth = 0.025;
+      ctx.beginPath(); ctx.moveTo(tip.x, tip.y); ctx.lineTo(tip.x + c * d, tip.y + sn * d); ctx.stroke();
+      ctx.fillStyle = '#ff3b3b'; art.circle(ctx, tip.x + c * d, tip.y + sn * d, 0.05); ctx.fill();
     }
 
     // characters
@@ -1084,7 +1229,9 @@
 
   // Hook for automated tests.
   window.__shadowStrike = {
-    save, generateLevel, startLevel, kill, triggerFreeze,
+    save, generateLevel, startLevel, kill, triggerFreeze, canSee, findPath, isWallTile, angleDiff, GUARD_TYPES,
+    tick(n, dt = 1 / 60) { for (let i = 0; i < n; i++) update(dt); },
+    get level() { return L; }, get time() { return time; },
     get state() { return state; }, get guards() { return guards; }, get player() { return player; },
     get mines() { return mines; }, get lasers() { return lasers; },
   };
