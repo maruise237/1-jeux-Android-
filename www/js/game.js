@@ -2075,7 +2075,7 @@
   const $ = id => document.getElementById(id);
   const fr = t => t.replace(/ ([!?:;»])/g, '\u00a0$1');
   // anonymous stats (no-op when the game has no server configured)
-  const online = window.KamOnline || { track() {}, pickPromo() { return null; }, markSeen() {}, openLink() {}, refreshPromos() {} };
+  const online = window.KamOnline || { track() {}, pickPromo() { return null; }, markSeen() {}, openLink(u) { window.open(u, '_blank'); }, refreshPromos() {} };
   const SCREENS = ['menu', 'heroes', 'result', 'pause', 'wheel', 'shop'];
   function showScreen(id) {
     for (const s of SCREENS) $(s).classList.toggle('hidden', s !== id);
@@ -2229,6 +2229,15 @@
     online.openLink(promoNow.url); hidePromo();
   });
   for (const id of ['btn-promo-close', 'btn-promo-later']) $(id).addEventListener('click', () => { sfx.tap(); hidePromo(); });
+  // privacy summary, readable offline; the full policy opens in the browser
+  const privacyPolicyUrl = 'https://shadow-strike-admin.vercel.app/confidentialite';
+  const statsBtn = $('btn-stats');
+  const showStats = () => { const on = online.statsOn !== false; statsBtn.setAttribute('aria-checked', String(on)); statsBtn.querySelector('b').textContent = on ? 'OUI' : 'NON'; };
+  statsBtn.classList.toggle('hidden', !online.setStats);
+  statsBtn.addEventListener('click', () => { sfx.tap(); online.setStats(!(online.statsOn !== false)); showStats(); });
+  $('btn-privacy').addEventListener('click', () => { audio.init(); sfx.button(); showStats(); $('privacy').classList.remove('hidden'); });
+  $('btn-privacy-close').addEventListener('click', () => { sfx.tap(); $('privacy').classList.add('hidden'); });
+  $('btn-privacy-full').addEventListener('click', () => { sfx.button(); online.openLink(privacyPolicyUrl); });
 
   function refreshToggles() {
     for (const k of ['sfx', 'music', 'vibe']) {
@@ -2607,6 +2616,7 @@
     if (state === 'paused') return resume();
     if (spinning) return;
     if (!$('promo').classList.contains('hidden')) return hidePromo();
+    if (!$('privacy').classList.contains('hidden')) return $('privacy').classList.add('hidden');
     if (visible('wheel')) return showScreen('result');
     if (visible('shop') || visible('heroes') || visible('result')) { sfx.button(); return showMenu(); }
     if (visible('menu')) { const App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App; if (App) App.exitApp(); }

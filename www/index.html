@@ -31,6 +31,7 @@
         <button class="round-btn" data-toggle="sfx" aria-label="Sons"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg></button>
         <button class="round-btn" data-toggle="music" aria-label="Musique"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17.5V5.5l10-2v12"/><circle cx="6.5" cy="17.5" r="2.6" fill="currentColor"/><circle cx="16.5" cy="15.5" r="2.6" fill="currentColor"/></svg></button>
       <button class="round-btn" data-toggle="vibe" aria-label="Vibrations"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="3.5" width="8" height="17" rx="2"/><path d="M4.5 8.5l-2 2 2 2 -2 2M19.5 8.5l2 2-2 2 2 2"/></svg></button>
+        <button class="round-btn" id="btn-privacy" aria-label="Confidentialité"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.3 7.5 9.5 4.4-1.2 7.5-4.9 7.5-9.5V6Z" fill="currentColor" fill-opacity=".25"/><path d="M12 10.5v5" stroke-linecap="round"/><circle cx="12" cy="7.8" r=".9" fill="currentColor" stroke="none"/></svg></button>
       </div>
     </div>
     <div class="brand">KamTech Studio</div>
@@ -110,10 +111,25 @@
     <div class="ribbon">ROUE DE LA CHANCE</div>
     <div class="wheel-box"><canvas id="wheel-canvas" width="560" height="560"></canvas><div class="wheel-pin"></div></div>
     <p id="wheel-result"></p>
+    <p class="wheel-odds">Gratuit · chaque case a 1 chance sur 8</p>
     <button id="btn-spin" class="btn btn-yellow big">TOURNER</button>
     <button id="btn-wheel-close" class="btn btn-blue hidden">CONTINUER</button>
   </div>
 
+  <div id="privacy" class="overlay dim hidden" role="dialog" aria-modal="true" aria-labelledby="privacy-title">
+    <div class="promo-card privacy-card">
+      <button id="btn-privacy-close" class="close-btn" aria-label="Fermer"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      <h2 id="privacy-title">Confidentialité</h2>
+      <ul>
+        <li>Aucun compte, aucun nom, aucun e-mail, aucune position.</li>
+        <li>Avec internet, le jeu envoie des statistiques de jeu anonymes (niveaux joués, achats en diamants, vues des annonces) liées à un identifiant aléatoire créé par le jeu.</li>
+        <li>Aucune régie publicitaire : les seules annonces sont celles de KamTech.</li>
+        <li>Sans internet, rien ne quitte ton téléphone.</li>
+      </ul>
+      <button id="btn-stats" class="stats-toggle" role="switch" aria-checked="true"><span>Statistiques anonymes</span><b></b></button>
+      <button id="btn-privacy-full" class="btn btn-blue">Politique complète</button>
+    </div>
+  </div>
   <div id="promo" class="overlay dim hidden" role="dialog" aria-modal="true" aria-labelledby="promo-title">
     <div class="promo-card">
       <span class="promo-tag">Annonce KamTech</span>

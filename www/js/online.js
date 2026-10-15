@@ -4,7 +4,7 @@
   const cfg = window.SHADOW_ONLINE || {};
   const API = (cfg.api || '').replace(/\/+$/, '');
   const VERSION = String(cfg.version || '1.0.0').slice(0, 20);
-  const QKEY = 'shadowstrike-queue', IDKEY = 'shadowstrike-device', PKEY = 'shadowstrike-promos', SEENKEY = 'shadowstrike-promo-seen';
+  const QKEY = 'shadowstrike-queue', IDKEY = 'shadowstrike-device', OFFKEY = 'shadowstrike-stats-off', PKEY = 'shadowstrike-promos', SEENKEY = 'shadowstrike-promo-seen';
   const MAX_QUEUE = 400, BATCH = 50, PROMO_TTL = 3 * 3600e3;
 
   const read = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } };
@@ -17,12 +17,14 @@
     device = 'd' + r; write(IDKEY, device);
   }
 
+  // the player can switch anonymous stats off from the privacy window
+  let statsOff = read(OFFKEY, false) === true;
   let queue = read(QKEY, []);
   if (!Array.isArray(queue)) queue = [];
   let sending = false;
 
   function track(type, level, data) {
-    if (!API) return;
+    if (!API || statsOff) return;
     queue.push({ t: Date.now(), type, level: Number.isFinite(level) ? level : null, data: data || {} });
     if (queue.length > MAX_QUEUE) queue.splice(0, queue.length - MAX_QUEUE);
     write(QKEY, queue);
@@ -92,7 +94,18 @@
     if (w) { try { w.opener = null; } catch (e) { /* cross-origin */ } } else location.href = url;
   }
 
+  function newDeviceId() {
+    const r = (crypto && crypto.getRandomValues) ? [...crypto.getRandomValues(new Uint8Array(12))].map(b => b.toString(16).padStart(2, '0')).join('') : String(Math.random()).slice(2) + Date.now();
+    return 'd' + r;
+  }
+  // switching stats off drops what is waiting on the phone and forgets the install id
+  function setStats(on) {
+    statsOff = !on; write(OFFKEY, statsOff);
+    if (statsOff) { queue = []; write(QKEY, queue); device = newDeviceId(); write(IDKEY, device); }
+  }
+
   window.KamOnline = {
+    get statsOn() { return !statsOff; }, setStats,
     enabled: !!API, device, track, flush, refreshPromos, pickPromo, markSeen, openLink, safeUrl,
     get queued() { return queue.length; },
   };

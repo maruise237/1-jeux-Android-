@@ -3,7 +3,7 @@
   const $ = id => document.getElementById(id);
   const TOKEN = 'kam-admin-token';
   let token = null;
-  try { token = localStorage.getItem(TOKEN); } catch (e) { /* private mode */ }
+  try { token = sessionStorage.getItem(TOKEN); } catch (e) { /* private mode */ }
   const nf = new Intl.NumberFormat('fr-FR');
   const fmt = n => n == null ? '–' : nf.format(n);
 
@@ -20,14 +20,14 @@
 
   // ---------- login ----------
   function showLogin() { $('app').classList.add('hidden'); $('login').classList.remove('hidden'); $('pw').focus(); }
-  function logout() { token = null; try { localStorage.removeItem(TOKEN); } catch (e) { /* ignore */ } showLogin(); }
+  function logout() { token = null; try { sessionStorage.removeItem(TOKEN); } catch (e) { /* ignore */ } showLogin(); }
   $('login-form').addEventListener('submit', async e => {
     e.preventDefault();
     const btn = e.submitter || e.target.querySelector('button');
     btn.disabled = true; $('login-error').textContent = '';
     try {
       const j = await api('/api/admin/login', { method: 'POST', body: JSON.stringify({ password: $('pw').value }) });
-      token = j.token; try { localStorage.setItem(TOKEN, token); } catch (err) { /* ignore */ }
+      token = j.token; try { sessionStorage.setItem(TOKEN, token); } catch (err) { /* ignore */ }
       $('pw').value = ''; start();
     } catch (err) { $('login-error').textContent = err.message; }
     btn.disabled = false;

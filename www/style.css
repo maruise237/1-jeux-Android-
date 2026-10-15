@@ -391,3 +391,15 @@ button:focus-visible, [role="button"]:focus-visible { outline: 3px solid #fff; o
 .chip-hard { display: inline-block; margin-left: 4px; padding: 1px 7px; border-radius: 999px; background: var(--ink); color: #ffd34d; font-weight: 400; font-size: 13px; text-shadow: none; vertical-align: 1px; }
 .flash-pill { display: flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 999px; background: rgba(28,26,43,.85); color: #ffd34d; font-size: 14px; }
 .flash-pill.over { color: #8b8fab; }
+
+/* ---------- privacy summary & wheel odds ---------- */
+#privacy { z-index: 21; }
+.privacy-card h2 { margin: 0; font-weight: 400; font-size: 26px; color: var(--yellow); text-shadow: 0 3px 0 var(--ink), 2px 0 0 var(--ink), -2px 0 0 var(--ink), 0 -2px 0 var(--ink); }
+.privacy-card ul { margin: 0; padding: 0 0 0 18px; text-align: left; font-size: 15px; line-height: 1.3; color: #e4e7ff; text-shadow: 0 2px 0 var(--ink); display: flex; flex-direction: column; gap: 6px; }
+.wheel-odds { margin: -6px 0 0; font-size: 14px; color: #c9cff5; text-shadow: 0 2px 0 var(--ink); }
+.menu-top .toggles { gap: 8px; }
+@media (max-width: 370px) { .menu-top .round-btn { width: 44px; height: 44px; } }
+
+.stats-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 48px; padding: 8px 12px; border-radius: 14px; background: #262842; border: 3px solid var(--ink); font-size: 16px; text-shadow: 0 2px 0 var(--ink); }
+.stats-toggle b { font-weight: 400; padding: 3px 10px; border-radius: 999px; background: #8b8fab; color: #fff; }
+.stats-toggle[aria-checked="true"] b { background: #2fbf4a; }
