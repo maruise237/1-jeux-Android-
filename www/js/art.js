@@ -80,10 +80,13 @@ KT.art = (() => {
 
   // ---------- Map ----------
   // ---------- Map ----------
+  // Each theme changes the floor and the look of the interior walls.
   const THEMES = {
-    concrete: { base: '#c9cac6', stain: [70, 72, 66], line: 'rgba(60,62,58,0.07)' },
-    warehouse: { base: '#c2b7a4', stain: [90, 70, 45], line: 'rgba(80,60,40,0.08)' },
-    lab: { base: '#c6ccd2', stain: [50, 60, 75], line: 'rgba(50,60,80,0.08)' },
+    concrete: { base: '#c9cac6', stain: [70, 72, 66], line: 'rgba(60,62,58,0.07)', wall: 'fence' },
+    warehouse: { base: '#c2b7a4', stain: [90, 70, 45], line: 'rgba(80,60,40,0.08)', wall: 'fence' },
+    lab: { base: '#c6ccd2', stain: [50, 60, 75], line: 'rgba(50,60,80,0.08)', wall: 'fence' },
+    interior: { base: '#86b9bb', stain: [30, 70, 80], line: 'rgba(20,60,70,0.16)', wall: 'panel', tiles: 0.5 },
+    garden: { base: '#bcc3b2', stain: [70, 80, 60], line: 'rgba(60,70,50,0.14)', wall: 'hedge', tiles: 1 },
   };
 
   function hazard(g, x, y, w, h, vertical) {
@@ -119,10 +122,11 @@ KT.art = (() => {
       gr.addColorStop(0, 'rgba(255,255,255,0.12)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
       g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2);
     }
-    // faint slab joints
-    g.strokeStyle = th.line; g.lineWidth = 0.02; g.beginPath();
-    for (let y = 0; y <= L.H; y += 2) { g.moveTo(0, y); g.lineTo(L.W, y); }
-    for (let x = 0; x <= L.W; x += 2) { g.moveTo(x, 0); g.lineTo(x, L.H); }
+    // slab joints (tiled themes have a tighter grid)
+    const step = th.tiles || 2;
+    g.strokeStyle = th.line; g.lineWidth = th.tiles ? 0.03 : 0.02; g.beginPath();
+    for (let y = 0; y <= L.H; y += step) { g.moveTo(0, y); g.lineTo(L.W, y); }
+    for (let x = 0; x <= L.W; x += step) { g.moveTo(x, 0); g.lineTo(x, L.H); }
     g.stroke();
     // small cracks
     g.strokeStyle = 'rgba(40,40,40,0.18)'; g.lineWidth = 0.015;
@@ -147,14 +151,34 @@ KT.art = (() => {
         g.fillStyle = 'rgba(255,255,255,0.06)'; g.fillRect(x + 0.06, y + 0.06, 0.88, 0.12);
         continue;
       }
-      g.fillStyle = '#6f6d44'; g.fillRect(x, y, 1, 1);
-      g.fillStyle = '#8c8a58'; g.fillRect(x, y, 1, isW(x, y + 1) ? 1 : 0.8);
-      g.strokeStyle = '#6a6840'; g.lineWidth = 0.035; g.beginPath();
-      for (let k = 0; k < 5; k++) {
-        const yy = y + 0.12 + k * 0.15, off = (k % 2) * 0.12;
-        for (let xx = x + 0.05 + off; xx < x + 0.95; xx += 0.24) { g.moveTo(xx, yy); g.lineTo(Math.min(x + 0.95, xx + 0.13), yy); }
+      const style = (THEMES[L.theme] || THEMES.concrete).wall;
+      const topH = isW(x, y + 1) ? 1 : 0.8;
+      if (style === 'hedge') {
+        g.fillStyle = '#245e22'; g.fillRect(x, y, 1, 1);
+        g.fillStyle = '#3a8c33'; g.fillRect(x, y, 1, topH);
+        for (let k = 0; k < 9; k++) {
+          const lx = x + 0.12 + ((k * 0.37 + x * 0.13) % 0.78), ly = y + 0.1 + ((k * 0.53 + y * 0.29) % (topH - 0.18));
+          g.fillStyle = k % 3 ? 'rgba(120,200,90,0.55)' : 'rgba(20,70,20,0.45)';
+          circle(g, lx, ly, 0.09 + (k % 2) * 0.04); g.fill();
+        }
+      } else if (style === 'panel') {
+        g.fillStyle = '#243b63'; g.fillRect(x, y, 1, 1);
+        g.fillStyle = '#3e62a0'; g.fillRect(x, y, 1, topH);
+        g.strokeStyle = 'rgba(15,30,60,0.55)'; g.lineWidth = 0.03; g.beginPath();
+        g.moveTo(x + 0.5, y + 0.05); g.lineTo(x + 0.5, y + topH - 0.05); g.stroke();
+        g.fillStyle = 'rgba(255,255,255,0.18)'; g.fillRect(x + 0.06, y + 0.05, 0.88, 0.07);
+        g.fillStyle = '#a8bde0';
+        for (const [rx, ry] of [[0.15, 0.2], [0.85, 0.2], [0.15, topH - 0.15], [0.85, topH - 0.15]]) { circle(g, x + rx, y + ry, 0.03); g.fill(); }
+      } else {
+        g.fillStyle = '#6f6d44'; g.fillRect(x, y, 1, 1);
+        g.fillStyle = '#8c8a58'; g.fillRect(x, y, 1, topH);
+        g.strokeStyle = '#6a6840'; g.lineWidth = 0.035; g.beginPath();
+        for (let k = 0; k < 5; k++) {
+          const yy = y + 0.12 + k * 0.15, off = (k % 2) * 0.12;
+          for (let xx = x + 0.05 + off; xx < x + 0.95; xx += 0.24) { g.moveTo(xx, yy); g.lineTo(Math.min(x + 0.95, xx + 0.13), yy); }
+        }
+        g.stroke();
       }
-      g.stroke();
     }
     // outlines on the edges facing the floor
     g.strokeStyle = '#2b2b26'; g.lineWidth = 0.06; g.lineCap = 'square';

@@ -31,7 +31,14 @@ Jeu mobile d'infiltration en vue du dessus. Tu es un assassin armé d'un couteau
 - **Héros détaillés** : visages, coiffures, tenues, couteaux de combat (lame dorée, de glace,
   rouge ou verte pour les héros premium).
 - **Sons et musique** synthétisés en direct (aucun fichier audio), vibrations, tremblement d'écran.
-- **Niveaux infinis**, 3 décors (béton, brique, dalles), difficulté progressive.
+- **Niveaux infinis**, 5 décors qui changent tous les 5 niveaux (intérieur carrelé à murs bleus,
+  entrepôt, jardin à haies, béton, labo). Les premiers niveaux sont petits avec 2-3 gardes.
+- **Combat de boss tous les 10 niveaux** : « Le Colosse » au masque à gaz, plus grand, armé d'un
+  canon ; il faut plusieurs coups de couteau (il est sonné puis riposte), les mines l'affaiblissent.
+- **Expérience des héros** : chaque élimination et victoire donne de l'XP ; chaque niveau de héros
+  ajoute +4 % de vie et +1,5 % de vitesse (niveau 20 max).
+- **Nouvel assassin** : chaque victoire remplit 25 % d'une jauge qui débloque gratuitement le
+  prochain héros. **Roue de la chance** tous les 5 niveaux (gemmes, clé, XP), sans publicité.
 - **Aucune publicité, aucun achat intégré.**
 
 Code, nom et graphismes 100 % originaux, © KamTech Studio.

@@ -96,7 +96,7 @@ await page.evaluate(() => {
   window.__playLevel = (lv, variant, tries) => {
     window.__variantOverride = variant;
     for (let k = 1; k <= tries; k++) {
-      s.save.level = lv; s.save.selected = 'kenji'; s.startLevel(); window.__goal = null;
+      s.save.level = lv; s.save.selected = 'kenji'; s.save.xp = {}; s.startLevel(); window.__goal = null;
       window.__noise = k === 1 ? 0 : 1.5;
       const delay = k === 1 ? 0 : Math.random() * 4;
       let t = 0;

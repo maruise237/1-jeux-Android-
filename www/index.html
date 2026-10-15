@@ -57,6 +57,8 @@
     <p id="result-sub"></p>
     <div class="result-gems"><i class="gem-ico big"></i><span id="result-gems">+0</span></div>
     <p id="result-bonus"></p>
+    <div id="result-unlock" class="unlock hidden"><div class="unlock-pic"></div><div class="unlock-info"><div class="unlock-title">NOUVEL ASSASSIN</div><div class="unlock-bar"><i></i></div><div class="unlock-pct"></div></div></div>
+    <button id="btn-wheel" class="btn btn-red hidden">🎡 ROUE DE LA CHANCE</button>
     <button id="btn-result" class="btn btn-yellow big">SUIVANT</button>
     <button id="btn-result-menu" class="btn btn-blue">MENU</button>
   </div>
@@ -70,6 +72,14 @@
       <button class="round-btn" data-toggle="music" aria-label="Musique">🎵</button>
     </div>
     <button id="btn-quit" class="btn btn-red">MENU</button>
+  </div>
+
+  <div id="wheel" class="overlay dim hidden">
+    <div class="ribbon">ROUE DE LA CHANCE</div>
+    <div class="wheel-box"><canvas id="wheel-canvas" width="560" height="560"></canvas><div class="wheel-pin"></div></div>
+    <p id="wheel-result"></p>
+    <button id="btn-spin" class="btn btn-yellow big">TOURNER</button>
+    <button id="btn-wheel-close" class="btn btn-blue hidden">CONTINUER</button>
   </div>
 
   <script src="js/audio.js"></script>

@@ -200,3 +200,23 @@ footer { color: rgba(255,255,255,.45); font-size: 13px; letter-spacing: .1em; }
 .mission { padding: 6px 10px; }
 
 .keys { margin-left: 8px; font-size: 16px; color: #ffd34d; }
+
+.xpbar { display: block; width: 120px; height: 6px; margin: 3px auto 0; background: #2a2d45; border-radius: 3px; overflow: hidden; }
+.xpbar i { display: block; height: 100%; background: linear-gradient(90deg, #5ee7ff, #7dff5a); }
+.hero-tag { text-align: center; }
+
+/* ---------- new assassin unlock ---------- */
+.unlock { display: flex; align-items: center; gap: 12px; width: min(320px, 86vw); padding: 10px; border-radius: 16px; background: rgba(20,22,48,.85); border: 3px solid var(--ink); }
+.unlock-pic canvas { display: block; }
+.unlock-info { flex: 1; text-align: left; }
+.unlock-title { font-size: 16px; color: var(--yellow); text-shadow: 0 2px 0 var(--ink); }
+.unlock-bar { height: 12px; margin: 6px 0 4px; background: #2a2d45; border: 2px solid var(--ink); border-radius: 8px; overflow: hidden; }
+.unlock-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #ffd34d, #ff8a1e); transition: width 1s ease-out; }
+.unlock-pct { font-size: 14px; color: #d6dcff; }
+.unlock.done .unlock-title { color: #7dff5a; }
+/* ---------- lucky wheel ---------- */
+.wheel-box { position: relative; width: min(280px, 76vw); aspect-ratio: 1; }
+.wheel-box canvas { width: 100%; height: 100%; }
+.wheel-pin { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 16px solid transparent; border-right: 16px solid transparent; border-top: 30px solid #ff3b4f; filter: drop-shadow(0 3px 0 var(--ink)); }
+#wheel-result { margin: 0; font-size: 22px; color: var(--yellow); min-height: 28px; text-shadow: 0 2px 0 var(--ink); }
+#banner.clear .banner-title { color: #7dff5a; }

@@ -523,7 +523,7 @@ window.KT = window.KT || {};
       g.beginPath(); g.moveTo(hx + 0.08, -0.02); g.lineTo(hx - 0.18, -0.02); g.stroke();
     }
     // face (hidden by full helmets / caps)
-    if (!['helmet', 'hood', 'cap', 'fedora'].includes(c.hair)) drawFace(g, c, hx, o);
+    if (!['helmet', 'hood', 'cap', 'fedora', 'gasmask'].includes(c.hair)) drawFace(g, c, hx, o);
 
     if (c.hair === 'cap') {
       g.save(); circle(g, hx, 0, R + 0.005); g.clip();
@@ -533,6 +533,22 @@ window.KT = window.KT || {};
       circle(g, hx, 0, R); g.lineWidth = 0.045; g.strokeStyle = OUT; g.stroke();
       ellipse(g, hx + 0.19, 0, 0.1, 0.17); fs(g, shade(c.cap, -0.15), 0.035);
       circle(g, hx - 0.03, 0, 0.03); g.fillStyle = shade(c.cap, 0.3); g.fill();
+    }
+    if (c.hair === 'gasmask') {
+      // hood, red crest, rubber mask with glowing lenses and two filter canisters
+      circle(g, hx - 0.01, 0, 0.215); fs(g, ball(g, hx - 0.01, 0, 0.215, c.hairColor), 0.045);
+      g.beginPath(); g.moveTo(hx + 0.08, 0);
+      for (let i = 0; i <= 6; i++) { const x = hx + 0.06 - i * 0.055; g.lineTo(x, (i % 2 ? -1 : 1) * 0.05); }
+      g.lineTo(hx - 0.3, 0);
+      for (let i = 6; i >= 0; i--) { const x = hx + 0.06 - i * 0.055; g.lineTo(x, (i % 2 ? 1 : -1) * 0.06); }
+      g.closePath(); fs(g, lin(g, hx - 0.3, 0, hx + 0.1, 0, [[0, '#8f1418'], [1, c.crest || '#e8344a']]), 0.03);
+      ellipse(g, hx + 0.11, 0, 0.11, 0.16); fs(g, ball(g, hx + 0.11, 0, 0.16, c.mask), 0.035);
+      for (const sd of [-1, 1]) {
+        circle(g, hx + 0.13, sd * 0.075, 0.045); fs(g, c.lens || '#7dff5a', 0.025);
+        g.fillStyle = 'rgba(255,255,255,0.7)'; circle(g, hx + 0.14, sd * 0.075 - 0.015, 0.012); g.fill();
+        circle(g, hx + 0.2, sd * 0.13, 0.055); fs(g, ball(g, hx + 0.2, sd * 0.13, 0.055, '#4a4d54'), 0.03);
+        g.strokeStyle = 'rgba(0,0,0,0.4)'; g.lineWidth = 0.012; circle(g, hx + 0.2, sd * 0.13, 0.03); g.stroke();
+      }
     }
     if (c.hair === 'fedora') {
       ellipse(g, hx - 0.01, 0, 0.26, 0.27); fs(g, ball(g, hx - 0.01, 0, 0.27, shade(c.hat, -0.05)), 0.04);
@@ -575,7 +591,7 @@ window.KT = window.KT || {};
       circle(g, hx, 0, R); g.lineWidth = 0.045; g.strokeStyle = OUT; g.stroke();
     }
     // hair shine
-    if (!['bald', 'mohawk', 'helmet', 'hood', 'balaclava', 'fedora'].includes(c.hair)) {
+    if (!['bald', 'mohawk', 'helmet', 'hood', 'balaclava', 'fedora', 'gasmask'].includes(c.hair)) {
       g.strokeStyle = 'rgba(255,255,255,0.35)'; g.lineWidth = 0.025; g.lineCap = 'round';
       g.beginPath(); g.arc(hx - 0.04, 0, 0.13, -1.9, -1.2); g.stroke();
     } else if (c.hair === 'bald' || c.hair === 'mohawk') {
