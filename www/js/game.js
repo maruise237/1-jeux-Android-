@@ -26,7 +26,6 @@
     { id: 'kami', name: 'Kami', label: '+60% Vitesse +80% Vie', spd: 0.6, hp: 0.8, price: 3000, look: { blade: 'gold', outfit: '#1c1a2b', detail: 'cape', accent: '#f5c542', skin: '#e8b48a', hair: 'helmet', helmet: '#f5c542', visor: '#1c1a2b', glove: '#f5c542' } },
   ];
   for (const h of HEROES) h.look.id = 'hero-' + h.id;
-  window.__heroLooks = HEROES.map(h => h.look);
 
   // Enemy roster: tougher types with better gear unlock as levels go up.
   const GUARD_TYPES = {
