@@ -114,3 +114,12 @@ Quatre agents du kit Claude Code Game Studios ont audité le jeu : game-designer
   - La mine de glace est un vrai cylindre : flanc, ombre portée dans l'axe de la lumière.
   - La mine explosive est enterrée dans un trou, avec de la terre sur le rebord.
 - **Diamants et héros.** Les diamants brillent dans le noir. Un anneau discret au sol permet de repérer le héros.
+
+**QA et performance**
+- La couche de pénombre est calculée en demi-résolution, et les cônes hors écran ne sont plus dessinés.
+- La densité de pixels est plafonnée à 1,5 au lieu de 2. La mesure a donné environ 50 % de temps d'image en moins.
+- Le niveau n'est plus redessiné derrière le menu, la pause et l'écran de résultat, ce qui économise la batterie.
+- Une sauvegarde abîmée est mise de côté (`-bak`) et chaque champ est vérifié. Elle ne peut plus bloquer le jeu.
+- La clé gagnée à la roue n'est plus perdue quand on en a déjà 2 : elle ouvre le coffre.
+- Les minuteurs des traces au sol suivent le temps de jeu réel. Ils s'arrêtent en pause et ne dépendent plus de la fréquence d'écran.
+- Vérification par le bot : les 60 niveaux restent gagnables avec le héros le plus faible.

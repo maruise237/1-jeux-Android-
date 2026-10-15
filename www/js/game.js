@@ -73,8 +73,22 @@
   function loadSave() {
     const base = { level: 1, gems: 0, keys: 0, owned: ['kenji'], selected: 'kenji', sfx: true, music: true, vibe: true, stars: {}, tips: {} };
     try {
-      const s = JSON.parse(localStorage.getItem(SAVE_KEY));
-      if (s && typeof s === 'object') return Object.assign(base, s);
+      const raw = localStorage.getItem(SAVE_KEY);
+      let s = null;
+      try { s = JSON.parse(raw); } catch (e) { localStorage.setItem(SAVE_KEY + '-bak', raw); } // keep a damaged save aside
+      if (s && typeof s === 'object') {
+        // only take fields with the expected type, so a damaged save can't freeze the game
+        const obj = v => v && typeof v === 'object' && !Array.isArray(v);
+        if (Number.isFinite(s.level) && s.level >= 1) base.level = Math.floor(s.level);
+        if (Number.isFinite(s.gems) && s.gems >= 0) base.gems = Math.floor(s.gems);
+        if (Number.isFinite(s.keys) && s.keys >= 0) base.keys = Math.min(2, Math.floor(s.keys));
+        if (Array.isArray(s.owned)) base.owned = [...new Set(['kenji', ...s.owned.filter(x => typeof x === 'string')])];
+        if (typeof s.selected === 'string' && base.owned.includes(s.selected)) base.selected = s.selected;
+        for (const k of ['sfx', 'music', 'vibe']) if (typeof s[k] === 'boolean') base[k] = s[k];
+        for (const k of ['stars', 'tips', 'missions', 'xp']) if (obj(s[k])) base[k] = s[k];
+        if (Number.isFinite(s.unlock)) base.unlock = s.unlock;
+        for (const k of Object.keys(s)) if (!(k in base)) base[k] = s[k];
+      }
     } catch (e) { /* storage unavailable */ }
     return base;
   }
@@ -1036,10 +1050,16 @@
 
   function vibrate(ms) { if (save.vibe === false) return; try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* ignore */ } }
 
+  let lastKeysHtml = '';
   function updateFx(dt) {
     for (const p of fx.parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.9; p.vy *= 0.9; p.t -= dt; }
     fx.parts = fx.parts.filter(p => p.t > 0);
     gemSoundCd -= dt;
+    for (const d of decals) {
+      if (d.kind === 'frost') d.t -= dt;
+      else if (d.kind === 'blood') d.t = Math.min(1, d.t + dt * 2);
+    }
+    if (decals.some(d => d.kind === 'frost' && d.t <= 0)) decals = decals.filter(d => d.kind !== 'frost' || d.t > 0);
     for (const g of fx.gems) {
       g.t += dt; g.rot += dt * 6;
       if (g.t < 0.4) { g.x += g.vx * dt; g.y += g.vy * dt; g.vx *= 0.86; g.vy *= 0.86; }
@@ -1124,10 +1144,10 @@
   const HUD_H = 64;
 
   function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     cw = window.innerWidth; ch = window.innerHeight;
     canvas.width = Math.round(cw * dpr); canvas.height = Math.round(ch * dpr);
-    shadeCanvas.width = canvas.width; shadeCanvas.height = canvas.height;
+    shadeCanvas.width = canvas.width >> 1; shadeCanvas.height = canvas.height >> 1; // soft layer, half resolution
     const fit = Math.min(cw / W, (ch - HUD_H) / H);
     ts = Math.max(fit, Math.min(cw / 9, (ch - HUD_H) / 13));
     art.setResolution(ts * dpr * CHAR_SCALE);
@@ -1174,8 +1194,9 @@
     g.closePath();
   }
 
-  function worldTransform(g, sx, sy) {
-    g.setTransform(dpr * ts, 0, 0, dpr * ts, dpr * (-cam.x * ts + sx), dpr * (HUD_H - cam.y * ts + sy));
+  function worldTransform(g, sx, sy, k = 1) {
+    const d = dpr * k;
+    g.setTransform(d * ts, 0, 0, d * ts, d * (-cam.x * ts + sx), d * (HUD_H - cam.y * ts + sy));
   }
 
   // Ground shadow shared by the traps, so they sit on the floor instead of being painted on it.
@@ -1451,7 +1472,6 @@
     }
     for (const d of decals) {
       if (d.kind === 'frost') {
-        d.t -= 1 / 60;
         if (d.t > 0) {
           const a = Math.min(1, d.t / 2) * 0.45;
           const gr = ctx.createRadialGradient(d.x, d.y, 0.1, d.x, d.y, d.r);
@@ -1468,7 +1488,6 @@
     }
     for (const d of decals) {
       if (d.kind !== 'blood') continue;
-      d.t = Math.min(1, d.t + 1 / 30);
       d.alpha = 0.92; d.scale = 0.4 + 0.6 * Math.min(1, d.t * 3);
       ctx.save(); ctx.translate(d.x, d.y); ctx.scale(d.scale, d.scale); ctx.translate(-d.x, -d.y);
       art.drawSplat(ctx, d); ctx.restore();
@@ -1509,14 +1528,17 @@
     }
 
     // darkness with flashlight cones cut out
-    const polys = guards.filter(g => g.alive && g.frozen <= 0).map(g => [g, visionPolygon(g)]);
+    const vh = (ch - HUD_H) / ts, vw = cw / ts;
+    const polys = guards.filter(g => g.alive && g.frozen <= 0
+      && Math.abs(g.y - (cam.y + vh / 2)) < vh / 2 + g.range + 1 && Math.abs(g.x - (cam.x + vw / 2)) < vw / 2 + g.range + 1)
+      .map(g => [g, visionPolygon(g)]);
     sctx.setTransform(1, 0, 0, 1, 0, 0);
     sctx.globalCompositeOperation = 'source-over';
     sctx.clearRect(0, 0, shadeCanvas.width, shadeCanvas.height);
     // night tint per theme: the room is dim, so the flashlights read as real light
     sctx.fillStyle = NIGHT[L.theme] || NIGHT.concrete;
     sctx.fillRect(0, 0, shadeCanvas.width, shadeCanvas.height);
-    worldTransform(sctx, sx, sy);
+    worldTransform(sctx, sx, sy, shadeCanvas.width / canvas.width);
     sctx.globalCompositeOperation = 'destination-out';
     for (const [gd, poly] of polys) {
       const grad = sctx.createRadialGradient(gd.x, gd.y, 0.1, gd.x, gd.y, gd.range);
@@ -1525,8 +1547,8 @@
     }
     sctx.globalCompositeOperation = 'source-over';
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.drawImage(shadeCanvas, 0, 0);
-    ctx.drawImage(vignette(shadeCanvas.width, shadeCanvas.height), 0, 0);
+    ctx.drawImage(shadeCanvas, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(vignette(canvas.width, canvas.height), 0, 0);
     worldTransform(ctx, sx, sy);
     for (const [gd, poly] of polys) {
       // the light warms from white to orange while the guard is noticing the hero, red once alerted
@@ -1816,7 +1838,8 @@
   function updateHud() {
     const keys = (save.keys || 0) + levelKey;
     $('hud-keys').classList.toggle('hidden', keys === 0);
-    $('hud-keys').innerHTML = '<i class="key-ico"></i>' + Math.min(keys, 3) + '/3';
+    const kh = '<i class="key-ico"></i>' + Math.min(keys, 3) + '/3';
+    if (kh !== lastKeysHtml) { lastKeysHtml = kh; $('hud-keys').innerHTML = kh; }
     const dead = guards.filter(g => !g.alive).length, kn = $('hud-kills-n');
     const txt = dead + '/' + guards.length;
     if (kn.textContent !== txt) {
@@ -2078,10 +2101,14 @@
       spinning = false;
       const p = PRIZES[win];
       if (p.gems) save.gems += p.gems;
-      if (p.key) save.keys = Math.min(2, (save.keys || 0) + 1);
+      let chest = 0;
+      if (p.key) { // a third key opens the chest right away instead of being lost
+        save.keys = (save.keys || 0) + 1;
+        if (save.keys >= 3) { save.keys = 0; chest = 100 + save.level * 5; save.gems += chest; }
+      }
       if (p.xp) addXp(currentHero().id, p.xp);
       persist(); sfx.win();
-      $('wheel-result').textContent = p.gems ? `+${p.gems} gemmes !` : p.key ? '+1 clé' : `+${p.xp} XP !`;
+      $('wheel-result').textContent = p.gems ? `+${p.gems} diamants !` : p.key ? (chest ? `3e clé : coffre ouvert, +${chest} diamants !` : '+1 clé') : `+${p.xp} XP !`;
       $('btn-spin').classList.add('hidden'); $('btn-wheel-close').classList.remove('hidden');
     })(t0);
   }
@@ -2117,11 +2144,15 @@
 
   // ---------- Main loop ----------
   let last = performance.now();
+  let idleFrames = 0;
   function frame(now) {
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
     update(dt);
-    render();
+    // behind the menu / pause / result screens, draw one frame and then let the GPU rest
+    const live = state === 'playing' || state === 'won' || state === 'lost';
+    if (live || idleFrames < 2) render();
+    idleFrames = live ? 0 : idleFrames + 1;
     requestAnimationFrame(frame);
   }
   resize();
