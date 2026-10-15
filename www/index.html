@@ -3,47 +3,76 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#0d1017">
+  <meta name="theme-color" content="#12141d">
   <title>Shadow Strike — KamTech</title>
+  <link rel="icon" href="data:,">
+  <link rel="preload" href="fonts/lilita-one-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <canvas id="game"></canvas>
 
   <div id="hud" class="hidden">
-    <div class="hud-row">
-      <span id="hud-level">Niveau 1</span>
-      <span id="hud-enemies">🎯 0</span>
-      <span id="hud-gems">💎 0</span>
+    <button id="btn-pause" class="round-btn" aria-label="Pause"><span class="pause-ico"></span></button>
+    <div class="hud-center">
+      <div id="hud-level" class="pill">NIVEAU 1</div>
+      <div id="hud-pips"></div>
     </div>
-    <div class="hp"><div id="hud-hp"></div></div>
+    <div id="hud-gembox" class="gembox"><i class="gem-ico"></i><span id="hud-gems">0</span></div>
   </div>
+  <div id="banner"></div>
+  <div id="tip" class="hidden"></div>
 
   <div id="menu" class="overlay">
-    <div class="brand">KAMTECH</div>
-    <h1>SHADOW<br>STRIKE</h1>
-    <p class="tagline">Reste dans l'ombre. Frappe sans bruit.</p>
-    <div class="gems">💎 <span id="menu-gems">0</span></div>
-    <button id="btn-play" class="btn primary">Jouer — Niveau 1</button>
-    <button id="btn-shop" class="btn">Personnages</button>
-    <p class="hint">Touche l'écran pour te déplacer.<br>Élimine tous les gardes sans entrer dans leur lumière.</p>
+    <div class="menu-top">
+      <div class="gembox"><i class="gem-ico"></i><span id="menu-gems">0</span></div>
+      <div class="toggles">
+        <button class="round-btn" data-toggle="sfx" aria-label="Sons">🔊</button>
+        <button class="round-btn" data-toggle="music" aria-label="Musique">🎵</button>
+      </div>
+    </div>
+    <div class="brand">KAMTECH STUDIO</div>
+    <h1 class="title"><span>SHADOW</span><span>STRIKE</span></h1>
+    <div class="hero-stage">
+      <div class="spot"></div>
+      <div id="menu-hero"></div>
+      <div id="menu-hero-name" class="hero-tag"></div>
+    </div>
+    <button id="btn-play" class="btn btn-yellow big"><span>JOUER</span><small id="btn-play-level">NIVEAU 1</small></button>
+    <button id="btn-heroes" class="btn btn-blue">HÉROS</button>
     <footer>© KamTech Studio</footer>
   </div>
 
-  <div id="shop" class="overlay hidden">
-    <h2>Personnages</h2>
-    <div class="gems">💎 <span id="shop-gems">0</span></div>
-    <div id="shop-list"></div>
-    <button id="btn-shop-back" class="btn">Retour</button>
+  <div id="heroes" class="overlay hidden">
+    <div class="ribbon">CHOISIS TON HÉROS</div>
+    <button id="btn-heroes-close" class="close-btn" aria-label="Fermer">✕</button>
+    <div class="gembox"><i class="gem-ico"></i><span id="heroes-gems">0</span></div>
+    <div id="heroes-grid"></div>
   </div>
 
   <div id="result" class="overlay hidden">
-    <h2 id="result-title"></h2>
-    <p id="result-text"></p>
-    <button id="btn-result" class="btn primary"></button>
-    <button id="btn-result-menu" class="btn">Menu</button>
+    <div id="result-title" class="ribbon big"></div>
+    <div id="result-stars"><span class="star"></span><span class="star mid"></span><span class="star"></span></div>
+    <p id="result-sub"></p>
+    <div class="result-gems"><i class="gem-ico big"></i><span id="result-gems">+0</span></div>
+    <p id="result-bonus"></p>
+    <button id="btn-result" class="btn btn-yellow big">SUIVANT</button>
+    <button id="btn-result-menu" class="btn btn-blue">MENU</button>
   </div>
 
-  <script src="game.js"></script>
+  <div id="pause" class="overlay dim hidden">
+    <div class="ribbon">PAUSE</div>
+    <button id="btn-resume" class="btn btn-yellow big">REPRENDRE</button>
+    <button id="btn-restart" class="btn btn-blue">RECOMMENCER</button>
+    <div class="toggles">
+      <button class="round-btn" data-toggle="sfx" aria-label="Sons">🔊</button>
+      <button class="round-btn" data-toggle="music" aria-label="Musique">🎵</button>
+    </div>
+    <button id="btn-quit" class="btn btn-red">MENU</button>
+  </div>
+
+  <script src="js/audio.js"></script>
+  <script src="js/art.js"></script>
+  <script src="js/game.js"></script>
 </body>
 </html>

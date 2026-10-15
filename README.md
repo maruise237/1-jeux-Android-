@@ -3,11 +3,16 @@
 Jeu mobile d'infiltration en vue du dessus. Tu es un assassin armé d'un couteau :
 élimine tous les gardes sans entrer dans le faisceau de leur lampe torche.
 
-- **Déplacement** : touche l'écran (ou glisse le doigt) pour aller à un endroit.
-- **Élimination** : touche un garde pour l'éliminer. S'il te voit, il tire.
-- **Gemmes 💎** : chaque garde éliminé en rapporte, avec un bonus à chaque niveau réussi.
-- **Personnages** : débloque Ronin, Spectre, Titan et Kami (plus rapides, plus résistants).
-- **Niveaux infinis**, générés automatiquement, de plus en plus difficiles.
+- **Déplacement** : touche le sol (ou glisse le doigt), un chemin pointillé s'affiche.
+- **Élimination** : touche un garde, ton héros le traque et l'élimine par surprise.
+- **Gardes** : 5 types (pistolet, fusil, fusil à pompe…) avec lampe torche, alerte « ! »,
+  recherche « ? » et réaction au bruit quand un collègue tombe.
+- **Pièges** : lasers rouges clignotants, mines de glace qui gèlent les gardes.
+- **Butin** : explosion de gemmes 💎 aspirées vers le héros, bonus et 1 à 3 étoiles par mission.
+- **10 héros** à débloquer (+Vitesse / +Vie), dont Kami, le héros KamTech.
+- **Sons et musique** synthétisés en direct (aucun fichier audio), vibrations, tremblement d'écran.
+- **Niveaux infinis**, 3 décors (béton, brique, dalles), difficulté progressive.
+- **Aucune publicité, aucun achat intégré.**
 
 Code, nom et graphismes 100 % originaux, © KamTech Studio.
 
@@ -21,7 +26,8 @@ npm start
 
 ## Léger par conception
 
-- Le jeu (`www/`) pèse **~32 Ko** : pas de moteur, pas de bibliothèque, pas d'images.
+- Le jeu (`www/`) pèse **~95 Ko** police comprise : pas de moteur, pas de bibliothèque,
+  pas d'image ni de son embarqués, tout est dessiné et synthétisé par le code.
 - Fonctionne **100 % hors ligne**, **aucune permission** demandée.
 - Build release optimisé (`minifyEnabled` + `shrinkResources`).
 - Publié en `.aab`, chaque téléphone ne télécharge que les ressources de sa taille d'écran
@@ -74,3 +80,7 @@ Les fichiers `.jks` sont exclus de Git (`.gitignore`) : ne publie jamais ta clé
       au moins 2 captures d'écran téléphone.
 - [ ] **Nouveau compte personnel** : Google impose un test fermé avec au moins 12 testeurs
       pendant 14 jours avant la mise en production.
+
+## Crédits
+
+Police Lilita One par Juan Montoreano, licence SIL Open Font License (`www/fonts/OFL.txt`).
