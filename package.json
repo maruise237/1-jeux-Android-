@@ -1,7 +1,7 @@
 {
   "name": "shadow-strike",
   "version": "1.0.0",
-  "description": "Shadow Strike \u2014 jeu mobile d'infiltration par KamTech Studio",
+  "description": "Shadow Strike — jeu mobile d'infiltration par KamTech Studio",
   "private": true,
   "author": "KamTech Studio",
   "scripts": {
@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",
+    "@capacitor/app": "^8.1.2",
     "@capacitor/core": "^8.5.3"
   },
   "devDependencies": {

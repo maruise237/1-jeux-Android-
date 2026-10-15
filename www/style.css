@@ -77,12 +77,14 @@ button { font-family: inherit; color: inherit; border: 0; cursor: pointer; }
   background: var(--red); border: 3px solid var(--ink); transform: rotate(-2deg);
   box-shadow: 0 6px 0 var(--red-d), 0 9px 0 var(--ink);
   text-shadow: 0 3px 0 var(--ink), 2px 0 0 var(--ink), -2px 0 0 var(--ink), 0 -2px 0 var(--ink);
+  max-width: 100%; text-wrap: balance; line-height: 1.05;
 }
-.ribbon.big { font-size: 36px; }
+#shop .ribbon, #heroes .ribbon { max-width: calc(100% - 112px); }
+.ribbon.big { font-size: 36px; max-width: 100%; }
 
 .overlay {
   position: fixed; inset: 0;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; justify-content: safe center;
   gap: 16px; padding: calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 16px);
   background: #1f2250;
   text-align: center; overflow-y: auto;
@@ -137,7 +139,11 @@ button { font-family: inherit; color: inherit; border: 0; cursor: pointer; }
   background: rgba(20,22,48,.92); border: 3px solid var(--ink); border-radius: 16px;
   font-size: 17px; line-height: 1.25; pointer-events: none; text-shadow: 0 2px 0 var(--ink);
 }
-#tip { border-left: 8px solid var(--yellow); }
+#tip::before {
+  content: ''; flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--yellow) center / 18px no-repeat; border: 3px solid var(--ink);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='%231c1a2b'%3E%3Crect x='10' y='10' width='4' height='11' rx='2'/%3E%3Ccircle cx='12' cy='5' r='2.4'/%3E%3C/g%3E%3C/svg%3E");
+}
+body.paused #tip { display: none; }
 
 /* ---------- heroes ---------- */
 #heroes { justify-content: flex-start; gap: 14px; }
@@ -146,8 +152,11 @@ button { font-family: inherit; color: inherit; border: 0; cursor: pointer; }
   position: absolute; top: calc(env(safe-area-inset-top) + 14px); right: 14px;
   width: 44px; height: 44px; border-radius: 12px; font-size: 22px;
   background: linear-gradient(#ff6276, var(--red)); border: 3px solid var(--ink);
-  box-shadow: 0 4px 0 var(--red-d), 0 6px 0 var(--ink); text-shadow: 0 2px 0 var(--ink);
+  box-shadow: 0 4px 0 var(--red-d), 0 6px 0 var(--ink);
+  display: flex; align-items: center; justify-content: center; color: #fff;
 }
+.close-btn svg { filter: drop-shadow(0 2px 0 var(--ink)); }
+.close-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--red-d), 0 3px 0 var(--ink); }
 #heroes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: min(420px, 100%); padding-bottom: 20px; }
 .hero-card {
   position: relative; padding: 8px 6px 10px; border-radius: 18px;
@@ -163,6 +172,7 @@ button { font-family: inherit; color: inherit; border: 0; cursor: pointer; }
 @keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 .hero-name { font-size: 18px; text-shadow: 0 2px 0 var(--ink), 1px 0 0 var(--ink), -1px 0 0 var(--ink); }
 .hero-name small { font-size: 13px; color: #c9cfee; }
+.hero-card.selected .hero-name small { color: #fff3c4; }
 .hero-label { font-size: 15px; text-shadow: 0 2px 0 var(--ink), 1px 0 0 var(--ink), -1px 0 0 var(--ink); }
 .hero-label.speed { color: #7fe3ff; }
 .hero-label.health { color: #7dff5a; }
@@ -237,7 +247,7 @@ button { font-family: inherit; color: inherit; border: 0; cursor: pointer; }
 .mcard {
   position: relative; display: flex; align-items: center; gap: 6px; min-height: 92px; padding: 10px 12px;
   border: 3px solid var(--ink); border-radius: 18px; text-align: left; font-size: 20px; line-height: 1.05;
-  text-shadow: 0 2px 0 var(--ink), 1px 0 0 var(--ink), -1px 0 0 var(--ink);
+  text-shadow: 0 3px 0 var(--ink), 2px 0 0 var(--ink), -2px 0 0 var(--ink), 0 -2px 0 var(--ink);
 }
 .mcard::after { content: ''; position: absolute; left: 8px; right: 8px; top: 5px; height: 26%; border-radius: 12px; background: rgba(255,255,255,.18); pointer-events: none; }
 .mcard:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
@@ -264,10 +274,10 @@ button { font-family: inherit; color: inherit; border: 0; cursor: pointer; }
 /* mission reward pill: grey "Prix" while running, green "Réclamer" when done */
 .reward {
   flex: none; display: flex; flex-direction: column; align-items: center; min-width: 96px; padding: 6px 10px;
-  border-radius: 12px; border: 3px solid var(--ink); background: linear-gradient(#c9ccd8, #9a9eb1);
-  box-shadow: 0 4px 0 #64687c; font-size: 15px; line-height: 1.1;
+  border-radius: 12px; border: 3px solid var(--ink); background: #262842;
+  box-shadow: 0 4px 0 #17182a; font-size: 15px; line-height: 1.1;
 }
-.reward-lab { color: #2f5cc7; text-shadow: none; }
+.reward-lab { color: #9aa4d8; text-shadow: 0 2px 0 var(--ink); }
 .reward-val { display: flex; align-items: center; gap: 3px; font-size: 18px; text-shadow: 0 2px 0 var(--ink); }
 .reward-val .gem-ico { width: 18px; height: 18px; }
 .reward.ready { background: linear-gradient(#7dff7a, #2fbf4a); box-shadow: 0 4px 0 #1b7a2e; }
@@ -281,7 +291,7 @@ button { font-family: inherit; color: inherit; border: 0; cursor: pointer; }
 .tabs { display: flex; gap: 6px; width: min(400px, 100%); }
 .tab { flex: 1; padding: 10px 4px 8px; border-radius: 12px; border: 3px solid var(--ink); background: #3a3d5c; box-shadow: 0 4px 0 #24263c; font-size: 16px; text-shadow: 0 2px 0 var(--ink); }
 .tab.on { background: linear-gradient(#ffd166, #f5a524); box-shadow: 0 4px 0 #b8720f; }
-#shop-hint { margin: -2px 0 0; font-size: 14px; color: rgba(255,255,255,.7); }
+#shop-hint { text-wrap: balance; margin: -2px 0 0; font-size: 14px; color: rgba(255,255,255,.7); }
 #shop-list { display: flex; flex-direction: column; gap: 8px; width: min(400px, 100%); padding-bottom: 20px; }
 .item { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 14px; background: #3a3d5c; border: 3px solid var(--ink); box-shadow: 0 4px 0 #24263c; text-align: left; }
 .item-ico { flex: none; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: #262842; }
@@ -301,9 +311,55 @@ button { font-family: inherit; color: inherit; border: 0; cursor: pointer; }
 .buy:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
 .buy-val { display: flex; align-items: center; gap: 3px; font-size: 17px; }
 .buy-val .gem-ico { width: 18px; height: 18px; }
-.buy.poor { background: linear-gradient(#c9ccd8, #9a9eb1); box-shadow: 0 4px 0 #64687c; }
-.buy.poor .buy-lab { color: #ffd6d6; }
+.buy.poor { background: #262842; box-shadow: 0 4px 0 #17182a; }
+.buy.poor .buy-lab { color: #9aa4d8; }
+.buy.poor .buy-val { color: #ff8a8a; }
 .buy.confirm { background: linear-gradient(#ffd166, #f5a524); box-shadow: 0 4px 0 #b8720f; }
 .buy.equip { background: linear-gradient(#6f93ff, var(--blue)); box-shadow: 0 4px 0 var(--blue-d); font-size: 15px; padding: 12px 8px; }
 .buy.on, .buy.max { background: #262842; box-shadow: none; color: #7dff5a; font-size: 15px; padding: 12px 8px; }
 .buy.shake { animation: shake .3s; }
+
+/* ---------- loss advice ---------- */
+#result-tip {
+  display: flex; align-items: center; gap: 10px; width: min(320px, 86vw); margin: 0; padding: 10px 12px;
+  border-radius: 16px; background: rgba(20,22,48,.85); border: 3px solid var(--ink);
+  font-size: 16px; line-height: 1.25; text-align: left; text-shadow: 0 2px 0 var(--ink);
+}
+#result-tip::before {
+  content: ''; flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--yellow) center / 18px no-repeat; border: 3px solid var(--ink);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='%231c1a2b'%3E%3Crect x='10' y='10' width='4' height='11' rx='2'/%3E%3Ccircle cx='12' cy='5' r='2.4'/%3E%3C/g%3E%3C/svg%3E");
+}
+#result-tip.hidden { display: none; }
+
+/* ---------- keyboard / gamepad focus ---------- */
+button:focus { outline: none; }
+button:focus-visible, [role="button"]:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+
+/* ---------- the start button is always on screen ---------- */
+#btn-play { position: sticky; bottom: 0; z-index: 2; flex: none; }
+
+/* ---------- short phones (≤ 720px tall) ---------- */
+@media (max-height: 720px) {
+  .overlay { gap: 10px; }
+  .brand { margin-top: 56px; font-size: 13px; }
+  #menu .title span { font-size: 38px; }
+  .mcard { min-height: 70px; padding: 6px 10px; }
+  .mcard-hero { min-height: 88px; }
+  .mcard-ico { width: 40px; height: 40px; }
+  #missions { gap: 6px; }
+  .mission { padding: 4px 8px 4px 12px; }
+  #menu-hero canvas { width: 80px !important; height: 80px !important; }
+  .mission .mtext { font-size: 13.5px; }
+  .reward { padding: 2px 8px; min-width: 78px; font-size: 13px; }
+  .reward-val { font-size: 16px; }
+  #menu .btn.big { font-size: 30px; padding: 10px 18px 8px; }
+  .btn { padding: 11px 18px; font-size: 22px; }
+  .btn.big { font-size: 30px; padding: 12px 18px 10px; }
+  .ribbon { font-size: 26px; padding: 9px 28px; }
+  .ribbon.big { font-size: 30px; }
+  #result-stars { height: 70px; }
+  .star { width: 50px; height: 50px; }
+  .star.mid { width: 66px; height: 66px; }
+  .result-gems { font-size: 40px; }
+  .wheel-box { width: min(240px, 66vw); }
+}

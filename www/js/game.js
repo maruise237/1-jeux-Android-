@@ -1938,21 +1938,23 @@
 
   // ---------- UI ----------
   const $ = id => document.getElementById(id);
+  const fr = t => t.replace(/ ([!?:;»])/g, '\u00a0$1');
   const SCREENS = ['menu', 'heroes', 'result', 'pause', 'wheel', 'shop'];
   function showScreen(id) {
     for (const s of SCREENS) $(s).classList.toggle('hidden', s !== id);
     $('hud').classList.toggle('hidden', !(id === null || id === 'pause'));
+    document.body.classList.toggle('paused', id === 'pause');
   }
   function showBanner(title, sub, cls) {
     const b = $('banner');
-    b.innerHTML = `<div class="banner-title">${title}</div><div class="banner-sub">${sub}</div>`;
+    b.innerHTML = `<div class="banner-title">${fr(title)}</div><div class="banner-sub">${fr(sub)}</div>`;
     b.className = cls || '';
     void b.offsetWidth; b.classList.add('show');
   }
   function showTip(html) {
     const t = $('tip');
     if (!html) { t.classList.add('hidden'); return; }
-    t.innerHTML = `<span>${html}</span>`;
+    t.innerHTML = `<span>${fr(html)}</span>`;
     t.classList.remove('hidden');
   }
   const LOSS_TIPS = [
@@ -2088,7 +2090,7 @@
         const lv = heroLevel(h.id), cost = trainCost(lv);
         const tr = document.createElement('div');
         tr.className = 'hero-train' + (save.gems < cost ? ' poor' : '');
-        tr.setAttribute('role', 'button');
+        tr.setAttribute('role', 'button'); tr.tabIndex = 0;
         tr.innerHTML = `Entraîner <i class="gem-ico"></i>${cost}`;
         tr.onclick = e => {
           e.stopPropagation();
@@ -2116,7 +2118,6 @@
 
   // ---------- Shop screen: upgrades, knives, outfits ----------
   let shopTab = 'upgrade';
-  const SHOP_TITLES = { upgrade: 'AMÉLIORER', armory: 'ARMURERIE', outfits: 'TENUES' };
   const UPG_ICONS = {
     hp: '<path d="M24 41 8 25a9 9 0 0 1 16-11 9 9 0 0 1 16 11Z" fill="#ff4f5e"/>',
     spd: '<path d="M27 4 10 27h12l-3 17 19-25H26Z" fill="#ffd34d"/>',
@@ -2175,7 +2176,6 @@
   }
   function renderShop() {
     $('shop-gems').textContent = save.gems;
-    $('shop-title').textContent = SHOP_TITLES[shopTab];
     document.querySelectorAll('#shop .tab').forEach(t => { const on = t.dataset.tab === shopTab; t.classList.toggle('on', on); t.setAttribute('aria-selected', String(on)); });
     const list = $('shop-list'); list.innerHTML = '';
     const hero = currentHero();
@@ -2254,17 +2254,20 @@
     lastGemShown = -1;
     const box = $('result');
     box.classList.toggle('lost', !won);
-    $('result-title').textContent = won ? 'MISSION RÉUSSIE !' : 'REPÉRÉ !';
-    $('result-sub').textContent = won ? (stars === 3 ? 'Assassin parfait : jamais repéré !' : 'Reste dans l\'ombre pour 3 étoiles')
-      : `Gardes éliminés : ${guards.filter(g => !g.alive).length}/${guards.length}. ` + LOSS_TIPS[Math.floor(Math.random() * LOSS_TIPS.length)];
+    $('result-title').textContent = fr(won ? 'MISSION RÉUSSIE !' : 'REPÉRÉ !');
+    $('result-sub').textContent = fr(won ? (stars === 3 ? 'Assassin parfait : jamais repéré !' : 'Reste dans l\'ombre pour 3 étoiles')
+      : `Gardes éliminés : ${guards.filter(g => !g.alive).length}/${guards.length}`);
+    const tipEl = $('result-tip');
+    tipEl.classList.toggle('hidden', won);
+    if (!won) tipEl.textContent = fr(LOSS_TIPS[Math.floor(Math.random() * LOSS_TIPS.length)]);
     const starEls = [...document.querySelectorAll('#result .star')];
     starEls.forEach(s => s.classList.remove('on'));
     $('result-stars').classList.toggle('hidden', !won);
     starEls.forEach((s, i) => { if (i < stars) setTimeout(() => { s.classList.add('on'); sfx.star(i); }, 350 + i * 300); });
-    $('result-bonus').innerHTML = (won
+    $('result-bonus').innerHTML = fr((won
       ? `Butin ${levelGems}, bonus ${bonus}` + (chest ? `, coffre ${chest}` : '')
-      : 'Mission échouée : rien n\'est gagné. Termine la mission pour garder ton butin.')
-      + `<br>+${xpGain} XP` + (leveled ? `, ${hero.name} passe au niveau ${heroLevel(hero.id)}` : '');
+      : 'Butin perdu : seule une mission terminée rapporte.')
+      + (xpGain ? `<br>+${xpGain} XP` : '') + (leveled ? `, ${hero.name} passe au niveau ${heroLevel(hero.id)}` : ''));
     const el = $('result-gems');
     el.parentElement.classList.toggle('lost', !won);
     if (!won) el.textContent = '0';
@@ -2377,7 +2380,7 @@
       const t1 = performance.now();
       (function glow(now) { if (now - t1 < 1600 && !$('wheel').classList.contains('hidden')) { drawWheel(win, Math.floor(now / 80)); requestAnimationFrame(glow); } else drawWheel(win, 0); })(t1);
       const res = $('wheel-result'); res.classList.remove('pop'); void res.offsetWidth; res.classList.add('pop');
-      $('wheel-result').textContent = p.gems ? `+${p.gems} diamants !` : p.key ? (chest ? `3e clé : coffre ouvert, +${chest} diamants !` : '+1 clé') : `+${p.xp} XP !`;
+      $('wheel-result').textContent = fr(p.gems ? `+${p.gems} diamants !` : p.key ? (chest ? `3e clé : coffre ouvert, +${chest} diamants !` : '+1 clé') : `+${p.xp} XP !`);
       $('btn-spin').classList.add('hidden'); $('btn-wheel-close').classList.remove('hidden');
     })(t0);
   }
@@ -2410,6 +2413,19 @@
   click('btn-resume', resume);
   click('btn-restart', startLevel);
   click('btn-quit', showMenu);
+
+  // Android back button (and Escape): step back one screen instead of quitting the app mid-level
+  const visible = id => !$(id).classList.contains('hidden');
+  function goBack() {
+    if (state === 'playing') return pause();
+    if (state === 'paused') return resume();
+    if (spinning) return;
+    if (visible('wheel')) return showScreen('result');
+    if (visible('shop') || visible('heroes') || visible('result')) { sfx.button(); return showMenu(); }
+    if (visible('menu')) { const App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App; if (App) App.exitApp(); }
+  }
+  try { const App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App; if (App) App.addListener('backButton', goBack); } catch (e) { /* web build */ }
+  window.addEventListener('keydown', e => { if (e.key === 'Escape') goBack(); });
 
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) { pause(); audio.suspend(); } else audio.resume();
