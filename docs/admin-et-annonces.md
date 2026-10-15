@@ -59,7 +59,7 @@ Si `www/js/online-config.js` a une adresse `api` vide, le jeu reste 100 % hors l
 |---|---|
 | **Annonces** | **Oui, l'appli contient des annonces.** Google compte les pop-up qui font la promotion de tes propres produits comme des annonces. La fiche affichera « Contient des annonces ». |
 | **Sécurité des données → Collecte** | Oui. *Activité dans l'appli → Interactions avec l'appli* et *Identifiants de l'appareil ou autres*. Finalité : *Données analytiques*. Non partagées. Chiffrées en transit : oui. |
-| **Règles de confidentialité** | `https://<ton-projet>.vercel.app/confidentialite` (remplace d'abord `[ton e-mail de contact]` dans `server/confidentialite.html`). |
+| **Règles de confidentialité** | `https://<ton-projet>.vercel.app/confidentialite`. |
 | **Public cible** | 13 ans et plus. En dessous, le jeu entrerait dans le programme Familles, aux règles publicitaires beaucoup plus strictes. |
 
 ## Tester en local

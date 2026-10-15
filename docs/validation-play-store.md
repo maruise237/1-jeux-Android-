@@ -27,7 +27,7 @@ En plus : la roue de la chance affiche ses chances (« Gratuit · chaque case a 
 
 | Rubrique | Réponse |
 |---|---|
-| **Règles de confidentialité** | `https://shadow-strike-admin.vercel.app/confidentialite`. Remplace d'abord `[ton e-mail de contact]` dans `server/confidentialite.html`. |
+| **Règles de confidentialité** | `https://shadow-strike-admin.vercel.app/confidentialite`. |
 | **Accès à l'appli** | Toutes les fonctionnalités sont disponibles sans restriction (aucune connexion). |
 | **Annonces** | **Oui, l'appli contient des annonces** : les pop-up KamTech comptent comme des annonces maison pour Google. |
 | **Classification du contenu (IARC)** | Catégorie Jeu. Violence : oui, **violence stylisée de dessin animé** (éliminations au couteau vues de dessus, sans sang réaliste). Pas de jeux d'argent : la roue est gratuite, sans argent réel, sans achat. Aucune interaction entre joueurs, aucun contenu généré par les utilisateurs, aucune position partagée, aucun achat. Résultat attendu : PEGI 12 ou équivalent. |
