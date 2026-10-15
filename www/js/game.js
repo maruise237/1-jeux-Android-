@@ -17,17 +17,67 @@
 
   const HEROES = [
     { id: 'kenji', name: 'Kenji', label: 'Standard', spd: 0, hp: 0, price: 0, look: { blade: 'kunai', outfit: '#3b8f4a', outfit2: '#24552e', detail: 'vest', sleeve: 'short', skin: '#e8b48a', hair: 'spiky', hairColor: '#4a2f1d', headband: '#d63a3a', glove: '#2b2b33' } },
-    { id: 'nova', name: 'Nova', label: '+10% Vie', spd: 0, hp: 0.1, price: 60, look: { outfit: '#f0b42a', detail: 'stripes', stripe: '#1c1a2b', skin: '#c98d5f', hair: 'bun', hairColor: '#1f1a1a', glove: '#2b2b33' } },
-    { id: 'rex', name: 'Rex', label: '+20% Vitesse', spd: 0.2, hp: 0, price: 150, look: { outfit: '#d6463a', detail: 'jacket', sleeve: 'short', skin: '#f0c7a0', hair: 'mohawk', hairColor: '#2e8bff', glove: '#222222', eyes: 'angry' } },
-    { id: 'lila', name: 'Lila', label: '+20% Vie', spd: 0, hp: 0.2, price: 150, look: { outfit: '#8e5ad6', detail: 'stripes', stripe: '#38d6d0', skin: '#f3cfb0', hair: 'pigtails', hairColor: '#38d6d0', accent: '#ff4f8b', glove: '#3a2350' } },
-    { id: 'blaze', name: 'Blaze', label: '+30% Vitesse', spd: 0.3, hp: 0, price: 350, look: { outfit: '#ff7a1a', outfit2: '#2a2a33', detail: 'vest', skin: '#a86f48', hair: 'cap', cap: '#1d4fd6', glove: '#2b2b33' } },
-    { id: 'onyx', name: 'Onyx', label: '+40% Vie', spd: 0, hp: 0.4, price: 350, look: { outfit: '#2b2d3a', detail: 'armor', accent: '#c0392b', sleeve: 'short', skin: '#7a4b2e', hair: 'bald', hairColor: '#1a1a1a', glove: '#c0392b', eyes: 'angry' } },
-    { id: 'viper', name: 'Viper', label: '+40% Vitesse', spd: 0.4, hp: 0, price: 700, look: { blade: 'venom', outfit: '#1fa37a', detail: 'stripes', stripe: '#0f3d30', hair: 'hood', hairColor: '#1fa37a', mask: '#e6f5ee', skin: '#e8b48a', glove: '#0f3d30' } },
-    { id: 'frost', name: 'Frost', label: '+60% Vie', spd: 0, hp: 0.6, price: 700, look: { blade: 'ice', outfit: '#6fd3ff', detail: 'armor', accent: '#e9f8ff', skin: '#bfe9ff', hair: 'spiky', hairColor: '#e9f8ff', glove: '#e9762b' } },
-    { id: 'phantom', name: 'Phantom', label: '+35% Vitesse +30% Vie', spd: 0.35, hp: 0.3, price: 1400, look: { blade: 'crimson', outfit: '#d6245c', detail: 'stripes', stripe: '#1c1a2b', hair: 'hood', hairColor: '#d6245c', mask: '#f4f4f4', skin: '#f0c7a0', glove: '#222222' } },
-    { id: 'kami', name: 'Kami', label: '+40% Vitesse +60% Vie', spd: 0.4, hp: 0.6, price: 3000, look: { blade: 'gold', outfit: '#1c1a2b', detail: 'cape', accent: '#f5c542', skin: '#e8b48a', hair: 'helmet', helmet: '#f5c542', visor: '#1c1a2b', glove: '#f5c542' } },
+    { id: 'nova', name: 'Nova', label: '+10% Vie', spd: 0, hp: 0.1, price: 400, look: { outfit: '#f0b42a', detail: 'stripes', stripe: '#1c1a2b', skin: '#c98d5f', hair: 'bun', hairColor: '#1f1a1a', glove: '#2b2b33' } },
+    { id: 'rex', name: 'Rex', label: '+20% Vitesse', spd: 0.2, hp: 0, price: 900, look: { outfit: '#d6463a', detail: 'jacket', sleeve: 'short', skin: '#f0c7a0', hair: 'mohawk', hairColor: '#2e8bff', glove: '#222222', eyes: 'angry' } },
+    { id: 'lila', name: 'Lila', label: '+20% Vie', spd: 0, hp: 0.2, price: 900, look: { outfit: '#8e5ad6', detail: 'stripes', stripe: '#38d6d0', skin: '#f3cfb0', hair: 'pigtails', hairColor: '#38d6d0', accent: '#ff4f8b', glove: '#3a2350' } },
+    { id: 'blaze', name: 'Blaze', label: '+30% Vitesse', spd: 0.3, hp: 0, price: 2000, look: { outfit: '#ff7a1a', outfit2: '#2a2a33', detail: 'vest', skin: '#a86f48', hair: 'cap', cap: '#1d4fd6', glove: '#2b2b33' } },
+    { id: 'onyx', name: 'Onyx', label: '+40% Vie', spd: 0, hp: 0.4, price: 2000, look: { outfit: '#2b2d3a', detail: 'armor', accent: '#c0392b', sleeve: 'short', skin: '#7a4b2e', hair: 'bald', hairColor: '#1a1a1a', glove: '#c0392b', eyes: 'angry' } },
+    { id: 'viper', name: 'Viper', label: '+40% Vitesse', spd: 0.4, hp: 0, price: 4500, look: { blade: 'venom', outfit: '#1fa37a', detail: 'stripes', stripe: '#0f3d30', hair: 'hood', hairColor: '#1fa37a', mask: '#e6f5ee', skin: '#e8b48a', glove: '#0f3d30' } },
+    { id: 'frost', name: 'Frost', label: '+60% Vie', spd: 0, hp: 0.6, price: 4500, look: { blade: 'ice', outfit: '#6fd3ff', detail: 'armor', accent: '#e9f8ff', skin: '#bfe9ff', hair: 'spiky', hairColor: '#e9f8ff', glove: '#e9762b' } },
+    { id: 'phantom', name: 'Phantom', label: '+35% Vitesse +30% Vie', spd: 0.35, hp: 0.3, price: 9000, look: { blade: 'crimson', outfit: '#d6245c', detail: 'stripes', stripe: '#1c1a2b', hair: 'hood', hairColor: '#d6245c', mask: '#f4f4f4', skin: '#f0c7a0', glove: '#222222' } },
+    { id: 'kami', name: 'Kami', label: '+40% Vitesse +60% Vie', spd: 0.4, hp: 0.6, price: 18000, look: { blade: 'gold', outfit: '#1c1a2b', detail: 'cape', accent: '#f5c542', skin: '#e8b48a', hair: 'helmet', helmet: '#f5c542', visor: '#1c1a2b', glove: '#f5c542' } },
   ];
   for (const h of HEROES) h.look.id = 'hero-' + h.id;
+
+  // ---------- Shop: what diamonds buy ----------
+  // Prices follow docs/economie.md: a player earns ~22 000 diamonds over levels 1-60, then ~600 per level.
+  // Early items fit in a few levels; the top of each track is a long-term goal.
+  const UPGRADES = [
+    { id: 'hp', name: 'Endurance', per: 0.06, text: n => `+${n * 6} % de vie` },
+    { id: 'spd', name: 'Agilité', per: 0.03, text: n => `+${n * 3} % de vitesse` },
+    { id: 'loot', name: 'Pillage', per: 0.08, text: n => `+${n * 8} % de diamants` },
+    { id: 'crate', name: 'Crochetage', per: 0.12, text: n => `Caisses ${n * 12} % plus rapides` },
+    { id: 'quiet', name: 'Discrétion', per: 0.08, text: n => `Éliminations ${n * 8} % plus silencieuses` },
+  ];
+  const UPG_COST = [300, 800, 1800, 3800, 7500];
+  const KNIVES = [
+    { id: 'hero', name: 'Lame du héros', blade: null, price: 0, perk: 'Aucun bonus', fx: {} },
+    { id: 'kunai', name: 'Kunai', blade: 'kunai', price: 800, perk: '+5 % de diamants', fx: { loot: 0.05 } },
+    { id: 'venom', name: 'Croc venimeux', blade: 'venom', price: 2000, perk: 'Éliminations 15 % plus silencieuses', fx: { quiet: 0.15 } },
+    { id: 'ice', name: 'Lame de givre', blade: 'ice', price: 3500, perk: 'Caisses 20 % plus rapides', fx: { crate: 0.2 } },
+    { id: 'crimson', name: 'Écarlate', blade: 'crimson', price: 6000, perk: '+12 % de diamants', fx: { loot: 0.12 } },
+    { id: 'shadow', name: 'Lame d\'ombre', blade: 'shadow', price: 10000, perk: 'Éliminations 30 % plus silencieuses', fx: { quiet: 0.3 } },
+    { id: 'gold', name: 'Lame d\'or', blade: 'gold', price: 16000, perk: '+20 % de diamants, 10 % plus silencieuse', fx: { loot: 0.2, quiet: 0.1 } },
+    { id: 'plasma', name: 'Plasma', blade: 'plasma', price: 25000, perk: '+25 % de diamants, caisses 25 % plus rapides', fx: { loot: 0.25, crate: 0.25 } },
+  ];
+  const OUTFITS = [
+    { id: 'base', name: 'Classique', price: 0, desc: 'La tenue d\'origine' },
+    { id: 'night', name: 'Nuit', price: 700, desc: 'Noir mat et néon cyan', over: { outfit: '#262a36', outfit2: '#16181f', stripe: '#5ee7ff', accent: '#5ee7ff', headband: '#5ee7ff' } },
+    { id: 'blood', name: 'Sang', price: 1500, desc: 'Rouge assassin', over: { outfit: '#b3122a', outfit2: '#5a0614', stripe: '#1c1a2b', accent: '#1c1a2b', headband: '#1c1a2b' } },
+    { id: 'snow', name: 'Neige', price: 1500, desc: 'Blanc et bleu, pour les missions d\'hiver', over: { outfit: '#e9eef5', outfit2: '#9aa6b8', stripe: '#3d6bea', accent: '#3d6bea', headband: '#3d6bea' } },
+    { id: 'royal', name: 'Royale', price: 4000, desc: 'Or et violet, la tenue des légendes', over: { outfit: '#f5c542', outfit2: '#a86d0a', stripe: '#1c1a2b', accent: '#7a3ad6', headband: '#7a3ad6' } },
+  ];
+  // the hero as he looks with his outfit (and, for the selected hero, the equipped knife)
+  function heroLook(h, withKnife) {
+    const o = OUTFITS.find(x => x.id === (save.outfit[h.id] || 'base')) || OUTFITS[0];
+    const k = withKnife ? KNIVES.find(x => x.id === save.knife) : null;
+    const L = { ...h.look };
+    if (o.over) for (const [key, v] of Object.entries(o.over)) if (key === 'outfit' || key in h.look) L[key] = v;
+    if (k && k.blade) L.blade = k.blade;
+    L.id = `hero-${h.id}-${o.id}-${L.blade || 'steel'}`;
+    return L;
+  }
+  // every bonus bought in the shop, combined
+  function perks() {
+    const u = save.upg, k = KNIVES.find(x => x.id === save.knife) || KNIVES[0];
+    return {
+      hp: 1 + 0.06 * u.hp, spd: 1 + 0.03 * u.spd,
+      loot: 1 + 0.08 * u.loot + (k.fx.loot || 0),
+      crate: 1 + 0.12 * u.crate + (k.fx.crate || 0),
+      quiet: Math.max(0.4, 1 - 0.08 * u.quiet - (k.fx.quiet || 0)),
+    };
+  }
+  let perk = { hp: 1, spd: 1, loot: 1, crate: 1, quiet: 1 };
 
   // Enemy roster: tougher types with better gear unlock as levels go up.
   const GUARD_TYPES = {
@@ -94,6 +144,16 @@
     return base;
   }
   const save = loadSave();
+  {
+    // shop data: keep only well-formed values from older or damaged saves
+    const u = save.upg && typeof save.upg === 'object' ? save.upg : {};
+    save.upg = {};
+    for (const id of ['hp', 'spd', 'loot', 'crate', 'quiet']) save.upg[id] = Number.isFinite(u[id]) ? Math.max(0, Math.min(5, Math.floor(u[id]))) : 0;
+    save.knives = Array.isArray(save.knives) ? [...new Set(['hero', ...save.knives.filter(x => typeof x === 'string')])] : ['hero'];
+    if (typeof save.knife !== 'string' || !save.knives.includes(save.knife)) save.knife = 'hero';
+    if (!save.outfits || typeof save.outfits !== 'object' || Array.isArray(save.outfits)) save.outfits = {};
+    if (!save.outfit || typeof save.outfit !== 'object' || Array.isArray(save.outfit)) save.outfit = {};
+  }
   function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* ignore */ } }
   const currentHero = () => HEROES.find(h => h.id === save.selected) || HEROES[0];
   // Experience: every hero levels up from kills and wins (+4% health, +1.5% speed per level, max 20)
@@ -101,6 +161,7 @@
   const heroXp = id => (save.xp && save.xp[id]) || 0;
   const xpFor = lv => 40 * (lv - 1) * (lv - 1);
   const heroLevel = id => { let lv = 1; while (lv < MAX_HERO_LV && heroXp(id) >= xpFor(lv + 1)) lv++; return lv; };
+  const trainCost = lv => 50 + 15 * lv * lv; // 65 for level 2, 1550 for level 11, 5465 for level 20
   function addXp(id, n) { save.xp = save.xp || {}; const before = heroLevel(id); save.xp[id] = heroXp(id) + n; return heroLevel(id) > before; }
   audio.set({ sfx: save.sfx, music: save.music });
 
@@ -450,10 +511,11 @@
     grid = L.grid;
     const hero = currentHero();
     const hlv = heroLevel(hero.id);
-    const maxHp = Math.round(BASE_HP * (1 + hero.hp) * (1 + 0.04 * (hlv - 1)));
+    perk = perks();
+    const maxHp = Math.round(BASE_HP * (1 + hero.hp) * (1 + 0.04 * (hlv - 1)) * perk.hp);
     player = {
-      x: L.start.x + 0.5, y: L.start.y + 0.5, angle: -Math.PI / 2, speed: BASE_SPEED * (1 + hero.spd) * (1 + 0.01 * (hlv - 1)),
-      hp: maxHp, maxHp, look: hero.look, path: null, pi: 0, walk: 0, chase: null, repath: 0,
+      x: L.start.x + 0.5, y: L.start.y + 0.5, angle: -Math.PI / 2, speed: BASE_SPEED * (1 + hero.spd) * (1 + 0.01 * (hlv - 1)) * perk.spd,
+      hp: maxHp, maxHp, look: heroLook(hero, true), path: null, pi: 0, walk: 0, chase: null, repath: 0,
       spotted: false, hurtCd: 0, attack: 0, dust: 0, frozen: 0,
     };
     const gSpeed = Math.min(1.5 + n * 0.025, MAX_GUARD_SPEED);
@@ -599,7 +661,7 @@
       if (pk.taken) continue;
       // stand on the loot: a ring fills up, then it bursts open
       const before = pk.open;
-      if (Math.hypot(pk.x - p.x, pk.y - p.y) < CRATE_R) pk.open = Math.min(1, pk.open + dt / 0.8);
+      if (Math.hypot(pk.x - p.x, pk.y - p.y) < CRATE_R) pk.open = Math.min(1, pk.open + dt * perk.crate / 0.8);
       else pk.open = Math.max(0, pk.open - dt * 2);
       if (Math.floor(before * 5) < Math.floor(pk.open * 5) && pk.open < 1) sfx.fillTick(pk.open);
       if (pk.open >= 1) {
@@ -613,7 +675,7 @@
           const a = Math.random() * Math.PI * 2, v = 2 + Math.random() * 3.5;
           fx.parts.push({ x: pk.x, y: pk.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0.55, max: 0.55, r: 0.07 + Math.random() * 0.04, c: i % 3 ? '#3f6fd0' : '#c9d2e6', shard: true, rot: a });
         }
-        spawnGems(pk.x, pk.y, pk.value, 1.15, 0.45);
+        spawnGems(pk.x, pk.y, Math.round(pk.value * perk.loot), 1.15, 0.45);
       }
     }
     if (keyItem && !keyItem.taken && Math.hypot(keyItem.x - p.x, keyItem.y - p.y) < 0.55) {
@@ -937,12 +999,12 @@
       fx.texts.push({ x: gd.x, y: gd.y - 1.0, text: label, color: '#ffd34d', t: 1.3, max: 1.3, big: true });
       sfx.combo(combo);
     }
-    spawnGems(gd.x, gd.y, gain);
+    spawnGems(gd.x, gd.y, Math.round(gain * perk.loot));
     fx.rings.push({ x: gd.x, y: gd.y, t: 0, max: 0.35, r: 0.9, c: '255,90,70', thin: true });
     shake = Math.max(shake, 0.15);
     vibrate(30);
     // the victim's cry: guards nearby hear it and come to look (frozen victims shatter silently)
-    if (!wasFrozen || byBlast) makeNoise(gd.x, gd.y, gd.boss ? 4.5 : 3.3, 0.7);
+    if (!wasFrozen || byBlast) makeNoise(gd.x, gd.y, (gd.boss ? 4.5 : 3.3) * perk.quiet, 0.7);
     if (guards.every(g => !g.alive)) finish(true);
   }
 
@@ -1876,7 +1938,7 @@
 
   // ---------- UI ----------
   const $ = id => document.getElementById(id);
-  const SCREENS = ['menu', 'heroes', 'result', 'pause', 'wheel'];
+  const SCREENS = ['menu', 'heroes', 'result', 'pause', 'wheel', 'shop'];
   function showScreen(id) {
     for (const s of SCREENS) $(s).classList.toggle('hidden', s !== id);
     $('hud').classList.toggle('hidden', !(id === null || id === 'pause'));
@@ -1955,16 +2017,16 @@
       const txt = document.createElement('div'); txt.className = 'mtext'; txt.textContent = m.text;
       if (m.goal) { const sm = document.createElement('small'); sm.textContent = `${Math.min(st.progress, m.goal)}/${m.goal}`; txt.appendChild(sm); }
       const btn = document.createElement('button');
-      btn.className = 'btn ' + (st.done ? 'btn-yellow' : 'btn-blue');
+      btn.className = 'reward' + (st.done ? ' ready' : '');
       const rw = missionReward(m);
-      btn.innerHTML = (st.done ? 'Récupérer<br>' : '') + `<i class="gem-ico" style="width:14px;height:14px"></i> ${rw}`;
+      btn.innerHTML = `<span class="reward-lab">${st.done ? 'Réclamer' : 'Prix'}</span><span class="reward-val"><i class="gem-ico"></i>${rw}</span>`;
       btn.setAttribute('aria-label', st.done ? `Récupérer ${rw} diamants` : `Mission en cours, ${rw} diamants`);
       btn.classList.toggle('bump', st.done);
       btn.disabled = !st.done;
       btn.onclick = () => {
         if (!st.done) return;
         save.gems += rw; st.done = false; st.progress = 0; persist();
-        sfx.pickup(); $('menu-gems').textContent = save.gems; renderMissions();
+        sfx.pickup(); $('menu-gems').textContent = save.gems; renderMissions(); refreshBadges();
       };
       row.append(txt, btn); box.appendChild(row);
     }
@@ -1975,12 +2037,16 @@
     state = 'menu';
     $('menu-gems').textContent = save.gems;
     $('btn-play-level').textContent = 'NIVEAU ' + save.level;
+    const ch2 = currentHero(), lv2 = heroLevel(ch2.id);
     const holder = $('menu-hero');
     holder.innerHTML = '';
-    holder.appendChild(heroPortrait(currentHero().look, 130));
-    const ch2 = currentHero(), lv2 = heroLevel(ch2.id);
+    holder.appendChild(heroPortrait(heroLook(ch2, true), 96));
     const pct = lv2 >= MAX_HERO_LV ? 100 : Math.round(100 * (heroXp(ch2.id) - xpFor(lv2)) / (xpFor(lv2 + 1) - xpFor(lv2)));
-    $('menu-hero-name').innerHTML = `${ch2.name}<small>niv. ${lv2}</small><span class="xpbar"><i style="width:${pct}%"></i></span>`;
+    $('menu-hero-name').innerHTML = `${ch2.name} · niv. ${lv2}<span class="xpbar"><i style="width:${pct}%"></i></span>`;
+    const kn = KNIVES.find(k => k.id === save.knife) || KNIVES[0];
+    art.drawKnifeIcon($('menu-knife'), kn.blade || ch2.look.blade || 'steel');
+    const oh = $('menu-outfit'); oh.innerHTML = ''; oh.appendChild(heroPortrait(heroLook(ch2, false), 56));
+    refreshBadges();
     refreshToggles();
     showScreen('menu');
   }
@@ -2006,7 +2072,7 @@
       const owned = save.owned.includes(h.id), selected = save.selected === h.id;
       const card = document.createElement('button');
       card.className = 'hero-card' + (selected ? ' selected' : '') + (owned ? '' : ' locked');
-      card.appendChild(heroPortrait(h.look, 84, { locked: !owned }));
+      card.appendChild(heroPortrait(owned ? heroLook(h, selected) : h.look, 84, { locked: !owned }));
       const name = document.createElement('div'); name.className = 'hero-name'; name.innerHTML = owned ? `${h.name} <small>niv. ${heroLevel(h.id)}</small>` : h.name;
       const lab = document.createElement('div'); lab.className = 'hero-label'; lab.textContent = selected ? 'ÉQUIPÉ' : h.label;
       if (h.spd && !selected) lab.classList.add('speed');
@@ -2019,7 +2085,7 @@
         card.appendChild(price);
       } else if (heroLevel(h.id) < MAX_HERO_LV) {
         // training: spend diamonds to gain a level right away
-        const lv = heroLevel(h.id), cost = 25 * lv;
+        const lv = heroLevel(h.id), cost = trainCost(lv);
         const tr = document.createElement('div');
         tr.className = 'hero-train' + (save.gems < cost ? ' poor' : '');
         tr.setAttribute('role', 'button');
@@ -2046,6 +2112,119 @@
       grid.appendChild(card);
     }
   }
+
+
+  // ---------- Shop screen: upgrades, knives, outfits ----------
+  let shopTab = 'upgrade';
+  const SHOP_TITLES = { upgrade: 'AMÉLIORER', armory: 'ARMURERIE', outfits: 'TENUES' };
+  const UPG_ICONS = {
+    hp: '<path d="M24 41 8 25a9 9 0 0 1 16-11 9 9 0 0 1 16 11Z" fill="#ff4f5e"/>',
+    spd: '<path d="M27 4 10 27h12l-3 17 19-25H26Z" fill="#ffd34d"/>',
+    loot: '<path d="M14 8h20l8 10-18 24L6 18Z" fill="#2b8cff"/><path d="M6 18h36M24 42 17 18l7-10 7 10Z" fill="none" stroke="#bfe3ff" stroke-width="2.5"/>',
+    crate: '<rect x="7" y="14" width="34" height="26" rx="3" fill="#3f6fd0"/><path d="M7 22h34M24 14v26" stroke="#ffd34d" stroke-width="4"/>',
+    quiet: '<path d="M8 28c4-10 28-10 32 0-8 6-24 6-32 0Z" fill="#9b7bff"/><circle cx="24" cy="26" r="5" fill="#1c1a2b"/>',
+  };
+  const upgradeCost = u => (save.upg[u.id] < 5 ? UPG_COST[save.upg[u.id]] : 0);
+  // what can be bought right now, for the "!" badges on the menu
+  const canBuy = {
+    heroes: () => HEROES.some(h => !save.owned.includes(h.id) && save.gems >= h.price),
+    upgrade: () => UPGRADES.some(u => save.upg[u.id] < 5 && save.gems >= upgradeCost(u)),
+    armory: () => KNIVES.some(k => !save.knives.includes(k.id) && save.gems >= k.price),
+    outfits: () => OUTFITS.some(o => o.price && !(save.outfits[save.selected] || []).includes(o.id) && save.gems >= o.price),
+  };
+  function refreshBadges() {
+    for (const k of Object.keys(canBuy)) $('badge-' + k).classList.toggle('hidden', !canBuy[k]());
+  }
+  // big purchases need a second tap, so a stray touch never spends thousands of diamonds
+  let armed = null, armedT = 0;
+  function confirmBuy(btn, key, price, done) {
+    if (save.gems < price) {
+      btn.classList.remove('shake'); void btn.offsetWidth; btn.classList.add('shake'); sfx.hurt();
+      btn.querySelector('.buy-lab').textContent = `Il manque ${price - save.gems}`;
+      return;
+    }
+    if (armed !== key || performance.now() - armedT > 3000) {
+      armed = key; armedT = performance.now(); sfx.tap();
+      btn.classList.add('confirm'); btn.querySelector('.buy-lab').textContent = 'Confirmer ?';
+      return;
+    }
+    armed = null;
+    save.gems -= price; done(); persist();
+    sfx.pickup(); vibrate(30);
+    renderShop();
+  }
+  function shopRow(icon, name, desc, extra, action) {
+    const row = document.createElement('div'); row.className = 'item';
+    const ic = document.createElement('div'); ic.className = 'item-ico'; ic.appendChild(icon);
+    const tx = document.createElement('div'); tx.className = 'item-txt';
+    tx.innerHTML = `<b>${name}</b><small>${desc}</small>`;
+    if (extra) tx.appendChild(extra);
+    row.append(ic, tx, action);
+    return row;
+  }
+  function buyBtn(label, price) {
+    const b = document.createElement('button');
+    b.className = 'buy' + (save.gems < price ? ' poor' : '');
+    b.innerHTML = `<span class="buy-lab">${label}</span><span class="buy-val"><i class="gem-ico"></i>${price}</span>`;
+    return b;
+  }
+  function stateBtn(label, cls) {
+    const b = document.createElement('button'); b.className = 'buy ' + cls;
+    b.innerHTML = `<span class="buy-lab">${label}</span>`;
+    return b;
+  }
+  function renderShop() {
+    $('shop-gems').textContent = save.gems;
+    $('shop-title').textContent = SHOP_TITLES[shopTab];
+    document.querySelectorAll('#shop .tab').forEach(t => { const on = t.dataset.tab === shopTab; t.classList.toggle('on', on); t.setAttribute('aria-selected', String(on)); });
+    const list = $('shop-list'); list.innerHTML = '';
+    const hero = currentHero();
+    if (shopTab === 'upgrade') {
+      $('shop-hint').textContent = 'Valable pour tous tes assassins.';
+      for (const u of UPGRADES) {
+        const lv = save.upg[u.id];
+        const ic = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        ic.setAttribute('viewBox', '0 0 48 48'); ic.innerHTML = UPG_ICONS[u.id];
+        const pips = document.createElement('span'); pips.className = 'pips';
+        pips.innerHTML = Array.from({ length: 5 }, (_, i) => `<i class="${i < lv ? 'on' : ''}"></i>`).join('');
+        const desc = lv ? u.text(lv) + (lv < 5 ? ` → ${u.text(lv + 1)}` : '') : u.text(1);
+        const act = lv >= 5 ? stateBtn('MAX', 'max') : buyBtn('Niveau ' + (lv + 1), upgradeCost(u));
+        if (lv < 5) act.onclick = () => confirmBuy(act, 'u-' + u.id, upgradeCost(u), () => { save.upg[u.id]++; });
+        list.appendChild(shopRow(ic, u.name, desc, pips, act));
+      }
+    } else if (shopTab === 'armory') {
+      $('shop-hint').textContent = 'Un seul couteau équipé à la fois. Son bonus s\'ajoute aux améliorations.';
+      for (const k of KNIVES) {
+        const c = document.createElement('canvas'); c.width = c.height = 128;
+        art.drawKnifeIcon(c, k.blade || hero.look.blade || 'steel');
+        const owned = save.knives.includes(k.id), on = save.knife === k.id;
+        let act;
+        if (on) act = stateBtn('ÉQUIPÉ', 'on');
+        else if (owned) { act = stateBtn('ÉQUIPER', 'equip'); act.onclick = () => { save.knife = k.id; persist(); sfx.button(); renderShop(); }; }
+        else { act = buyBtn('Acheter', k.price); act.onclick = () => confirmBuy(act, 'k-' + k.id, k.price, () => { save.knives.push(k.id); save.knife = k.id; }); }
+        list.appendChild(shopRow(c, k.name, k.perk, null, act));
+      }
+    } else {
+      $('shop-hint').textContent = `Tenues de ${hero.name}. Chaque assassin a sa propre garde-robe.`;
+      const mine = save.outfits[hero.id] || [];
+      for (const o of OUTFITS) {
+        const owned = !o.price || mine.includes(o.id), on = (save.outfit[hero.id] || 'base') === o.id;
+        const prev = save.outfit[hero.id]; save.outfit[hero.id] = o.id;
+        const pic = heroPortrait(heroLook(hero, false), 56);
+        save.outfit[hero.id] = prev;
+        let act;
+        if (on) act = stateBtn('PORTÉE', 'on');
+        else if (owned) { act = stateBtn('PORTER', 'equip'); act.onclick = () => { save.outfit[hero.id] = o.id; persist(); sfx.button(); renderShop(); }; }
+        else {
+          act = buyBtn('Acheter', o.price);
+          act.onclick = () => confirmBuy(act, 'o-' + hero.id + o.id, o.price, () => { save.outfits[hero.id] = [...mine, o.id]; save.outfit[hero.id] = o.id; });
+        }
+        list.appendChild(shopRow(pic, o.name, o.desc, null, act));
+      }
+    }
+  }
+  function openShop(tab) { shopTab = tab; armed = null; renderShop(); showScreen('shop'); }
+  document.querySelectorAll('#shop .tab').forEach(t => t.addEventListener('click', () => { sfx.tap(); shopTab = t.dataset.tab; armed = null; renderShop(); }));
 
   function showResult(won) {
     hideTip();
@@ -2099,13 +2278,13 @@
       lastShown = v;
       if (p < 1 && state === 'result') requestAnimationFrame(count);
     })(t0);
-    // "new assassin" progress: every win fills a fifth of the bar (cheap heroes only), then the next locked hero is free
-    const next = HEROES.find(h => !save.owned.includes(h.id) && h.price <= 150);
+    // "new assassin" progress: every win fills a tenth of the bar (the three cheapest heroes only), then the next one is free
+    const next = HEROES.find(h => !save.owned.includes(h.id) && h.price <= 900);
     const ub = $('result-unlock');
     ub.classList.toggle('hidden', !next || !won);
     if (next && won) {
       const before = save.unlock || 0;
-      save.unlock = Math.min(100, before + 20);
+      save.unlock = Math.min(100, before + 10);
       const pic = ub.querySelector('.unlock-pic'); pic.innerHTML = '';
       const done = save.unlock >= 100;
       pic.appendChild(heroPortrait(next.look, 64, { locked: !done }));
@@ -2218,6 +2397,10 @@
   click('btn-play', startLevel);
   click('btn-heroes', () => { renderHeroes(); showScreen('heroes'); });
   click('btn-heroes-close', showMenu);
+  click('btn-upgrade', () => openShop('upgrade'));
+  click('btn-armory', () => openShop('armory'));
+  click('btn-outfits', () => openShop('outfits'));
+  click('btn-shop-close', showMenu);
   click('btn-result', startLevel);
   click('btn-wheel', openWheel);
   click('btn-spin', spinWheel);

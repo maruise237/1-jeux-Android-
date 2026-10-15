@@ -34,14 +34,43 @@
     </div>
     <div class="brand">KamTech Studio</div>
     <h1 class="title"><span>SHADOW</span><span>STRIKE</span></h1>
-    <div class="hero-stage">
-      <div class="spot"></div>
-      <div id="menu-hero"></div>
-      <div id="menu-hero-name" class="hero-tag"></div>
+    <div class="menu-grid">
+      <button id="btn-heroes" class="mcard mcard-hero">
+        <span class="mcard-txt">Changer<br>d'assassin<small id="menu-hero-name"></small></span>
+        <span id="menu-hero"></span>
+        <i class="badge hidden" id="badge-heroes">!</i>
+      </button>
+      <button id="btn-upgrade" class="mcard mcard-up">
+        <svg class="mcard-ico" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 6 40 24H31V42H17V24H8Z" fill="#7dff5a" stroke="#1c1a2b" stroke-width="4" stroke-linejoin="round"/></svg>
+        <span class="mcard-lab">Améliorer</span>
+        <i class="badge hidden" id="badge-upgrade">!</i>
+      </button>
+      <button id="btn-armory" class="mcard mcard-knife">
+        <canvas id="menu-knife" width="128" height="128"></canvas>
+        <span class="mcard-lab">Armurerie</span>
+        <i class="badge hidden" id="badge-armory">!</i>
+      </button>
+      <button id="btn-outfits" class="mcard mcard-outfit">
+        <span id="menu-outfit"></span>
+        <span class="mcard-lab">Tenues</span>
+        <i class="badge hidden" id="badge-outfits">!</i>
+      </button>
     </div>
-    <button id="btn-play" class="btn btn-play big"><span>JOUER</span><small id="btn-play-level">NIVEAU 1</small></button>
-    <button id="btn-heroes" class="btn btn-blue">HÉROS</button>
     <div id="missions"></div>
+    <button id="btn-play" class="btn btn-play big"><span>DÉMARRER</span><small id="btn-play-level">NIVEAU 1</small></button>
+  </div>
+
+  <div id="shop" class="overlay hidden">
+    <div class="ribbon" id="shop-title">BOUTIQUE</div>
+    <button id="btn-shop-close" class="close-btn" aria-label="Fermer">✕</button>
+    <div class="gembox"><i class="gem-ico"></i><span id="shop-gems">0</span></div>
+    <div class="tabs" role="tablist">
+      <button class="tab" data-tab="upgrade" role="tab">Améliorer</button>
+      <button class="tab" data-tab="armory" role="tab">Couteaux</button>
+      <button class="tab" data-tab="outfits" role="tab">Tenues</button>
+    </div>
+    <p id="shop-hint"></p>
+    <div id="shop-list"></div>
   </div>
 
   <div id="heroes" class="overlay hidden">

@@ -187,6 +187,8 @@ window.KT = window.KT || {};
     ice: ['#ffffff', '#b8efff', '#3fa6d8'],
     crimson: ['#ffd9dd', '#ef3b52', '#6e0f1e'],
     venom: ['#eafff3', '#53dc9a', '#16603f'],
+    shadow: ['#e6d9ff', '#7a4fd6', '#241047'],
+    plasma: ['#f0ffff', '#4ff3ff', '#0b6f9e'],
   };
   // Combat knife held in the fist: pommel behind, guard in front, clip-point blade forward.
   // Futuristic kunai: diamond blade with a glowing core, ring pommel.
@@ -697,5 +699,15 @@ window.KT = window.KT || {};
     }
   }
 
-  Object.assign(art, { drawCharacter, drawPortrait, setResolution, muzzle });
+  // shop icon: the knife alone, tilted, filling the canvas
+  function drawKnifeIcon(canvas, blade, core) {
+    const g = canvas.getContext('2d'), s = canvas.width;
+    g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, s, s);
+    const k = s / 0.95;
+    g.setTransform(k, 0, 0, k, s * 0.5, s * 0.5);
+    g.rotate(-Math.PI / 4);
+    drawKnife(g, { blade, core }, { x: -0.25, y: 0 });
+  }
+
+  Object.assign(art, { drawCharacter, drawPortrait, drawKnifeIcon, setResolution, muzzle });
 })();

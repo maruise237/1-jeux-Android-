@@ -100,11 +100,8 @@ button { font-family: inherit; color: inherit; border: 0; cursor: pointer; }
 }
 .title span:first-child { color: #fff; }
 .title span:last-child { color: var(--red); }
-.hero-stage { position: relative; width: 170px; height: 150px; display: flex; align-items: center; justify-content: center; }
-.spot { position: absolute; inset: 20px; border-radius: 50%; background: radial-gradient(rgba(255,240,200,.45), transparent 70%); }
 #menu-hero { position: relative; animation: idle 2.4s ease-in-out infinite; }
 @keyframes idle { 50% { transform: translateY(-6px) rotate(3deg); } }
-.hero-tag { position: absolute; bottom: -2px; background: var(--ink); border-radius: 999px; padding: 3px 14px; font-size: 16px; color: var(--yellow); }
 
 /* ---------- HUD ---------- */
 #hud {
@@ -175,7 +172,7 @@ button { font-family: inherit; color: inherit; border: 0; cursor: pointer; }
 .hero-train { display: flex; align-items: center; gap: 4px; margin-top: 3px; background: var(--ink); border-radius: 999px; padding: 4px 10px 4px 8px; font-size: 13px; min-height: 28px; }
 .hero-train .gem-ico { width: 15px; height: 15px; }
 .hero-train.poor { color: #ff8a8a; }
-.mission .btn.bump { animation: bump 1.2s infinite; }
+.mission .reward.bump { animation: bump 1.2s infinite; }
 
 /* ---------- result ---------- */
 #result.lost .ribbon { background: #4a4c60; box-shadow: 0 6px 0 #2c2e3d, 0 9px 0 var(--ink); }
@@ -195,12 +192,10 @@ button { font-family: inherit; color: inherit; border: 0; cursor: pointer; }
 #result-bonus { margin: -8px 0 6px; font-size: 16px; color: rgba(255,255,255,.7); }
 
 /* ---------- missions ---------- */
-#missions { display: flex; flex-direction: column; gap: 8px; width: min(320px, 86vw); }
-.mission { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 14px; background: rgba(20,22,48,.85); border: 3px solid var(--ink); text-align: left; }
+#missions { display: flex; flex-direction: column; gap: 8px; width: min(400px, 100%); }
+.mission { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 14px; border-radius: 14px; background: #3a3d5c; border: 3px solid var(--ink); box-shadow: 0 4px 0 #24263c; text-align: left; }
 .mission .mtext { flex: 1; font-size: 15px; line-height: 1.15; text-shadow: 0 2px 0 var(--ink); }
 .mission .mtext small { display: block; color: #9aa4d8; font-size: 12px; }
-.mission button { width: auto; padding: 8px 10px; font-size: 14px; border-radius: 10px; }
-.mission button:disabled { filter: grayscale(1) brightness(.7); }
 
 #menu { gap: 12px; justify-content: flex-start; }
 #menu .btn.big { padding: 12px 18px 10px; }
@@ -210,8 +205,6 @@ button { font-family: inherit; color: inherit; border: 0; cursor: pointer; }
 
 .xpbar { display: block; width: 120px; height: 6px; margin: 3px auto 0; background: #2a2d45; border-radius: 3px; overflow: hidden; }
 .xpbar i { display: block; height: 100%; background: linear-gradient(90deg, #5ee7ff, #7dff5a); }
-.hero-tag { text-align: center; }
-.hero-tag small { margin-left: 6px; font-size: 13px; color: #c9cfee; }
 
 /* ---------- new assassin unlock ---------- */
 .unlock { display: flex; align-items: center; gap: 12px; width: min(320px, 86vw); padding: 10px; border-radius: 16px; background: rgba(20,22,48,.85); border: 3px solid var(--ink); }
@@ -237,3 +230,80 @@ button { font-family: inherit; color: inherit; border: 0; cursor: pointer; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01s !important; animation-iteration-count: 1 !important; transition-duration: .01s !important; }
 }
+
+/* ---------- menu cards (change assassin / upgrade / armory / outfits) ---------- */
+#menu .title span { font-size: 46px; }
+.menu-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; width: min(400px, 100%); }
+.mcard {
+  position: relative; display: flex; align-items: center; gap: 6px; min-height: 92px; padding: 10px 12px;
+  border: 3px solid var(--ink); border-radius: 18px; text-align: left; font-size: 20px; line-height: 1.05;
+  text-shadow: 0 2px 0 var(--ink), 1px 0 0 var(--ink), -1px 0 0 var(--ink);
+}
+.mcard::after { content: ''; position: absolute; left: 8px; right: 8px; top: 5px; height: 26%; border-radius: 12px; background: rgba(255,255,255,.18); pointer-events: none; }
+.mcard:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
+.mcard-hero { grid-column: span 4; min-height: 112px; background: linear-gradient(#b27cff, #8a4fe0); box-shadow: 0 6px 0 #5b2ea6, 0 9px 0 var(--ink); }
+.mcard-up { grid-column: span 2; flex-direction: column; justify-content: center; background: linear-gradient(#ffd166, #f5a524); box-shadow: 0 6px 0 #b8720f, 0 9px 0 var(--ink); }
+.mcard-knife { grid-column: span 3; background: linear-gradient(#48d6c4, #1f9f98); box-shadow: 0 6px 0 #146b66, 0 9px 0 var(--ink); }
+.mcard-outfit { grid-column: span 3; background: linear-gradient(#ff8fb8, #e0508a); box-shadow: 0 6px 0 #9c2a5a, 0 9px 0 var(--ink); }
+.mcard-txt { flex: 1; }
+.mcard-txt small { display: block; margin-top: 6px; font-size: 13px; color: #f3e9ff; }
+.mcard-txt .xpbar { margin: 4px 0 0; width: 100px; }
+.mcard-ico { width: 48px; height: 48px; }
+.mcard-lab { font-size: 17px; }
+.mcard-up .mcard-lab { font-size: 16px; }
+#menu-knife { width: 52px; height: 52px; flex: none; filter: drop-shadow(0 3px 0 rgba(0,0,0,.35)); }
+#menu-hero canvas, #menu-outfit canvas { display: block; }
+.badge {
+  position: absolute; top: -10px; right: -8px; width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 18px;
+  background: #ff3b4e; border: 3px solid #fff; box-shadow: 0 2px 0 var(--ink); text-shadow: none;
+  animation: bump 1.2s infinite;
+}
+@media (prefers-reduced-motion: reduce) { .badge, .mission .reward.bump { animation: none; } }
+
+/* mission reward pill: grey "Prix" while running, green "Réclamer" when done */
+.reward {
+  flex: none; display: flex; flex-direction: column; align-items: center; min-width: 96px; padding: 6px 10px;
+  border-radius: 12px; border: 3px solid var(--ink); background: linear-gradient(#c9ccd8, #9a9eb1);
+  box-shadow: 0 4px 0 #64687c; font-size: 15px; line-height: 1.1;
+}
+.reward-lab { color: #2f5cc7; text-shadow: none; }
+.reward-val { display: flex; align-items: center; gap: 3px; font-size: 18px; text-shadow: 0 2px 0 var(--ink); }
+.reward-val .gem-ico { width: 18px; height: 18px; }
+.reward.ready { background: linear-gradient(#7dff7a, #2fbf4a); box-shadow: 0 4px 0 #1b7a2e; }
+.reward.ready .reward-lab { color: #fff3a0; text-shadow: 0 2px 0 var(--ink); }
+.reward:disabled { cursor: default; }
+.reward.ready:active { transform: translateY(3px); box-shadow: 0 1px 0 #1b7a2e; }
+
+/* ---------- shop ---------- */
+#shop { justify-content: flex-start; gap: 12px; }
+#shop .ribbon { margin-top: 12px; }
+.tabs { display: flex; gap: 6px; width: min(400px, 100%); }
+.tab { flex: 1; padding: 10px 4px 8px; border-radius: 12px; border: 3px solid var(--ink); background: #3a3d5c; box-shadow: 0 4px 0 #24263c; font-size: 16px; text-shadow: 0 2px 0 var(--ink); }
+.tab.on { background: linear-gradient(#ffd166, #f5a524); box-shadow: 0 4px 0 #b8720f; }
+#shop-hint { margin: -2px 0 0; font-size: 14px; color: rgba(255,255,255,.7); }
+#shop-list { display: flex; flex-direction: column; gap: 8px; width: min(400px, 100%); padding-bottom: 20px; }
+.item { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 14px; background: #3a3d5c; border: 3px solid var(--ink); box-shadow: 0 4px 0 #24263c; text-align: left; }
+.item-ico { flex: none; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: #262842; }
+.item-ico svg { width: 48px; height: 48px; }
+.item-ico canvas { width: 56px !important; height: 56px !important; }
+.item-txt { flex: 1; min-width: 0; text-shadow: 0 2px 0 var(--ink); }
+.item-txt b { display: block; font-weight: 400; font-size: 17px; }
+.item-txt small { display: block; font-size: 12.5px; color: #c9cff5; line-height: 1.2; margin-top: 2px; }
+.pips { display: flex; gap: 4px; margin-top: 5px; }
+.pips i { width: 16px; height: 8px; border-radius: 3px; background: #23253b; border: 2px solid var(--ink); }
+.pips i.on { background: #7dff5a; }
+.buy {
+  flex: none; display: flex; flex-direction: column; align-items: center; min-width: 92px; padding: 6px 8px;
+  border-radius: 12px; border: 3px solid var(--ink); background: linear-gradient(#7dff7a, #2fbf4a); box-shadow: 0 4px 0 #1b7a2e;
+  font-size: 13px; line-height: 1.15; text-shadow: 0 2px 0 var(--ink);
+}
+.buy:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.buy-val { display: flex; align-items: center; gap: 3px; font-size: 17px; }
+.buy-val .gem-ico { width: 18px; height: 18px; }
+.buy.poor { background: linear-gradient(#c9ccd8, #9a9eb1); box-shadow: 0 4px 0 #64687c; }
+.buy.poor .buy-lab { color: #ffd6d6; }
+.buy.confirm { background: linear-gradient(#ffd166, #f5a524); box-shadow: 0 4px 0 #b8720f; }
+.buy.equip { background: linear-gradient(#6f93ff, var(--blue)); box-shadow: 0 4px 0 var(--blue-d); font-size: 15px; padding: 12px 8px; }
+.buy.on, .buy.max { background: #262842; box-shadow: none; color: #7dff5a; font-size: 15px; padding: 12px 8px; }
+.buy.shake { animation: shake .3s; }
