@@ -1,5 +1,6 @@
 'use strict';
-// Synthesized sound effects and music (Web Audio): no audio files, keeps the app tiny.
+// Sound effects: short CC0 recordings (www/sfx, ~220 KB, see README credits) with synthesized
+// fallbacks while they load; synthesized music (Web Audio).
 window.KT = window.KT || {};
 KT.audio = (() => {
   let ctx = null, sfxGain = null, musicGain = null, noiseBuf = null;
@@ -19,7 +20,33 @@ KT.audio = (() => {
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     apply();
     startMusic();
+    loadSamples();
   }
+
+  // ---------- Recorded samples ----------
+  const SAMPLES = ['pistol', 'smg', 'rifle', 'shotgun', 'cannon', 'slash1', 'slash2', 'draw', 'hit1', 'hit2', 'body',
+    'clang', 'shatter', 'hurt', 'freeze', 'boom', 'crunch', 'zap', 'click', 'latch', 'coins', 'chest', 'ui', 'ui2',
+    'step0', 'step1', 'step2', 'step3', 'grass0', 'grass1'];
+  const buf = {};
+  function loadSamples() {
+    for (const n of SAMPLES) {
+      fetch('sfx/' + n + '.mp3').then(r => (r.ok ? r.arrayBuffer() : Promise.reject(r.status)))
+        .then(a => new Promise((ok, ko) => ctx.decodeAudioData(a, ok, ko)))
+        .then(b => { buf[n] = b; }).catch(() => { /* keep the synthesized fallback */ });
+    }
+  }
+  // plays a sample with a little random pitch so repeated sounds never feel robotic; false if not loaded yet
+  function play(name, { v = 1, rate = 1, vary = 0.08, at = 0 } = {}) {
+    const b = buf[name];
+    if (!ctx || !b) return false;
+    const s = ctx.createBufferSource(), g = ctx.createGain();
+    s.buffer = b; s.playbackRate.value = rate * (1 + (Math.random() * 2 - 1) * vary);
+    g.gain.value = v;
+    s.connect(g); g.connect(sfxGain);
+    s.start(Math.max(ctx.currentTime, at || 0));
+    return true;
+  }
+  const any = (...names) => names[Math.floor(Math.random() * names.length)];
 
   function apply() {
     if (!ctx) return;
@@ -63,20 +90,29 @@ KT.audio = (() => {
   const later = s => (ctx ? ctx.currentTime + s : 0);
 
   const sfx = {
-    tap() { tone({ type: 'triangle', f: 900, f2: 600, t: 0.05, v: 0.12 }); },
-    button() { tone({ type: 'triangle', f: 660, f2: 990, t: 0.08, v: 0.18 }); },
-    slash() { noise({ t: 0.13, v: 0.5, type: 'bandpass', f: 7000, f2: 1500, q: 0.8 }); },
+    tap() { play('ui', { v: 0.6 }) || tone({ type: 'triangle', f: 900, f2: 600, t: 0.05, v: 0.12 }); },
+    button() { play('ui2', { v: 0.8 }) || tone({ type: 'triangle', f: 660, f2: 990, t: 0.08, v: 0.18 }); },
+    slash() { play(any('slash1', 'slash2'), { v: 0.9 }) || noise({ t: 0.13, v: 0.5, type: 'bandpass', f: 7000, f2: 1500, q: 0.8 }); },
+    // knife stab: blade whoosh, then the thud of the hit and the body falling
     kill() {
-      sfx.slash();
+      if (play(any('slash1', 'slash2'), { v: 0.9 })) {
+        play(any('hit1', 'hit2'), { v: 0.9, at: later(0.04) });
+        play('body', { v: 0.7, rate: 0.85, at: later(0.22) });
+        return;
+      }
+      noise({ t: 0.13, v: 0.5, type: 'bandpass', f: 7000, f2: 1500, q: 0.8 });
       tone({ type: 'sine', f: 170, f2: 45, t: 0.22, v: 0.7 });
-      noise({ t: 0.14, v: 0.3, type: 'lowpass', f: 900, at: later(0.02) });
     },
     gem() {
       const p = 1 + Math.random() * 0.2;
       tone({ type: 'triangle', f: 1300 * p, f2: 2100 * p, t: 0.08, v: 0.14 });
       tone({ type: 'sine', f: 2600 * p, t: 0.12, v: 0.05, at: later(0.03) });
     },
-    shot() {
+    // each weapon has its own real gunshot; far shots are quieter
+    shot(weapon = 'pistol', dist = 0) {
+      const v = Math.max(0.35, 1 - dist * 0.08);
+      const name = weapon === 'energy' ? 'zap' : weapon;
+      if (play(name, { v: weapon === 'energy' ? v : v * 0.85, rate: weapon === 'energy' ? 0.7 : 1, vary: 0.05 })) return;
       noise({ t: 0.16, v: 0.7, type: 'bandpass', f: 2200, f2: 400, q: 0.7 });
       tone({ type: 'square', f: 130, f2: 40, t: 0.1, v: 0.22 });
     },
@@ -84,36 +120,42 @@ KT.audio = (() => {
       tone({ type: 'square', f: 880, t: 0.07, v: 0.1 });
       tone({ type: 'square', f: 1320, t: 0.1, v: 0.1, at: later(0.08) });
     },
-    hurt() { tone({ type: 'sawtooth', f: 240, f2: 90, t: 0.2, v: 0.22 }); },
+    // soft "hm?" when a guard hears something
+    suspect() { tone({ type: 'triangle', f: 520, f2: 760, t: 0.18, v: 0.09 }); },
+    hurt() { play('hurt', { v: 1 }) || tone({ type: 'sawtooth', f: 240, f2: 90, t: 0.2, v: 0.22 }); },
     freeze() {
+      if (play('freeze', { v: 0.9, rate: 1.1 })) { play('shatter', { v: 0.35, rate: 1.6 }); return; }
       noise({ t: 0.7, v: 0.35, type: 'highpass', f: 1500, f2: 9000 });
       tone({ type: 'sine', f: 320, f2: 70, t: 0.35, v: 0.45 });
-      [1568, 2093, 2637, 3136].forEach((f, i) => tone({ type: 'sine', f, t: 0.9, v: 0.06, at: later(i * 0.05) }));
     },
     shatter() {
+      if (play('shatter', { v: 1 })) { play('body', { v: 0.5, at: later(0.1) }); return; }
       noise({ t: 0.3, v: 0.5, type: 'highpass', f: 3000 });
-      [2100, 2700, 3400].forEach((f, i) => tone({ type: 'triangle', f, t: 0.16, v: 0.07, at: later(i * 0.03) }));
       tone({ type: 'sine', f: 150, f2: 50, t: 0.18, v: 0.5 });
     },
-    laser() { tone({ type: 'sawtooth', f: 200, f2: 110, t: 0.3, v: 0.16 }); },
-    pickup() { [880, 1175, 1568].forEach((f, i) => tone({ type: 'triangle', f, t: 0.12, v: 0.15, at: later(i * 0.06) })); },
+    laser() { play('zap', { v: 0.8 }) || tone({ type: 'sawtooth', f: 200, f2: 110, t: 0.3, v: 0.16 }); },
+    pickup() { play('chest', { v: 0.6, rate: 1.3 }); [880, 1175, 1568].forEach((f, i) => tone({ type: 'triangle', f, t: 0.12, v: 0.12, at: later(i * 0.06) })); },
     win() {
       [523, 659, 784, 1047].forEach((f, i) => tone({ type: 'triangle', f, t: 0.25, v: 0.22, at: later(i * 0.11) }));
       tone({ type: 'triangle', f: 1319, t: 0.7, v: 0.18, at: later(0.46) });
     },
     lose() { [392, 330, 262, 196].forEach((f, i) => tone({ type: 'sawtooth', f, t: 0.3, v: 0.1, at: later(i * 0.16) })); },
     star(i) { tone({ type: 'triangle', f: 880 * Math.pow(1.26, i), t: 0.2, v: 0.2 }); tone({ type: 'sine', f: 1760 * Math.pow(1.26, i), t: 0.3, v: 0.06 }); },
-    beep() { tone({ type: 'square', f: 1750, t: 0.06, v: 0.12 }); },
+    beep() { play('click', { v: 0.7, rate: 1.4 }) || tone({ type: 'square', f: 1750, t: 0.06, v: 0.12 }); },
     explosion() {
+      if (play('boom', { v: 1, vary: 0.03 })) { play('crunch', { v: 0.8 }); return; }
       noise({ t: 1.2, v: 0.9, type: 'lowpass', f: 900, f2: 120 });
       tone({ type: 'sine', f: 90, f2: 30, t: 0.9, v: 0.9 });
-      noise({ t: 0.25, v: 0.5, type: 'highpass', f: 2500, at: later(0.02) });
     },
     clang() {
+      if (play('clang', { v: 1 })) return;
       noise({ t: 0.18, v: 0.45, type: 'bandpass', f: 4200, q: 6 });
       [1250, 1870, 2730].forEach((f, i) => tone({ type: 'square', f, t: 0.25, v: 0.06 / (i + 1) }));
     },
-    coin() { tone({ type: 'square', f: 1600, f2: 2000, t: 0.04, v: 0.05 }); },
+    coin() { play('coins', { v: 0.35, rate: 1.2 }) || tone({ type: 'square', f: 1600, f2: 2000, t: 0.04, v: 0.05 }); },
+    step(grass) { play(grass ? any('grass0', 'grass1') : any('step0', 'step1', 'step2', 'step3'), { v: grass ? 0.25 : 0.18, vary: 0.12 }); },
+    unsheathe() { play('draw', { v: 0.5 }); },
+    arm() { play('latch', { v: 0.8 }); },
   };
 
   // ---------- Music: stealthy minor groove, scheduled ahead ----------

@@ -3,7 +3,8 @@
 Jeu mobile d'infiltration en vue du dessus. Tu es un assassin armé d'un couteau :
 élimine tous les gardes sans entrer dans le faisceau de leur lampe torche.
 
-- **Déplacement** : touche le sol (ou glisse le doigt), un chemin pointillé s'affiche.
+- **Déplacement** : touche le sol (ou glisse le doigt). Une flèche orange suit le vrai trajet du héros :
+  elle contourne murs et obstacles, avec des virages arrondis.
 - **Élimination** : touche un garde, ton héros le traque et l'élimine par surprise.
 - **Ennemis qui montent en puissance** :
   voyous (pistolet) → gardes du corps → évadés armés (fusil) → **gardes à bouclier**
@@ -15,6 +16,10 @@ Jeu mobile d'infiltration en vue du dessus. Tu es un assassin armé d'un couteau
   Certains gardes patrouillent en binôme.
   Lampe torche avec halo, alerte « ! », hésitation « ? » après un bruit, bulles de discussion
   entre gardes, flèches rouges vers les ennemis hors écran.
+- **Gardes qui entendent** : le cri d'un garde éliminé, les coups de feu et les explosions s'entendent
+  à travers les murs. Les gardes proches hésitent, puis viennent vérifier en marchant plus vite ;
+  sur place, ils regardent à gauche et à droite et fouillent 1 ou 2 recoins avant de reprendre leur ronde.
+  Un garde qui repère le héros appelle ses voisins. Un garde bloqué recalcule son chemin.
 - **Pièges** : lasers rouges clignotants, mines de glace qui gèlent les gardes et, dès le niveau 12,
   **mines explosives** (rouges) : le héros les déclenche en passant dessus, puis doit fuir ;
   l'explosion tue les poursuivants, blesse le héros s'il est trop près et **détruit les murs**.
@@ -30,7 +35,9 @@ Jeu mobile d'infiltration en vue du dessus. Tu es un assassin armé d'un couteau
 - **10 héros** à débloquer (+Vitesse / +Vie), dont Kami, le héros KamTech.
 - **Héros détaillés** : visages, coiffures, tenues, couteaux de combat (lame dorée, de glace,
   rouge ou verte pour les héros premium).
-- **Sons et musique** synthétisés en direct (aucun fichier audio), vibrations, tremblement d'écran.
+- **Bruitages réels libres de droits (CC0)** : coup de couteau, impact, chute du corps, un tir différent
+  par arme (pistolet, mitraillette, fusil, fusil à pompe, canon), explosion, glace, bouclier, pas sur
+  béton ou dans l'herbe. Musique synthétisée en direct, vibrations, tremblement d'écran.
 - **Niveaux infinis**, 5 décors qui changent tous les 5 niveaux (intérieur carrelé à murs bleus,
   entrepôt, jardin à haies, béton, labo). Les premiers niveaux sont petits avec 2-3 gardes.
 - **Combat de boss tous les 10 niveaux** : « Le Colosse » au masque à gaz, plus grand, armé d'un
@@ -80,8 +87,8 @@ npm run verify-levels
 
 ## Léger par conception
 
-- Le jeu (`www/`) pèse **~95 Ko** police comprise : pas de moteur, pas de bibliothèque,
-  pas d'image ni de son embarqués, tout est dessiné et synthétisé par le code.
+- Le jeu (`www/`) pèse **~350 Ko** police et sons compris : pas de moteur, pas de bibliothèque,
+  pas d'image, tout est dessiné par le code ; 30 bruitages courts en MP3 mono (~220 Ko).
 - Fonctionne **100 % hors ligne**, **aucune permission** demandée.
 - Build release optimisé (`minifyEnabled` + `shrinkResources`).
 - Publié en `.aab`, chaque téléphone ne télécharge que les ressources de sa taille d'écran
@@ -138,3 +145,9 @@ Les fichiers `.jks` sont exclus de Git (`.gitignore`) : ne publie jamais ta clé
 ## Crédits
 
 Police Lilita One par Juan Montoreano, licence SIL Open Font License (`www/fonts/OFL.txt`).
+
+Bruitages (`www/sfx/`), tous dans le domaine public (CC0), raccourcis et convertis en MP3 mono :
+
+- Kenney (www.kenney.nl) : packs *RPG Audio*, *Impact Sounds*, *Sci-fi Sounds*, *Interface Sounds*.
+- *The Free Firearm Sound Library* (freefirearmsfx.com, via OpenGameArt) : tirs de pistolet,
+  mitraillette, fusil d'assaut, fusil à pompe et fusil lourd.

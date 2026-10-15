@@ -8,7 +8,7 @@
   const levelHeight = n => (n <= 3 ? 13 + n * 2 : 19 + Math.min(Math.floor((n - 1) / 3), 11));
   const SAVE_KEY = 'kamtech-shadowstrike-save-v2';
   const HP_DISPLAY = 10; // health is shown x10 (a base hero has 1000)
-  const BASE_SPEED = 3.6, BASE_HP = 100, PLAYER_R = 0.3, CHAR_SCALE = 1.3;
+  const BASE_SPEED = 4.9, BASE_HP = 100, PLAYER_R = 0.3, CHAR_SCALE = 1.3;
   // Difficulty ceilings: levels get harder but always stay winnable.
   const MAX_RANGE = 4.2;         // flashlight reach (tiles)
   const MAX_GUARD_SPEED = 1.8;   // always well below the slowest hero (3.6)
@@ -522,7 +522,9 @@
     const moving = p.frozen <= 0 && p.path && p.pi < p.path.length;
     if (p.frozen <= 0) followPath(p, p.speed, dt);
     if (moving) {
+      const ph = Math.floor(p.walk / Math.PI);
       p.walk += dt * 14;
+      if (Math.floor(p.walk / Math.PI) !== ph) sfx.step(inGrass(p));
       p.dust -= dt;
       if (p.dust <= 0) {
         p.dust = 0.11;
@@ -585,9 +587,75 @@
     if (Math.hypot(gd.x - ox, gd.y - oy) > 0.001) gd.walk += dt * 10;
   }
 
+  // Guards hear noises (a buddy being stabbed, gunfire, explosions) through walls and come to check,
+  // walking a bit faster than on patrol. Guards that can see the spot react sooner.
+  function makeNoise(x, y, radius, hesitation, except) {
+    let heard = false;
+    for (const o of guards) {
+      if (o === except || !o.alive || o.frozen > 0 || o.stun > 0 || o.state === 'alert') continue;
+      const d = Math.hypot(o.x - x, o.y - y);
+      if (d > radius) continue;
+      if (!findPath(o, Math.floor(x), Math.floor(y))) continue;
+      const sees = sightLine(o, { x, y });
+      o.state = 'suspect'; o.qT = 1.4; o.searchN = 0;
+      o.timer = (sees ? hesitation * 0.6 : hesitation) + Math.random() * 0.25;
+      o.lastSeen = { x, y };
+      heard = true;
+    }
+    if (heard) sfx.suspect();
+  }
+
+  function nearestRouteIndex(gd) {
+    let bi = 0, bd = Infinity;
+    gd.route.forEach((q, i) => { const d = Math.hypot(q.x - gd.x, q.y - gd.y); if (d < bd) { bd = d; bi = i; } });
+    return bi;
+  }
+  function goBackToRoute(gd) {
+    gd.follow = gd.follow != null && guards[gd.follow] && guards[gd.follow].alive ? gd.follow : null;
+    if (!gd.route.length) { gd.state = 'patrol'; return; }
+    gd.ri = nearestRouteIndex(gd);
+    const t = gd.route[gd.ri];
+    gd.state = 'return'; gd.path = findPath(gd, Math.floor(t.x), Math.floor(t.y)) || [t]; gd.pi = 0;
+  }
+  // walk to a point (several guards going to the same spot spread around it instead of piling up)
+  function goTo(gd, x, y, speedMul, nextState) {
+    let tx = Math.floor(x), ty = Math.floor(y);
+    const taken = guards.some(o => o !== gd && o.alive && o.goal && o.goal.x === tx && o.goal.y === ty);
+    if (taken || isWallTile(tx, ty)) {
+      const opts = [];
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const cx = tx + dx, cy = ty + dy;
+        if ((dx || dy) && !isWallTile(cx, cy) && !guards.some(o => o !== gd && o.alive && o.goal && o.goal.x === cx && o.goal.y === cy)) opts.push({ x: cx, y: cy });
+      }
+      if (opts.length) { const o = opts[Math.floor(Math.random() * opts.length)]; tx = o.x; ty = o.y; }
+    }
+    const path = findPath(gd, tx, ty);
+    if (!path) { gd.goal = null; goBackToRoute(gd); return; }
+    gd.goal = { x: tx, y: ty }; gd.path = path; gd.pi = 0; gd.moveMul = speedMul; gd.state = nextState;
+  }
+  // after reaching the spot: look left and right, then check one or two nearby corners before giving up
+  function nextSearchSpot(gd) {
+    const c = gd.lastSeen || gd, opts = [];
+    for (let y = Math.floor(c.y) - 3; y <= Math.floor(c.y) + 3; y++) for (let x = Math.floor(c.x) - 3; x <= Math.floor(c.x) + 3; x++) {
+      if (isWallTile(x, y)) continue;
+      const d = Math.hypot(x + 0.5 - gd.x, y + 0.5 - gd.y);
+      if (d > 1.4 && d < 3.6) opts.push({ x, y });
+    }
+    for (let k = 0; k < 6 && opts.length; k++) {
+      const o = opts.splice(Math.floor(Math.random() * opts.length), 1)[0];
+      const path = findPath(gd, o.x, o.y);
+      if (path && path.length <= 5) { gd.goal = o; gd.path = path; gd.pi = 0; gd.moveMul = 1.15; gd.state = 'search'; return true; }
+    }
+    return false;
+  }
+
   function stepGuard(gd, dt) {
     if (state === 'playing' && canSee(gd, player)) {
-      if (gd.state !== 'alert') { gd.state = 'alert'; gd.reaction = gd.reactTime; gd.alertT = 1.2; sfx.alert(); player.spotted = true; }
+      if (gd.state !== 'alert') {
+        gd.state = 'alert'; gd.reaction = gd.reactTime; gd.alertT = 1.2; sfx.alert(); player.spotted = true;
+        // he shouts: nearby guards come to help
+        makeNoise(player.x, player.y, 3.6, 0.6, gd);
+      }
       gd.lastSeen = { x: player.x, y: player.y };
       turnTo(gd, Math.atan2(player.y - gd.y, player.x - gd.x), dt * 10);
       gd.reaction -= dt; gd.cooldown -= dt;
@@ -595,29 +663,31 @@
       return;
     }
     if (gd.state === 'alert') {
-      gd.state = 'search';
+      // lost sight of the hero: run to where he was last seen
       if (!gd.lastSeen) gd.lastSeen = { x: gd.x, y: gd.y };
-      gd.path = findPath(gd, Math.floor(gd.lastSeen.x), Math.floor(gd.lastSeen.y)) || [];
-      gd.pi = 0;
+      gd.searchN = 0;
+      goTo(gd, gd.lastSeen.x, gd.lastSeen.y, 1.4, 'search');
+      if (gd.state !== 'search') return;
     }
     if (gd.state === 'suspect') {
-      turnTo(gd, Math.atan2(gd.lastSeen.y - gd.y, gd.lastSeen.x - gd.x), dt * 3);
+      if (!gd.lastSeen) { goBackToRoute(gd); return; }
+      turnTo(gd, Math.atan2(gd.lastSeen.y - gd.y, gd.lastSeen.x - gd.x), dt * 4);
       gd.timer -= dt;
-      if (gd.timer <= 0) {
-        gd.state = 'search';
-        gd.path = findPath(gd, Math.floor(gd.lastSeen.x), Math.floor(gd.lastSeen.y)) || []; gd.pi = 0;
-      }
+      if (gd.timer <= 0) goTo(gd, gd.lastSeen.x, gd.lastSeen.y, 1.3, 'search');
       return;
     }
     if (gd.state === 'search') {
-      if (followPath(gd, gd.speed * 1.25, dt)) { gd.state = 'look'; gd.timer = 1.6; }
+      if (followPath(gd, gd.speed * (gd.moveMul || 1.25), dt)) {
+        gd.state = 'look'; gd.timer = 1.3; gd.lookBase = gd.angle; gd.lookT = 0;
+      }
       return;
     }
     if (gd.state === 'look') {
-      gd.timer -= dt; gd.angle += dt * 2.4;
+      gd.timer -= dt; gd.lookT += dt;
+      gd.angle = gd.lookBase + Math.sin(gd.lookT * 3.2) * 1.2;
       if (gd.timer <= 0) {
-        const t = gd.route[gd.ri] || gd;
-        gd.state = 'return'; gd.path = findPath(gd, Math.floor(t.x), Math.floor(t.y)) || []; gd.pi = 0;
+        gd.searchN = (gd.searchN || 0) + 1;
+        if (gd.searchN > 2 || !nextSearchSpot(gd)) { gd.goal = null; goBackToRoute(gd); }
       }
       return;
     }
@@ -626,14 +696,55 @@
       return;
     }
     const leader = gd.follow != null ? guards[gd.follow] : null;
-    if (leader && leader.alive && leader.state === 'patrol' && leader.frozen <= 0) {
-      const t = { x: leader.x - Math.cos(leader.angle) * 0.9, y: leader.y - Math.sin(leader.angle) * 0.9 };
-      if (Math.hypot(t.x - gd.x, t.y - gd.y) > 0.15 && !isWallAt(t.x, t.y)) moveTo(gd, t, gd.speed * 1.1, dt);
-      else turnTo(gd, leader.angle, dt * 4);
-      gd.ri = leader.ri;
-      return;
+    if (leader && leader.alive && leader.frozen <= 0) {
+      if (leader.state === 'patrol') {
+        const t = { x: leader.x - Math.cos(leader.angle) * 0.9, y: leader.y - Math.sin(leader.angle) * 0.9 };
+        if (Math.hypot(t.x - gd.x, t.y - gd.y) > 0.15 && !isWallAt(t.x, t.y) && clearLine(gd, t, 0.1)) moveTo(gd, t, gd.speed * 1.1, dt);
+        else if (Math.hypot(leader.x - gd.x, leader.y - gd.y) > 1.6) { goTo(gd, leader.x, leader.y, 1.2, 'return'); return; }
+        else turnTo(gd, leader.angle, dt * 4);
+        gd.ri = leader.ri;
+        return;
+      }
+      // the leader is checking something out: his partner goes with him
+      if (leader.lastSeen && (leader.state === 'suspect' || leader.state === 'search' || leader.state === 'look')) {
+        gd.lastSeen = { ...leader.lastSeen }; gd.state = 'suspect'; gd.timer = 0.3; gd.searchN = 0; return;
+      }
     }
-    if (gd.route.length && moveTo(gd, gd.route[gd.ri], gd.speed, dt)) gd.ri = (gd.ri + 1) % gd.route.length;
+    if (!gd.route.length) return;
+    // lost the route (pushed away, leader gone): walk back along a real path instead of through walls
+    if (!clearLine(gd, gd.route[gd.ri], 0.1)) { goBackToRoute(gd); return; }
+    if (moveTo(gd, gd.route[gd.ri], gd.speed, dt)) gd.ri = (gd.ri + 1) % gd.route.length;
+  }
+
+  // Guards never stand inside each other; a guard that stops moving for too long picks a new path.
+  function separateGuards(dt) {
+    const live = guards.filter(g => g.alive && g.frozen <= 0 && g.stun <= 0);
+    // only guards standing still (looking around, hesitating) are spread apart: pushing walking guards
+    // could keep two of them from ever reaching the same waypoint
+    const idle = g => g.state === 'look' || g.state === 'suspect';
+    for (let i = 0; i < live.length; i++) for (let j = i + 1; j < live.length; j++) {
+      const a = live[i], b = live[j];
+      if (!idle(a) || !idle(b)) continue;
+      const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
+      if (d >= 0.5 || d < 1e-4) continue;
+      const push = (0.5 - d) / 2, ux = dx / d * push, uy = dy / d * push;
+      if (!isWallAt(a.x - ux, a.y - uy)) { a.x -= ux; a.y -= uy; }
+      if (!isWallAt(b.x + ux, b.y + uy)) { b.x += ux; b.y += uy; }
+    }
+    for (const g of live) {
+      const busy = g.state === 'search' || g.state === 'return' || (g.state === 'patrol' && g.follow == null && g.route.length);
+      if (!busy) { g.stuckT = 0; g.stuckAt = { x: g.x, y: g.y }; continue; }
+      if (!g.stuckAt || Math.hypot(g.x - g.stuckAt.x, g.y - g.stuckAt.y) > 0.25) { g.stuckAt = { x: g.x, y: g.y }; g.stuckT = 0; continue; }
+      g.stuckT = (g.stuckT || 0) + dt;
+      if (g.stuckT > 1.5) {
+        g.stuckT = 0; g.goal = null; goBackToRoute(g);
+        // still blocked on the same waypoint: skip to the next one
+        if (g.route.length > 1 && Math.hypot(g.route[g.ri].x - g.x, g.route[g.ri].y - g.y) < 0.6) {
+          g.ri = (g.ri + 1) % g.route.length; const t = g.route[g.ri];
+          g.path = findPath(g, Math.floor(t.x), Math.floor(t.y)) || [t]; g.pi = 0;
+        }
+      }
+    }
   }
 
   function gunTip(gd) {
@@ -657,7 +768,7 @@
       const a = gd.angle + (Math.random() - 0.5) * 0.8, v = 3 + Math.random() * 3;
       fx.parts.push({ x: tip.x, y: tip.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0.15, max: 0.15, r: 0.03, c: '#ffe27a' });
     }
-    sfx.shot();
+    sfx.shot(gd.weapon, Math.hypot(gd.x - player.x, gd.y - player.y));
     damage(gd.damage);
   }
 
@@ -723,14 +834,8 @@
     fx.texts.push({ x: gd.x, y: gd.y - 0.4, text: '+' + gain, color: '#7dff5a', t: 1.1, max: 1.1, big: true });
     shake = Math.max(shake, 0.15);
     vibrate(30);
-    for (const o of guards) {
-      if (!o.alive || o.frozen > 0 || o.state !== 'patrol') continue;
-      // only guards that could see the spot get suspicious, and they hesitate before checking it
-      if (Math.hypot(o.x - gd.x, o.y - gd.y) < 2.6 && sightLine(o, gd)) {
-        o.state = 'suspect'; o.timer = 0.8; o.qT = 1.2;
-        o.lastSeen = { x: gd.x, y: gd.y };
-      }
-    }
+    // the victim's cry: guards nearby hear it and come to look (frozen victims shatter silently)
+    if (!wasFrozen || byBlast) makeNoise(gd.x, gd.y, gd.boss ? 4.5 : 3.3, 0.7);
     if (guards.every(g => !g.alive)) finish(true);
   }
 
@@ -773,7 +878,7 @@
     for (const b of bombs) {
       if (b.state === 'armed') {
         // only the hero sets it off; the short fuse lets him run while his pursuers get caught
-        if (state === 'playing' && Math.hypot(player.x - b.x, player.y - b.y) < 0.45) { b.state = 'fuse'; b.fuse = 0.7; sfx.beep(); }
+        if (state === 'playing' && Math.hypot(player.x - b.x, player.y - b.y) < 0.45) { b.state = 'fuse'; b.fuse = 0.7; sfx.arm(); sfx.beep(); }
       } else if (b.state === 'fuse') {
         const before = b.fuse;
         b.fuse -= dt;
@@ -787,6 +892,7 @@
     b.state = 'done';
     const R = 1.9;
     sfx.explosion(); vibrate(150);
+    makeNoise(b.x, b.y, 5, 0.4);
     shake = Math.max(shake, 0.55);
     fx.fireballs.push({ x: b.x, y: b.y, t: 0, max: 0.45, r: R });
     for (let i = 0; i < 16; i++) {
@@ -918,6 +1024,7 @@
     if (state === 'playing') updatePlayer(dt);
     if (state === 'playing' || state === 'won' || state === 'lost') {
       for (const gd of guards) updateGuard(gd, dt);
+      separateGuards(dt);
       updateBombs(dt);
       updateMines(dt);
       updateChatter(dt);
@@ -1029,30 +1136,46 @@
     }
   }
 
-  // Orange curved arrow along the planned route.
+  // Orange arrow that follows the real route around walls and obstacles, with rounded corners.
   function drawPathLine() {
     const p = player;
-    let pts;
-    if (p.chase && p.chase.alive) pts = [{ x: p.x, y: p.y }, { x: p.chase.x, y: p.chase.y }];
-    else if (p.path && p.pi < p.path.length) pts = [{ x: p.x, y: p.y }, ...p.path.slice(p.pi)];
-    else return;
+    if (!p.path || p.pi >= p.path.length) return;
+    let pts = [{ x: p.x, y: p.y }, ...p.path.slice(p.pi)];
+    if (p.chase && p.chase.alive) {
+      // the path ends on the target's tile: finish on the target itself, stopping just short of it
+      pts[pts.length - 1] = { x: p.chase.x, y: p.chase.y };
+      const a = pts[pts.length - 2], z = pts[pts.length - 1], d = Math.hypot(z.x - a.x, z.y - a.y);
+      if (d > 0.7) pts[pts.length - 1] = { x: z.x - (z.x - a.x) / d * 0.6, y: z.y - (z.y - a.y) / d * 0.6 };
+      else pts.pop();
+    }
+    // drop points closer than a few centimetres (they would make tiny wobbles)
+    pts = pts.filter((q, i) => i === 0 || Math.hypot(q.x - pts[i - 1].x, q.y - pts[i - 1].y) > 0.05);
+    if (pts.length < 2) return;
     const last = pts[pts.length - 1], prev = pts[pts.length - 2];
+    const total = pts.reduce((acc, q, i) => i ? acc + Math.hypot(q.x - pts[i - 1].x, q.y - pts[i - 1].y) : 0, 0);
+    if (total < 0.4) return;
     const ang = Math.atan2(last.y - prev.y, last.x - prev.x);
-    const end = p.chase ? { x: last.x - Math.cos(ang) * 0.75, y: last.y - Math.sin(ang) * 0.75 } : last;
-    if (Math.hypot(end.x - p.x, end.y - p.y) < 0.4) return;
+    // leave room for the arrow head
+    const end = { x: last.x - Math.cos(ang) * 0.12, y: last.y - Math.sin(ang) * 0.12 };
     const trace = () => {
       ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
       for (let i = 1; i < pts.length - 1; i++) {
-        const mx = (pts[i].x + pts[i + 1].x) / 2, my = (pts[i].y + pts[i + 1].y) / 2;
-        ctx.quadraticCurveTo(pts[i].x, pts[i].y, i === pts.length - 2 ? end.x : mx, i === pts.length - 2 ? end.y : my);
+        const a = pts[i - 1], c = pts[i], n = pts[i + 1];
+        const r = Math.min(0.55, Math.hypot(c.x - a.x, c.y - a.y) / 2, Math.hypot(n.x - c.x, n.y - c.y) / 2);
+        ctx.arcTo(c.x, c.y, n.x, n.y, r);
       }
-      if (pts.length === 2) ctx.lineTo(end.x, end.y);
+      ctx.lineTo(end.x, end.y);
     };
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    trace(); ctx.strokeStyle = 'rgba(80,30,0,0.45)'; ctx.lineWidth = 0.16; ctx.stroke();
+    trace(); ctx.strokeStyle = 'rgba(80,30,0,0.45)'; ctx.lineWidth = 0.17; ctx.stroke();
     trace(); ctx.strokeStyle = '#ff8a1e'; ctx.lineWidth = 0.1; ctx.stroke();
-    ctx.save(); ctx.translate(end.x, end.y); ctx.rotate(ang);
-    ctx.beginPath(); ctx.moveTo(0.22, 0); ctx.lineTo(-0.1, -0.17); ctx.lineTo(-0.1, 0.17); ctx.closePath();
+    // moving dashes show the direction of travel
+    ctx.save();
+    trace(); ctx.setLineDash([0.12, 0.28]); ctx.lineDashOffset = -time * 1.6;
+    ctx.strokeStyle = 'rgba(255,236,190,0.9)'; ctx.lineWidth = 0.045; ctx.stroke();
+    ctx.restore();
+    ctx.save(); ctx.translate(last.x, last.y); ctx.rotate(ang);
+    ctx.beginPath(); ctx.moveTo(0.22, 0); ctx.lineTo(-0.12, -0.19); ctx.lineTo(-0.12, 0.19); ctx.closePath();
     ctx.fillStyle = '#ff8a1e'; ctx.fill(); ctx.lineWidth = 0.035; ctx.strokeStyle = 'rgba(80,30,0,0.6)'; ctx.stroke();
     ctx.restore();
   }
@@ -1387,7 +1510,7 @@
       hideTip();
       if (target) {
         player.chase = target; player.repath = 0; marker = null; lastTile = -1;
-        sfx.tap();
+        sfx.tap(); sfx.unsheathe();
         return;
       }
       sfx.tap();
