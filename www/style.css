@@ -198,3 +198,5 @@ footer { color: rgba(255,255,255,.45); font-size: 13px; letter-spacing: .1em; }
 #menu { gap: 12px; justify-content: flex-start; }
 #menu .btn.big { padding: 12px 18px 10px; }
 .mission { padding: 6px 10px; }
+
+.keys { margin-left: 8px; font-size: 16px; color: #ffd34d; }

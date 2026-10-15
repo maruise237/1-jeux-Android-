@@ -9,7 +9,10 @@ Jeu mobile d'infiltration en vue du dessus. Tu es un assassin armé d'un couteau
   voyous (pistolet) → gardes du corps → évadés armés (fusil) → **gardes à bouclier**
   (invincibles de face : prends-les de dos ou gèle-les) → soldats → colosses blindés
   (fusil à pompe, gros dégâts mais lents) → commandos d'élite.
-  Tous les 10 niveaux, leurs armes s'améliorent (renforcées → visée laser → armes en or).
+  Arsenal tenu à deux mains : pistolet, mitraillette, fusil d'assaut, fusil à pompe, fusil à énergie,
+  canon lourd en T. Tous les 10 niveaux, l'équipement progresse : lampe tactique, puis lunette et
+  visée laser, puis armes en or. Les gardes à bouclier sont armés et tirent si on les heurte de face.
+  Certains gardes patrouillent en binôme.
   Lampe torche avec halo, alerte « ! », hésitation « ? » après un bruit, bulles de discussion
   entre gardes, flèches rouges vers les ennemis hors écran.
 - **Pièges** : lasers rouges clignotants, mines de glace qui gèlent les gardes et, dès le niveau 12,

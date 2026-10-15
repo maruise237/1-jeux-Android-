@@ -111,6 +111,11 @@ window.KT = window.KT || {};
         g.beginPath(); g.moveTo(-0.2, -0.42); g.lineTo(-0.2, 0.42); g.stroke();
         g.fillStyle = '#c9a24a'; g.fillRect(-0.225, -0.04, 0.05, 0.08);
         break;
+      case 'camo':
+        for (const [x, y, r, k] of [[-0.15, -0.2, 0.09, 0], [0.05, 0.15, 0.1, 1], [-0.05, -0.02, 0.07, 2], [0.12, -0.22, 0.06, 1], [-0.2, 0.22, 0.08, 2]]) {
+          ellipse(g, x, y, r * 1.3, r); g.fillStyle = [shade(c.outfit, -0.3), shade(c.outfit, 0.18), '#4a3f2a'][k]; g.fill();
+        }
+        break;
       case 'cape':
         g.fillStyle = c.accent;
         rrect(g, -0.04, -0.06, 0.32, 0.12, 0.03); g.fill();
@@ -138,6 +143,14 @@ window.KT = window.KT || {};
     g.beginPath(); g.moveTo(sh.x, sh.y); g.lineTo(el.x, el.y); g.stroke();
     g.strokeStyle = c.sleeve === 'short' ? c.skin : shade(sleeve, -0.02); g.lineWidth = 0.115;
     g.beginPath(); g.moveTo(el.x, el.y); g.lineTo(hand.x, hand.y); g.stroke();
+    if (c.sleeve === 'short' || c.sleeve === 'none') {
+      g.strokeStyle = 'rgba(255,255,255,0.22)'; g.lineWidth = 0.035;
+      g.beginPath(); g.moveTo(el.x + (hand.x - el.x) * 0.15, el.y + (hand.y - el.y) * 0.15 - side * 0.02); g.lineTo(el.x + (hand.x - el.x) * 0.6, el.y + (hand.y - el.y) * 0.6 - side * 0.02); g.stroke();
+    }
+    if (c.sleeve === 'none') {
+      g.strokeStyle = c.skin; g.lineWidth = 0.13;
+      g.beginPath(); g.moveTo(sh.x, sh.y); g.lineTo(el.x, el.y); g.stroke();
+    }
     if (c.sleeve === 'short') {
       g.strokeStyle = shade(sleeve, -0.25); g.lineWidth = 0.14;
       g.beginPath(); g.moveTo(el.x - (el.x - sh.x) * 0.12, el.y - (el.y - sh.y) * 0.12); g.lineTo(el.x, el.y); g.stroke();
@@ -176,7 +189,28 @@ window.KT = window.KT || {};
     venom: ['#eafff3', '#53dc9a', '#16603f'],
   };
   // Combat knife held in the fist: pommel behind, guard in front, clip-point blade forward.
+  // Futuristic kunai: diamond blade with a glowing core, ring pommel.
+  function drawKunai(g, c, h) {
+    g.save(); g.translate(h.x, h.y);
+    circle(g, -0.17, 0, 0.055); g.lineWidth = 0.03; g.strokeStyle = OUT; g.stroke();
+    g.strokeStyle = '#9aa6b8'; g.lineWidth = 0.018; g.stroke();
+    rrect(g, -0.13, -0.035, 0.22, 0.07, 0.02); fs(g, '#2a2c34', 0.025);
+    g.strokeStyle = '#c0392b'; g.lineWidth = 0.015; g.beginPath();
+    for (let x = -0.1; x < 0.08; x += 0.03) { g.moveTo(x, -0.035); g.lineTo(x + 0.015, 0.035); } g.stroke();
+    g.beginPath(); g.moveTo(0.08, 0); g.lineTo(0.24, -0.11); g.lineTo(0.62, 0); g.lineTo(0.24, 0.11); g.closePath();
+    fs(g, lin(g, 0.1, -0.11, 0.1, 0.11, [[0, '#f2f7ff'], [0.5, '#a9c4e8'], [1, '#4f6f9e']]), 0.028);
+    g.strokeStyle = 'rgba(255,255,255,0.85)'; g.lineWidth = 0.013;
+    g.beginPath(); g.moveTo(0.14, 0); g.lineTo(0.58, 0); g.stroke();
+    const glow = c.core || '#ff4fa3';
+    const gr = g.createRadialGradient(0.24, 0, 0, 0.24, 0, 0.09);
+    gr.addColorStop(0, '#ffffff'); gr.addColorStop(0.35, glow); gr.addColorStop(1, 'rgba(255,79,163,0)');
+    g.fillStyle = gr; circle(g, 0.24, 0, 0.09); g.fill();
+    circle(g, 0.24, 0, 0.035); fs(g, glow, 0.015);
+    g.restore();
+  }
+
   function drawKnife(g, c, h) {
+    if (c.blade === 'kunai') return drawKunai(g, c, h);
     const [hi, mid, lo] = BLADES[c.blade || 'steel'];
     g.save(); g.translate(h.x, h.y);
     rrect(g, -0.15, -0.042, 0.26, 0.084, 0.03);
@@ -207,34 +241,117 @@ window.KT = window.KT || {};
     g.restore();
   }
 
-  function drawPistol(g, c, h) {
-    g.save(); g.translate(h.x, h.y);
-    const col = c.gun || '#4b4f5c';
-    rrect(g, -0.04, -0.045, 0.34, 0.09, 0.02);
-    fs(g, lin(g, 0, -0.045, 0, 0.045, [[0, shade(col, 0.35)], [1, shade(col, -0.3)]]), 0.03);
-    g.fillStyle = shade(col, -0.45); g.fillRect(0.28, -0.02, 0.04, 0.04);
-    g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(0.0, -0.03, 0.24, 0.015);
+  // ---------- Weapons ----------
+  // Long guns are held two-handed, diagonally across the chest: stock at the right shoulder,
+  // muzzle forward-left. Geometry is shared with the game (muzzle position for shots/lasers).
+  const GUNS = {
+    rifle:   { len: 1.02, ax: -0.12, ay: 0.27, grip: 0.38, fore: 0.7 },
+    smg:     { len: 0.78, ax: -0.02, ay: 0.24, grip: 0.3, fore: 0.55 },
+    shotgun: { len: 0.98, ax: -0.12, ay: 0.27, grip: 0.36, fore: 0.66 },
+    energy:  { len: 1.04, ax: -0.12, ay: 0.27, grip: 0.38, fore: 0.72 },
+    cannon:  { len: 0.95, ax: -0.1, ay: 0.26, grip: 0.36, fore: 0.66 },
+  };
+  const GUN_ANGLE = -0.3;
+  function gunPoint(kind, t, off = 0) {
+    const G = GUNS[kind], c = Math.cos(GUN_ANGLE), s = Math.sin(GUN_ANGLE);
+    return { x: G.ax + c * t - s * off, y: G.ay + s * t + c * off };
+  }
+  function muzzle(kind) {
+    if (kind === 'pistol') return { x: 0.78, y: 0.06 };
+    if (!GUNS[kind]) return { x: 0.6, y: 0.1 };
+    return gunPoint(kind, GUNS[kind].len + 0.04);
+  }
+
+  function metal(g, col) { return (y0, y1) => lin(g, 0, y0, 0, y1, [[0, shade(col, 0.35)], [0.5, col], [1, shade(col, -0.35)]]); }
+
+  function drawGunBody(g, c, kind) {
+    const G = GUNS[kind], L = G.len, tier = c.wtier || 0;
+    const steel = c.gun || '#3b3e47';
+    const furn = tier >= 3 ? '#e6b53a' : (c.furniture || (kind === 'shotgun' ? '#8a5a2b' : '#24262c'));
+    const m = metal(g, steel), f = metal(g, furn);
+    g.save(); g.translate(G.ax, G.ay); g.rotate(GUN_ANGLE);
+    g.lineJoin = 'round';
+    if (kind === 'cannon') {
+      // heavy T-shaped energy cannon with glowing coils
+      rrect(g, 0, -0.07, 0.3, 0.14, 0.04); fs(g, f(-0.07, 0.07), 0.03);
+      rrect(g, 0.26, -0.06, 0.58, 0.12, 0.03); fs(g, m(-0.06, 0.06), 0.03);
+      for (let x = 0.32; x < 0.8; x += 0.07) { rrect(g, x, -0.065, 0.04, 0.13, 0.01); fs(g, '#ff3b4f', 0.015); }
+      rrect(g, 0.82, -0.28, 0.1, 0.56, 0.04); fs(g, m(-0.28, 0.28), 0.035);
+      g.fillStyle = 'rgba(255,90,110,0.9)'; g.fillRect(0.9, -0.22, 0.03, 0.44);
+      g.restore(); return;
+    }
+    // stock
+    g.beginPath();
+    if (kind === 'smg') { g.moveTo(0, -0.03); g.lineTo(0.22, -0.03); g.lineTo(0.22, 0.03); g.lineTo(0, 0.03); }
+    else { g.moveTo(0, -0.07); g.lineTo(0.28, -0.05); g.lineTo(0.28, 0.05); g.lineTo(0, 0.08); }
+    g.closePath(); fs(g, f(-0.07, 0.08), 0.028);
+    // receiver
+    const rx = kind === 'smg' ? 0.2 : 0.26, rw = kind === 'smg' ? 0.26 : 0.32;
+    rrect(g, rx, -0.065, rw, 0.13, 0.025); fs(g, m(-0.065, 0.065), 0.03);
+    g.fillStyle = 'rgba(0,0,0,0.35)'; g.fillRect(rx + 0.08, -0.03, 0.1, 0.02);
+    // pistol grip + magazine (on the +y side)
+    rrect(g, rx + 0.1, 0.05, 0.06, 0.1, 0.02); fs(g, f(0.05, 0.15), 0.025);
+    g.beginPath();
+    if (kind === 'smg') { g.moveTo(rx + 0.18, 0.06); g.lineTo(rx + 0.24, 0.06); g.lineTo(rx + 0.24, 0.27); g.lineTo(rx + 0.18, 0.27); }
+    else if (kind === 'shotgun') { g.moveTo(rx, 0); }
+    else { g.moveTo(rx + 0.18, 0.06); g.lineTo(rx + 0.27, 0.06); g.quadraticCurveTo(rx + 0.31, 0.16, rx + 0.34, 0.24); g.lineTo(rx + 0.25, 0.26); g.quadraticCurveTo(rx + 0.22, 0.16, rx + 0.18, 0.06); }
+    g.closePath();
+    if (kind !== 'shotgun') fs(g, kind === 'energy' ? (c.glow || '#4fd2ff') : (c.mag || shade(steel, -0.2)), 0.025);
+    // handguard / pump
+    const hx = rx + rw - 0.01, hw = (kind === 'smg' ? 0.2 : 0.3);
+    if (kind === 'shotgun') {
+      rrect(g, hx, -0.05, 0.5, 0.05, 0.02); fs(g, m(-0.05, 0), 0.025);
+      rrect(g, hx, 0.0, 0.48, 0.045, 0.02); fs(g, m(0, 0.045), 0.025);
+      rrect(g, hx + 0.08, -0.06, 0.18, 0.13, 0.03); fs(g, f(-0.06, 0.07), 0.028);
+      g.strokeStyle = 'rgba(0,0,0,0.35)'; g.lineWidth = 0.012; g.beginPath();
+      for (let x = hx + 0.1; x < hx + 0.25; x += 0.03) { g.moveTo(x, -0.06); g.lineTo(x, 0.07); }
+      g.stroke();
+    } else {
+      rrect(g, hx, -0.055, hw, 0.11, 0.025); fs(g, kind === 'energy' ? m(-0.055, 0.055) : f(-0.055, 0.055), 0.028);
+      if (kind === 'energy') {
+        for (let x = hx + 0.03; x < hx + hw - 0.03; x += 0.06) { rrect(g, x, -0.04, 0.035, 0.08, 0.01); fs(g, c.glow || '#4fd2ff', 0.012); }
+      } else {
+        g.strokeStyle = 'rgba(0,0,0,0.4)'; g.lineWidth = 0.012; g.beginPath();
+        for (let x = hx + 0.03; x < hx + hw - 0.02; x += 0.035) { g.moveTo(x, -0.055); g.lineTo(x, -0.03); }
+        g.stroke();
+      }
+      // barrel + muzzle brake
+      rrect(g, hx + hw - 0.01, -0.025, L - (hx + hw) + 0.01, 0.05, 0.015); fs(g, m(-0.025, 0.025), 0.022);
+      rrect(g, L - 0.06, -0.035, 0.07, 0.07, 0.015); fs(g, '#1e2026', 0.02);
+    }
+    // tier attachments: tactical light, then scope + laser
+    if (tier >= 1 && kind !== 'smg') {
+      rrect(g, hx + 0.06, 0.055, 0.12, 0.05, 0.02); fs(g, '#2a2c33', 0.02);
+      g.fillStyle = '#fff6c2'; g.fillRect(hx + 0.17, 0.062, 0.015, 0.036);
+    }
+    if (tier >= 2 || c.scope) {
+      rrect(g, rx + 0.02, -0.12, 0.22, 0.07, 0.03); fs(g, m(-0.12, -0.05), 0.025);
+      circle(g, rx + 0.24, -0.085, 0.03); fs(g, '#5ee7ff', 0.015);
+    }
+    if (tier >= 3) { g.fillStyle = 'rgba(255,255,255,0.5)'; g.fillRect(0.04, -0.04, L * 0.6, 0.015); }
     g.restore();
   }
 
-  function drawLongGun(g, c, kind) {
-    const y = 0.09;
-    if (kind === 'shotgun') {
-      rrect(g, -0.02, y - 0.06, 0.26, 0.12, 0.04); fs(g, lin(g, 0, y - 0.06, 0, y + 0.06, [[0, '#a8743f'], [1, '#6b4523']]), 0.03);
-      rrect(g, 0.22, y - 0.045, 0.56, 0.09, 0.02); fs(g, lin(g, 0, y - 0.045, 0, y + 0.045, [[0, '#6c7180'], [1, '#2c2f38']]), 0.03);
-      rrect(g, 0.44, y - 0.06, 0.16, 0.12, 0.03); fs(g, '#7a4f2a', 0.03);
-      g.strokeStyle = '#4a2f18'; g.lineWidth = 0.012;
-      g.beginPath(); for (let x = 0.46; x < 0.6; x += 0.03) { g.moveTo(x, y - 0.06); g.lineTo(x, y + 0.06); } g.stroke();
-      return;
-    }
-    const col = c.gun || '#e0922f';
-    rrect(g, -0.04, y - 0.06, 0.24, 0.12, 0.04); fs(g, lin(g, 0, y - 0.06, 0, y + 0.06, [[0, '#3c3f4a'], [1, '#1f2128']]), 0.03);
-    rrect(g, 0.18, y - 0.055, 0.42, 0.11, 0.025); fs(g, lin(g, 0, y - 0.055, 0, y + 0.055, [[0, shade(col, 0.3)], [1, shade(col, -0.25)]]), 0.03);
-    rrect(g, 0.32, y + 0.04, 0.08, 0.12, 0.02); fs(g, '#2a2c34', 0.025);
-    rrect(g, 0.58, y - 0.025, 0.34, 0.05, 0.015); fs(g, '#3a3d48', 0.025);
-    rrect(g, 0.26, y - 0.1, 0.18, 0.06, 0.02); fs(g, '#2a2c34', 0.025);
-    circle(g, 0.44, y - 0.07, 0.025); g.fillStyle = '#5ee7ff'; g.fill();
-    g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(0.2, y - 0.035, 0.36, 0.015);
+  function drawPistol(g, c, h) {
+    g.save(); g.translate(h.x, h.y); g.rotate(-0.05);
+    const col = c.gun || '#3b3e47', tier = c.wtier || 0;
+    const m = metal(g, col);
+    rrect(g, -0.02, -0.05, 0.36, 0.1, 0.025); fs(g, m(-0.05, 0.05), 0.03);
+    g.fillStyle = 'rgba(0,0,0,0.35)';
+    for (let x = 0.02; x < 0.12; x += 0.025) g.fillRect(x, -0.05, 0.012, 0.1);
+    rrect(g, 0.32, -0.025, 0.06, 0.05, 0.01); fs(g, '#1e2026', 0.02);
+    if (tier >= 1) { rrect(g, 0.14, 0.05, 0.14, 0.05, 0.02); fs(g, '#2a2c33', 0.02); g.fillStyle = '#fff6c2'; g.fillRect(0.27, 0.058, 0.015, 0.034); }
+    if (tier >= 2) { circle(g, 0.06, -0.075, 0.03); fs(g, '#ff3b3b', 0.015); }
+    g.fillStyle = 'rgba(255,255,255,0.4)'; g.fillRect(0.02, -0.035, 0.28, 0.015);
+    g.restore();
+  }
+
+  function drawPack(g, c) {
+    rrect(g, -0.42, -0.24, 0.22, 0.48, 0.07);
+    fs(g, lin(g, -0.42, 0, -0.2, 0, [[0, shade(c.pack, -0.35)], [1, c.pack]]), 0.04);
+    rrect(g, -0.4, -0.16, 0.08, 0.32, 0.03); g.fillStyle = shade(c.pack, -0.2); g.fill();
+    g.strokeStyle = shade(c.pack, -0.45); g.lineWidth = 0.03;
+    g.beginPath(); g.moveTo(-0.22, -0.2); g.lineTo(0.02, -0.26); g.moveTo(-0.22, 0.2); g.lineTo(0.02, 0.26); g.stroke();
   }
 
   // Riot shield: a wide curved plate in front of the guard, with a viewing window.
@@ -475,8 +592,8 @@ window.KT = window.KT || {};
     let lh, rh;
     if (o.dead) { lh = { x: -0.02, y: -0.52 }; rh = { x: 0.12, y: 0.5 }; }
     else if (w === 'knife') { lh = { x: 0.22 - sw, y: -0.33 }; rh = { x: 0.3 + sw, y: 0.3 }; }
-    else if (w === 'pistol') { lh = { x: 0.4, y: 0.0 }; rh = { x: 0.44, y: 0.12 }; }
-    else { lh = { x: 0.5, y: 0.1 }; rh = { x: 0.16, y: 0.13 }; }
+    else if (w === 'pistol') { lh = { x: 0.4, y: 0.02 }; rh = { x: 0.42, y: 0.1 }; }
+    else if (GUNS[w]) { rh = gunPoint(w, GUNS[w].grip, 0.07); lh = gunPoint(w, GUNS[w].fore, 0.05); lh.y += sw; }
     if (o.attack) { rh = { x: 0.58, y: 0.1 }; lh = { x: 0.02, y: -0.38 }; }
     if (c.shield && !o.dead) { lh = { x: 0.34, y: -0.2 }; rh = { x: 0.3, y: 0.24 }; }
 
@@ -492,10 +609,11 @@ window.KT = window.KT || {};
       g.strokeStyle = shade(c.outfit, -0.45); g.lineWidth = 0.02;
       g.beginPath(); g.moveTo(-0.3, 0); g.lineTo(-0.44, 0); g.stroke();
     }
-    if (!o.dead && (w === 'rifle' || w === 'shotgun')) drawLongGun(g, c, w);
+    if (c.pack) drawPack(g, c);
     drawTorso(g, c);
     drawArm(g, c, { x: -0.02, y: -0.31 }, lh, -1);
     drawArm(g, c, { x: -0.02, y: 0.31 }, rh, 1);
+    if (!o.dead && GUNS[w]) drawGunBody(g, c, w);
     if (!o.dead && c.shield) drawShield(g, c);
     if (!o.dead && w === 'knife') drawKnife(g, c, rh);
     if (!o.dead && w === 'pistol') drawPistol(g, c, rh);
@@ -563,5 +681,5 @@ window.KT = window.KT || {};
     }
   }
 
-  Object.assign(art, { drawCharacter, drawPortrait, setResolution });
+  Object.assign(art, { drawCharacter, drawPortrait, setResolution, muzzle });
 })();
