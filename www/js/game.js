@@ -394,7 +394,7 @@
       const pspots = free.filter(c => c.d >= 3 && ![...mines, ...bombs].some(m => Math.floor(m.x) === c.x && Math.floor(m.y) === c.y));
       for (let q = 0, k = 2 + ri(2); q < k && pspots.length; q++) {
         const c = pspots.splice(ri(pspots.length), 1)[0];
-        pickups.push({ x: c.x + 0.5, y: c.y + 0.5, value: 5 });
+        pickups.push({ x: c.x + 0.5, y: c.y + 0.5, value: 6 + Math.floor(n / 4) });
       }
       let key = null;
       const kspots = pspots.filter(c => c.d >= 6);
@@ -416,7 +416,7 @@
   const calmMotion = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } })();
   const cam = { x: 0, y: 0 }, lead = { x: 0, y: 0 };
   let camKick = { x: 0, y: 0 };
-  const INTRO = 1.25;
+  const INTRO = 1.25, CRATE_R = 1.15;
   const resetFx = () => ({ parts: [], gems: [], texts: [], rings: [], tracers: [], ripples: [], slashes: [], smoke: [], fireballs: [] });
   fx = resetFx();
 
@@ -438,8 +438,6 @@
     const baseRange = Math.min(3.0 + n * 0.04, 3.8);
     const baseDmg = 16 + Math.min(n, 14);
     const tier = gearTier(n), G = GEAR[tier];
-    // time a guard needs to recognise the hero at full range (shorter on later levels)
-    const detectTime = Math.max(0.35, 0.7 - n * 0.008);
     guards = L.guards.map((def, gi) => {
       const T = GUARD_TYPES[def.type];
       const route = def.route;
@@ -449,7 +447,7 @@
         speed: gSpeed * (def.type === 'heavy' ? 0.85 : def.type === 'boss' ? 0.8 : 1), range: Math.min(baseRange * T.range * G.range, MAX_RANGE), half: T.half,
         damage: Math.min(Math.round(baseDmg * T.dmg * G.dmg * (def.type === 'heavy' && tier >= 2 ? 1.15 : 1)), (T.weapon === 'shotgun' || T.weapon === 'cannon') ? MAX_HIT_SHOTGUN : MAX_HIT), shield: !!T.shield, rate: T.rate, type: def.type, look: guardLook(def.type, tier), weapon: def.type === 'heavy' && tier >= 2 ? 'cannon' : T.weapon,
         reactTime: T.reaction, laser: !!(T.laser || (G.laser && T.weapon !== 'shotgun')),
-        frozen: 0, walk: 0, muzzle: 0, alertT: 0, qT: 0, deadT: 0, follow: def.follow, aware: 0, detect: detectTime,
+        frozen: 0, walk: 0, muzzle: 0, alertT: 0, qT: 0, deadT: 0, follow: def.follow,
         boss: def.type === 'boss', hp: def.type === 'boss' ? 3 + Math.floor(n / 30) : 1, stun: 0, scale: def.type === 'boss' ? 1.45 : 1,
       };
     });
@@ -577,14 +575,21 @@
       if (pk.taken) continue;
       // stand on the loot: a ring fills up, then it bursts open
       const before = pk.open;
-      if (Math.hypot(pk.x - p.x, pk.y - p.y) < 0.7) pk.open = Math.min(1, pk.open + dt / 0.45);
+      if (Math.hypot(pk.x - p.x, pk.y - p.y) < CRATE_R) pk.open = Math.min(1, pk.open + dt / 0.8);
       else pk.open = Math.max(0, pk.open - dt * 2);
       if (Math.floor(before * 5) < Math.floor(pk.open * 5) && pk.open < 1) sfx.fillTick(pk.open);
       if (pk.open >= 1) {
         pk.taken = true;
-        sfx.pickup(); vibrate(25);
-        fx.rings.push({ x: pk.x, y: pk.y, t: 0, max: 0.4, r: 1.0, c: '120,255,170', thin: true });
-        spawnGems(pk.x, pk.y, pk.value, 1.4);
+        sfx.crate(); vibrate(35);
+        shake = Math.max(shake, 0.12);
+        // the crate bursts: flash, a bright ring, planks and steel bits, then the diamonds spill out
+        fx.rings.push({ x: pk.x, y: pk.y, t: 0, max: 0.45, r: CRATE_R + 0.3, c: '120,255,170', thin: true });
+        fx.parts.push({ x: pk.x, y: pk.y, vx: 0, vy: 0, t: 0.12, max: 0.12, r: 0.6, c: 'rgba(255,255,255,0.9)' });
+        for (let i = 0; i < 12; i++) {
+          const a = Math.random() * Math.PI * 2, v = 2 + Math.random() * 3.5;
+          fx.parts.push({ x: pk.x, y: pk.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0.55, max: 0.55, r: 0.07 + Math.random() * 0.04, c: i % 3 ? '#3f6fd0' : '#c9d2e6', shard: true, rot: a });
+        }
+        spawnGems(pk.x, pk.y, pk.value, 1.15, 0.45);
       }
     }
     if (keyItem && !keyItem.taken && Math.hypot(keyItem.x - p.x, keyItem.y - p.y) < 0.55) {
@@ -626,7 +631,7 @@
     }
     if (gd.frozen > 0) {
       gd.frozen -= dt;
-      if (gd.frozen <= 0) { gd.state = 'look'; gd.timer = 0.8; }
+      if (gd.frozen <= 0) { gd.state = 'look'; gd.timer = 0.8; gd.lookBase = gd.angle; gd.lookT = 0; }
       return;
     }
     const ox = gd.x, oy = gd.y;
@@ -698,26 +703,11 @@
 
   function stepGuard(gd, dt) {
     const seen = state === 'playing' && canSee(gd, player);
-    // detection gauge: a guard needs a moment to recognise the hero (instant at point-blank range),
-    // which gives the player a fair chance to slip out of the light
-    if (seen && gd.state !== 'alert') {
-      const d = Math.hypot(player.x - gd.x, player.y - gd.y);
-      const fill = d < 0.9 ? 100 : 1 / (gd.detect * (0.35 + 0.65 * d / gd.range));
-      gd.aware = Math.min(1, gd.aware + dt * fill);
-      gd.lastSeen = { x: player.x, y: player.y };
-      if (gd.aware > 0.5) gd.preAim = (gd.preAim || 0) + dt;
-      if (gd.aware < 1) { turnTo(gd, Math.atan2(player.y - gd.y, player.x - gd.x), dt * 2.5); return; }
-    } else if (!seen && gd.aware > 0 && gd.state !== 'alert') {
-      // lost sight before being sure: he comes to check where he saw something
-      if (gd.aware > 0.3 && gd.lastSeen && (gd.state === 'patrol' || gd.state === 'return')) {
-        gd.state = 'suspect'; gd.timer = 0.4; gd.qT = 1.2; gd.searchN = 0; sfx.suspect();
-      }
-      gd.aware = Math.max(0, gd.aware - dt * 0.8);
-    }
     if (seen) {
-      gd.aware = 0;
       if (gd.state !== 'alert') {
-        gd.state = 'alert'; gd.reaction = Math.max(0.12, gd.reactTime - (gd.preAim || 0)); gd.preAim = 0; gd.alertT = 1.2; sfx.alert(); player.spotted = true;
+        // a guard who sees the hero reacts at once: short draw time, then he fires
+        const dd = Math.hypot(player.x - gd.x, player.y - gd.y);
+        gd.state = 'alert'; gd.reaction = Math.max(0.15, gd.reactTime * (0.5 + 0.45 * Math.min(1, dd / gd.range))); gd.alertT = 1.2; sfx.alert(); player.spotted = true;
         // he shouts: nearby guards come to help
         makeNoise(player.x, player.y, 3.6, 0.6, gd);
       }
@@ -1014,22 +1004,11 @@
     }
   }
 
-  // idle guards standing together chat with little emoticon bubbles
-  const CHAT = [':D', ':)', '8)', ':P', ';)', ':O'];
-  function updateChatter(dt) {
-    for (const gd of guards) {
-      gd.chatT = Math.max(0, (gd.chatT || 0) - dt);
-      if (!gd.alive || gd.frozen > 0 || gd.state !== 'patrol' || gd.chatT > 0) continue;
-      const mate = guards.find(o => o !== gd && o.alive && o.state === 'patrol' && Math.hypot(o.x - gd.x, o.y - gd.y) < 2.2);
-      if (mate && Math.random() < dt * 0.6) { gd.chat = CHAT[Math.floor(Math.random() * CHAT.length)]; gd.chatT = 1.6; }
-    }
-  }
-
   // gems pop out in a little fountain (they hop and bounce), then get pulled into the hero
-  function spawnGems(x, y, n, spread = 1) {
+  function spawnGems(x, y, n, spread = 1, hold = 0) {
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2, s = (1.6 + Math.random() * 3) * spread;
-      fx.gems.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, z: 0, vz: 3 + Math.random() * 2.5, t: -i * 0.012, rot: Math.random() * 6 });
+      fx.gems.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, z: 0, vz: 3 + Math.random() * 2.5, t: -i * 0.012, rot: Math.random() * 6, hold });
     }
   }
 
@@ -1081,14 +1060,14 @@
     for (const g of fx.gems) {
       g.t += dt; g.rot += dt * 6;
       if (g.t < 0) continue;
-      if (g.t < 0.5) {
+      if (g.t < 0.5 + (g.hold || 0)) {
         g.x += g.vx * dt; g.y += g.vy * dt; g.vx *= 0.88; g.vy *= 0.88;
         g.z += g.vz * dt; g.vz -= 22 * dt;
         if (g.z < 0) { g.z = 0; g.vz = Math.abs(g.vz) * 0.35; }
       } else {
         g.z *= Math.exp(-dt * 8);
         const dx = player.x - g.x, dy = player.y - g.y, d = Math.hypot(dx, dy);
-        const sp = 4 + (g.t - 0.5) * 24;
+        const sp = 4 + (g.t - 0.5 - (g.hold || 0)) * 24;
         if (d < 0.3 || d < sp * dt) {
           g.done = true; levelGems++;
           loot.n++; loot.t = 0; loot.pop = 1;
@@ -1137,7 +1116,6 @@
       separateGuards(dt);
       updateBombs(dt);
       updateMines(dt);
-      updateChatter(dt);
       updateFx(dt);
       updateHud();
     }
@@ -1529,24 +1507,13 @@
     for (const m of mines) if (m.state !== 'used') drawMine(m);
     for (const pk of pickups) {
       if (pk.taken) continue;
-      // a few loose diamonds lying on the floor, each catching the light in turn
-      ctx.fillStyle = 'rgba(0,0,0,0.22)'; art.ellipse(ctx, pk.x, pk.y + 0.16, 0.34, 0.1); ctx.fill();
-      // soft additive glow, so the diamonds shine through the dark
-      ctx.save(); ctx.globalCompositeOperation = 'lighter';
-      const glow = ctx.createRadialGradient(pk.x, pk.y, 0.02, pk.x, pk.y, 0.5);
-      glow.addColorStop(0, `rgba(90,200,255,${0.32 + Math.sin(time * 3 + pk.x) * 0.08})`); glow.addColorStop(1, 'rgba(90,200,255,0)');
-      ctx.fillStyle = glow; art.circle(ctx, pk.x, pk.y, 0.5); ctx.fill(); ctx.restore();
-      const bob = Math.sin(time * 2.4 + pk.x * 3) * 0.025;
-      const glint = i => Math.max(0, Math.sin(time * 2.2 + pk.y * 5 + i * 2.1) * 4 - 3);
-      art.drawGem(ctx, pk.x - 0.17, pk.y + 0.06, 0.1, 0.5, glint(1));
-      art.drawGem(ctx, pk.x + 0.17, pk.y + 0.08, 0.09, -0.4, glint(2));
-      art.drawGem(ctx, pk.x, pk.y - 0.04 + bob, 0.15, 0, glint(0));
+      // opening zone: a wide pale circle, filled from the centre while the hero stands in it
       if (pk.open > 0) {
-        ctx.fillStyle = 'rgba(255,255,255,0.12)'; art.circle(ctx, pk.x, pk.y, 0.9); ctx.fill();
-        ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 0.035; ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(pk.x, pk.y); ctx.arc(pk.x, pk.y, 0.9, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * pk.open); ctx.closePath();
-        ctx.fillStyle = 'rgba(90,240,150,0.45)'; ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.14)'; art.circle(ctx, pk.x, pk.y, CRATE_R); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 0.035; ctx.stroke();
+        ctx.fillStyle = 'rgba(80,235,140,0.55)'; art.circle(ctx, pk.x, pk.y, CRATE_R * pk.open); ctx.fill();
       }
+      art.drawLootCrate(ctx, pk.x, pk.y, time, pk.open, pk.x * 1.7 + pk.y);
     }
     if (keyItem && !keyItem.taken) {
       const kx = keyItem.x, ky = keyItem.y + Math.sin(time * 3) * 0.05;
@@ -1561,8 +1528,9 @@
     }
     // fallen guards fade away, leaving only the stain
     for (const gd of guards) {
-      if (gd.alive || gd.deadT > 0.7) continue;
-      art.drawCharacter(ctx, gd.look, gd.x, gd.y, gd.angle, { weapon: gd.weapon, dead: true, alpha: 1 - gd.deadT / 0.7, noShadow: true, scale: CHAR_SCALE });
+      if (gd.alive || gd.vanish) continue;
+      // bodies stay where they fell
+      art.drawCharacter(ctx, gd.look, gd.x, gd.y, gd.angle, { weapon: gd.weapon, dead: true, alpha: 0.92, noShadow: true, scale: CHAR_SCALE * gd.scale });
     }
 
     // darkness with flashlight cones cut out
@@ -1589,9 +1557,8 @@
     ctx.drawImage(vignette(canvas.width, canvas.height), 0, 0);
     worldTransform(ctx, sx, sy);
     for (const [gd, poly] of polys) {
-      // the light warms from white to orange while the guard is noticing the hero, red once alerted
-      const k = gd.aware;
-      const c = gd.state === 'alert' ? '255,90,80' : k > 0 ? `255,${Math.round(255 - 110 * k)},${Math.round(250 - 200 * k)}` : '255,255,250';
+      // white light while patrolling, red once alerted
+      const c = gd.state === 'alert' ? '255,90,80' : '255,255,250';
       const grad = ctx.createRadialGradient(gd.x, gd.y, 0.1, gd.x, gd.y, gd.range);
       grad.addColorStop(0, `rgba(${c},0.3)`); grad.addColorStop(0.7, `rgba(${c},0.2)`); grad.addColorStop(1, `rgba(${c},0.1)`);
       ctx.save();
@@ -1699,7 +1666,11 @@
     for (const g of fx.gems) {
       if (g.t < 0) continue;
       if (g.z > 0.03) { ctx.fillStyle = 'rgba(0,0,0,0.25)'; art.ellipse(ctx, g.x, g.y + 0.08, 0.1, 0.04); ctx.fill(); }
-      art.drawGem(ctx, g.x, g.y - g.z * 0.35, 0.14, g.rot, Math.max(0, Math.cos(g.rot) * 3 - 2));
+      // a small blue glow travels with each diamond
+      const gy = g.y - g.z * 0.35, gg = ctx.createRadialGradient(g.x, gy, 0.02, g.x, gy, 0.24);
+      gg.addColorStop(0, 'rgba(30,110,255,0.55)'); gg.addColorStop(1, 'rgba(30,110,255,0)');
+      ctx.fillStyle = gg; art.circle(ctx, g.x, gy, 0.24); ctx.fill();
+      art.drawGem(ctx, g.x, g.y - g.z * 0.35, 0.15, g.rot, Math.max(0, Math.cos(g.rot) * 3 - 1.8));
     }
     for (const f of fx.fireballs) {
       const k = f.t / f.max;
@@ -1716,18 +1687,6 @@
     }
 
     // screen-space overlays
-    for (const gd of guards) {
-      if (!gd.alive || gd.chatT <= 0 || gd.alertT > 0 || gd.qT > 0 || gd.aware > 0 || !gd.chat) continue;
-      const s2 = toScreen(gd.x + 0.35, gd.y - 0.75);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.globalAlpha = Math.min(1, gd.chatT * 3);
-      art.rrect(ctx, s2.x + sx - 17, s2.y + sy - 11, 34, 22, 9); ctx.fillStyle = '#ffffff'; ctx.fill();
-      ctx.lineWidth = 2; ctx.strokeStyle = '#1c1a2b'; ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(s2.x + sx - 8, s2.y + sy + 10); ctx.lineTo(s2.x + sx - 14, s2.y + sy + 18); ctx.lineTo(s2.x + sx - 1, s2.y + sy + 10); ctx.fillStyle = '#ffffff'; ctx.fill();
-      ctx.font = '15px "Lilita One", system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#1c1a2b'; ctx.fillText(gd.chat, s2.x + sx, s2.y + sy + 1);
-      ctx.globalAlpha = 1;
-    }
     for (const gd of guards) {
       if (!gd.alive || !gd.boss) continue;
       const s4 = toScreen(gd.x, gd.y - 1.05), maxHp = 3 + Math.floor(save.level / 30);
@@ -1758,22 +1717,8 @@
         ctx.restore();
       }
     }
-    // detection gauges: an eye that fills up above each guard that is noticing the hero
     for (const gd of guards) {
-      if (!gd.alive || gd.aware <= 0 || gd.state === 'alert') continue;
-      const s = toScreen(gd.x, gd.y - 0.95);
-      const x = s.x + sx, y = s.y + sy, r = 13, k = gd.aware;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.beginPath(); ctx.arc(x, y, r + 3, 0, Math.PI * 2); ctx.fillStyle = 'rgba(28,26,43,0.85)'; ctx.fill();
-      ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * k); ctx.closePath();
-      ctx.fillStyle = k < 0.6 ? '#ffc93c' : '#ff6a2a'; ctx.fill();
-      // eye pictogram
-      ctx.beginPath(); ctx.ellipse(x, y, 8, 5, 0, 0, Math.PI * 2); ctx.fillStyle = '#ffffff'; ctx.fill();
-      ctx.lineWidth = 1.5; ctx.strokeStyle = '#1c1a2b'; ctx.stroke();
-      ctx.beginPath(); ctx.arc(x, y, 2.6, 0, Math.PI * 2); ctx.fillStyle = '#1c1a2b'; ctx.fill();
-    }
-    for (const gd of guards) {
-      if (!gd.alive || (gd.alertT <= 0 && gd.qT <= 0) || (gd.aware > 0 && gd.state !== 'alert')) continue;
+      if (!gd.alive || (gd.alertT <= 0 && gd.qT <= 0)) continue;
       const s = toScreen(gd.x, gd.y - 0.9);
       const pop = Math.min(1, (gd.alertT > 0 ? 1.2 - gd.alertT : 1 - gd.qT) * 8);
       screenText(gd.alertT > 0 ? '!' : '?', s.x + sx, s.y + sy, 30 * pop, gd.alertT > 0 ? '#ff2a2a' : '#ff5a3d', { stroke: '#ffffff' });

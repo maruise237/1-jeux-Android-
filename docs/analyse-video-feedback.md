@@ -16,3 +16,12 @@ Référence : capture de 19 s d'un jeu du même genre, fournie par le client. El
 À vérifier en test sur téléphone :
 - la durée du remplissage du coffre (0,45 s) ;
 - le volume du souffle de l'intro.
+
+## Deuxième passe (retours du client)
+
+- **Bulles au-dessus des gardes** (émoticônes « :D ») : supprimées, elles n'existent pas dans la référence.
+- **Caisse de butin** : les diamants posés au sol sont remplacés par une petite caisse bleue cerclée d'or. Lumière qui filtre par la fente du couvercle, petit saut régulier pour attirer l'œil, halo chaud. Rester dans le grand cercle (1,15 case) le remplit depuis le centre en 0,8 s, pendant que la caisse tremble de plus en plus puis clignote en blanc. Ensuite : éclat, anneau vert, débris de planches et d'acier, diamants qui s'étalent légèrement, restent au sol un court instant, puis sont aspirés vers le héros. Contenu : 6 + niveau/4 diamants.
+- **Corps** : les gardes éliminés restent au sol, comme dans la référence.
+- **Réaction des gardes** : la jauge « œil » est supprimée. Un garde qui voit le héros passe en alerte tout de suite. Délai avant le tir : 50 % de son temps de réaction à bout portant, 95 % au bout de son champ de vision.
+- **Couleur des diamants** : bleu saphir profond au lieu du cyan pâle, avec un halo bleu qui les suit en vol.
+- **Bug corrigé** : un garde qui dégelait après une mine de glace pouvait obtenir une direction invalide et bloquer le jeu.

@@ -55,7 +55,7 @@ KT.art = (() => {
     const pts = [[0.55, 0], [0.38, 0.42], [-0.05, 0.56], [-0.45, 0.35], [-0.55, -0.05], [-0.3, -0.48], [0.15, -0.55], [0.48, -0.3]];
     g.beginPath(); pts.forEach(([px, py], i) => (i ? g.lineTo(px, py) : g.moveTo(px, py))); g.closePath();
     g.fillStyle = 'rgba(160,225,255,0.72)'; g.fill();
-    g.lineWidth = 0.05; g.strokeStyle = '#e9fbff'; g.stroke();
+    g.lineWidth = 0.05; g.strokeStyle = '#eef8ff'; g.stroke();
     g.strokeStyle = 'rgba(255,255,255,0.8)'; g.lineWidth = 0.04;
     g.beginPath(); g.moveTo(-0.3, -0.25); g.lineTo(-0.05, -0.38); g.stroke();
     g.beginPath(); g.moveTo(0.1, 0.25); g.lineTo(0.3, 0.1); g.stroke();
@@ -65,7 +65,7 @@ KT.art = (() => {
 
   // Brilliant-cut diamond seen slightly from above: crown facets on top, pavilion below.
   // `spin` turns it on itself (flying loot), `glint` (0..1) adds a star-shaped sparkle.
-  const GEM_LIGHT = ['#e9fbff', '#9fe6ff', '#5cc8ff', '#2f98e8', '#1a69c4', '#124f9c'];
+  const GEM_LIGHT = ['#eef8ff', '#6cc4ff', '#2b8cff', '#1360e6', '#0a3fb0', '#062a7a'];
   function drawGem(g, x, y, r, spin = 0, glint = 0) {
     g.save(); g.translate(x, y);
     const sx = Math.cos(spin), k = Math.max(0.28, Math.abs(sx));
@@ -92,7 +92,7 @@ KT.art = (() => {
     g.beginPath(); g.moveTo(girdle[0][0], girdle[0][1]); g.lineTo(girdle[4][0], girdle[4][1]); g.stroke();
     g.beginPath();
     g.moveTo(table[0][0] * 0.86, -0.7 * r); g.lineTo(-r, -0.18 * r); g.lineTo(0, 0.9 * r); g.lineTo(r, -0.18 * r); g.lineTo(table[3][0] * 0.86, -0.7 * r); g.closePath();
-    g.lineWidth = r * 0.16; g.strokeStyle = '#0d2f5c'; g.stroke();
+    g.lineWidth = r * 0.16; g.strokeStyle = '#031a4d'; g.stroke();
     // sparkle
     if (glint > 0) {
       g.scale(1 / k, 1);
@@ -102,6 +102,44 @@ KT.art = (() => {
       g.moveTo(cx, cy - s); g.quadraticCurveTo(cx, cy, cx + s, cy); g.quadraticCurveTo(cx, cy, cx, cy + s);
       g.quadraticCurveTo(cx, cy, cx - s, cy); g.quadraticCurveTo(cx, cy, cx, cy - s); g.fill();
     }
+    g.restore();
+  }
+
+  // Loot crate: a small steel-banded box hiding diamonds. Light leaks through its seams and it
+  // hops now and then to call the player. `charge` (0..1) makes it rattle harder before it bursts.
+  function drawLootCrate(g, x, y, time, charge = 0, seed = 0) {
+    const ph = (time * 0.8 + seed) % 2.6;
+    const hop = ph < 0.35 ? Math.sin(ph / 0.35 * Math.PI) : 0;
+    const shakeX = charge > 0 ? Math.sin(time * (40 + charge * 30)) * 0.035 * charge : 0;
+    const lift = hop * 0.12 + charge * 0.03;
+    const sq = 1 + (ph > 0.35 && ph < 0.5 ? Math.sin((ph - 0.35) / 0.15 * Math.PI) * 0.12 : 0) + charge * 0.06;
+    const w = 0.8, h = 0.68;
+    // warm halo so the crate reads even in the dark rooms
+    g.save(); g.globalCompositeOperation = 'lighter';
+    const halo = g.createRadialGradient(x, y, 0.05, x, y, 0.75);
+    halo.addColorStop(0, `rgba(255,210,90,${0.28 + 0.1 * Math.sin(time * 3 + seed) + charge * 0.2})`); halo.addColorStop(1, 'rgba(255,210,90,0)');
+    g.fillStyle = halo; circle(g, x, y, 0.75); g.fill(); g.restore();
+    // ground shadow shrinks while it is in the air
+    g.fillStyle = `rgba(0,0,0,${0.3 - hop * 0.12})`; ellipse(g, x, y + 0.32, w * 0.55 * (1 - hop * 0.2), 0.09); g.fill();
+    g.save(); g.translate(x + shakeX, y + 0.3 - lift); g.scale(sq, 2 - sq); g.translate(0, -0.3);
+    g.rotate(charge > 0 ? Math.sin(time * 33) * 0.06 * charge : 0);
+    // box body
+    rrect(g, -w / 2, -h / 2, w, h, 0.1); g.fillStyle = '#4a7de8'; g.fill();
+    g.lineWidth = 0.06; g.strokeStyle = OUT; g.stroke();
+    // front face, darker, for a bit of volume
+    rrect(g, -w / 2 + 0.03, 0.02, w - 0.06, h / 2 - 0.05, 0.05); g.fillStyle = '#2d55b0'; g.fill();
+    // lid seam glowing with the diamonds' light
+    const glow = 0.55 + Math.sin(time * 4 + seed) * 0.25 + charge * 0.4;
+    g.fillStyle = `rgba(150,235,255,${Math.min(1, glow)})`; g.fillRect(-w / 2 + 0.05, -0.02, w - 0.1, 0.045);
+    // steel bands and rivets
+    g.fillStyle = '#ffc93c';
+    g.fillRect(-w / 2 + 0.12, -h / 2 + 0.02, 0.1, h - 0.04); g.fillRect(w / 2 - 0.22, -h / 2 + 0.02, 0.1, h - 0.04);
+    g.fillStyle = '#b86f10';
+    for (const [rx, ry] of [[-w / 2 + 0.17, -0.22], [-w / 2 + 0.17, 0.21], [w / 2 - 0.17, -0.22], [w / 2 - 0.17, 0.21]]) { circle(g, rx, ry, 0.028); g.fill(); }
+    // diamond emblem on the lid
+    drawGem(g, 0, -0.16, 0.15, 0, Math.max(0, Math.sin(time * 2.2 + seed * 3) * 3 - 2));
+    // flashes white just before it bursts
+    if (charge > 0.75) { rrect(g, -w / 2, -h / 2, w, h, 0.1); g.fillStyle = `rgba(255,255,255,${(charge - 0.75) * 2.4 * (0.6 + 0.4 * Math.sin(time * 50))})`; g.fill(); }
     g.restore();
   }
 
@@ -429,5 +467,5 @@ KT.art = (() => {
     g.restore();
   }
 
-  return { drawIce, drawGem, renderMap, makeSplat, drawSplat, drawScorch, rrect, circle, ellipse, shade, greyLook, mulberry32, OUT };
+  return { drawIce, drawGem, drawLootCrate, renderMap, makeSplat, drawSplat, drawScorch, rrect, circle, ellipse, shade, greyLook, mulberry32, OUT };
 })();

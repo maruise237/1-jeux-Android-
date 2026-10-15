@@ -164,6 +164,13 @@ KT.audio = (() => {
     },
     // loot ring filling: short ticks that climb with the progress
     fillTick(k = 0) { tone({ type: 'triangle', f: 700 + k * 900, t: 0.05, v: 0.1 }); },
+    // crate bursting open: wood crunch, a pop, then a bright sparkle run
+    crate() {
+      play('crunch', { v: 0.5, rate: 1.5 }) || noise({ t: 0.15, v: 0.4, type: 'bandpass', f: 1200, q: 0.8 });
+      play('chest', { v: 0.6, rate: 1.2 });
+      tone({ type: 'sine', f: 180, f2: 60, t: 0.15, v: 0.4 });
+      [1047, 1319, 1568, 2093].forEach((f, i) => tone({ type: 'triangle', f, t: 0.12, v: 0.1, at: later(0.05 + i * 0.05) }));
+    },
     pickup() { play('chest', { v: 0.6, rate: 1.3 }); play('confirm', { v: 0.5 }); [880, 1175, 1568].forEach((f, i) => tone({ type: 'triangle', f, t: 0.12, v: 0.12, at: later(i * 0.06) })); },
     win() {
       play('levelup', { v: 0.5, at: later(0.5) });
