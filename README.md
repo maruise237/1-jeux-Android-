@@ -118,8 +118,8 @@ npm run android:open     # ouvre Android Studio
 
 Dans Android Studio : **Run ▶** pour tester sur ton téléphone (mode développeur + débogage USB activés).
 
-Pour changer l'icône : modifie `assets/icon.svg`, exporte-la en `assets/icon-only.png` (1024×1024),
-puis lance `npx @capacitor/assets generate --android`.
+L'icône est dessinée à partir du héros du jeu (vu de dessus, couteau levé, fond rouge) : `node tools/make-icon.mjs`
+recrée `assets/icon-only.png` et ses calques, puis lance `npx @capacitor/assets generate --android`.
 
 ## Signer l'APK au nom de KamTech (Play Store)
 

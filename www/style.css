@@ -9,8 +9,8 @@
   --yellow-d: #d98a12;
   --blue: #3d6bea;
   --blue-d: #2440a8;
-  --red: #e8344a;
-  --red-d: #9e1a2c;
+  --red: #ff2a3d;
+  --red-d: #a3001a;
   --gem: #45d4ff;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -67,7 +67,8 @@ button { font-family: inherit; color: inherit; border: 0; cursor: pointer; }
 .btn.big { font-size: 34px; padding: 16px 18px 14px; }
 .btn-yellow { background: linear-gradient(#ffe066, var(--yellow) 55%, #f5a623); box-shadow: 0 6px 0 var(--yellow-d), 0 9px 0 var(--ink); }
 .btn-blue { background: linear-gradient(#6f93ff, var(--blue)); box-shadow: 0 6px 0 var(--blue-d), 0 9px 0 var(--ink); }
-.btn-red { background: linear-gradient(#ff6276, var(--red)); box-shadow: 0 6px 0 var(--red-d), 0 9px 0 var(--ink); }
+.btn-play { background: linear-gradient(#ff8f8f, #ff5a5f 55%, #f0434d); box-shadow: 0 6px 0 #b8323a, 0 9px 0 var(--ink); }
+.btn-red { background: linear-gradient(#ff6a78, var(--red)); box-shadow: 0 6px 0 var(--red-d), 0 9px 0 var(--ink); }
 .btn::after { content: ''; position: absolute; left: 10px; right: 10px; top: 5px; height: 30%; border-radius: 12px; background: rgba(255,255,255,.25); pointer-events: none; }
 .btn:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--ink); }
 
@@ -83,10 +84,7 @@ button { font-family: inherit; color: inherit; border: 0; cursor: pointer; }
   position: fixed; inset: 0;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 16px; padding: calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 16px);
-  background:
-    radial-gradient(circle at 50% 38%, rgba(255,201,60,.18), transparent 45%),
-    repeating-linear-gradient(45deg, rgba(255,255,255,.025) 0 18px, transparent 18px 36px),
-    linear-gradient(#2a2d6b, #151733 70%);
+  background: #1f2250;
   text-align: center; overflow-y: auto;
 }
 .overlay.dim { background: rgba(10,12,28,.82); }
@@ -101,7 +99,7 @@ button { font-family: inherit; color: inherit; border: 0; cursor: pointer; }
   text-shadow: 0 5px 0 var(--ink), 3px 0 0 var(--ink), -3px 0 0 var(--ink), 0 -3px 0 var(--ink), 3px 3px 0 var(--ink), -3px 3px 0 var(--ink), 3px -3px 0 var(--ink), -3px -3px 0 var(--ink), 0 10px 0 rgba(0,0,0,.35);
 }
 .title span:first-child { color: #fff; }
-.title span:last-child { color: var(--yellow); }
+.title span:last-child { color: var(--red); }
 .hero-stage { position: relative; width: 170px; height: 150px; display: flex; align-items: center; justify-content: center; }
 .spot { position: absolute; inset: 20px; border-radius: 50%; background: radial-gradient(rgba(255,240,200,.45), transparent 70%); }
 #menu-hero { position: relative; animation: idle 2.4s ease-in-out infinite; }
@@ -192,7 +190,7 @@ button { font-family: inherit; color: inherit; border: 0; cursor: pointer; }
 @keyframes starIn { 0% { transform: scale(2.2) rotate(-40deg); } 100% { transform: scale(1); } }
 #result-sub { margin: 0; font-size: 18px; color: #d6dcff; text-shadow: 0 2px 0 var(--ink); }
 .result-gems { display: flex; align-items: center; gap: 10px; font-size: 48px; text-shadow: 0 4px 0 var(--ink), 2px 0 0 var(--ink), -2px 0 0 var(--ink); color: #7fe3ff; }
-.result-gems.lost { color: #ff7b7b; }
+.result-gems.lost { color: #e9ebf5; }
 .result-gems.lost .gem-ico { filter: grayscale(1) brightness(.7); }
 #result-bonus { margin: -8px 0 6px; font-size: 16px; color: rgba(255,255,255,.7); }
 

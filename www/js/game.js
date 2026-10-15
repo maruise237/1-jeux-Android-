@@ -8,6 +8,7 @@
   const levelHeight = n => (n <= 3 ? 13 + n * 2 : 19 + Math.min(Math.floor((n - 1) / 3), 11));
   const SAVE_KEY = 'kamtech-shadowstrike-save-v2';
   const HP_DISPLAY = 10; // health is shown x10 (a base hero has 1000)
+  const BODY_HOLD = 0.7, BODY_FADE = 0.45; // seconds a body stays, then dissolves
   const BASE_SPEED = 4.9, BASE_HP = 100, PLAYER_R = 0.3, CHAR_SCALE = 1.3;
   // Difficulty ceilings: levels get harder but always stay winnable.
   const MAX_RANGE = 4.2;         // flashlight reach (tiles)
@@ -258,10 +259,20 @@
       // relief level after each boss (levels 11, 21, 31...): two guards fewer
       const nGuards = Math.min(n <= 2 ? n + 1 : 3 + Math.floor((n - 1) / 4) - (n > 10 && n % 10 === 1 ? 2 : 0), n >= 45 ? 10 : 9, Math.floor(open / 16));
       if (far.length < nGuards * 3) continue;
+      // posts are spread over the whole map (best of several random picks, farthest from the others),
+      // so guards never start bunched up in one corner
+      const md = c => posts.reduce((m, p) => Math.min(m, Math.abs(p.x - c.x) + Math.abs(p.y - c.y)), 99);
       const posts = [];
-      for (let tries = 0; tries < 500 && posts.length < nGuards; tries++) {
-        const c = pick(far);
-        if (posts.every(p => Math.abs(p.x - c.x) + Math.abs(p.y - c.y) >= 4)) posts.push(c);
+      for (let k = 0; k < nGuards; k++) {
+        let best = null, bs = -1;
+        for (let sm = 0; sm < 16; sm++) {
+          const c = pick(far), d = md(c);
+          if (d < 4) continue;
+          const sc = Math.min(d, 10) + rnd() * 2.5;
+          if (sc > bs) { bs = sc; best = c; }
+        }
+        if (!best) break;
+        posts.push(best);
       }
       if (posts.length < nGuards) continue;
       const isPost = (x, y) => posts.some(p => p.x === x && p.y === y);
@@ -274,13 +285,24 @@
       const startPt = { x: start.x + 0.5, y: start.y + 0.5 };
       // a point is unsafe if a guard standing there could see the spawn point
       const seesStart = q => Math.hypot(q.x - startPt.x, q.y - startPt.y) < MAX_RANGE + 0.6 && sightLine(q, startPt);
-      let guards = posts.map(p => {
+      // each guard owns the area closest to his post and patrols a loop through it: guards cover the
+      // whole map instead of walking over each other
+      const owner = c => { let bi = 0, bd = 1e9; posts.forEach((p, i) => { const d = Math.abs(p.x - c.x) + Math.abs(p.y - c.y); if (d < bd) { bd = d; bi = i; } }); return bi; };
+      let guards = posts.map((p, pi) => {
         const wps = [p];
-        const k = 1 + ri(2);
-        for (let q = 0, tries = 0; q < k && tries < 20; tries++) {
-          const near = patrolCells.filter(c => Math.abs(c.x - p.x) + Math.abs(c.y - p.y) <= 6 && (c.x !== p.x || c.y !== p.y));
-          if (!near.length) break;
-          wps.push(pick(near)); q++;
+        const span = c => Math.abs(c.x - p.x) + Math.abs(c.y - p.y);
+        let zone = patrolCells.filter(c => span(c) >= 3 && span(c) <= 7 && owner(c) === pi);
+        if (zone.length < 2) zone = patrolCells.filter(c => span(c) >= 2 && span(c) <= 6);
+        const k = zone.length >= 6 ? 1 + ri(2) : 1;
+        for (let q = 0; q < k && zone.length; q++) {
+          // the next waypoint is the best of a few picks, far from the points already on the loop
+          let best = null, bs = -1;
+          for (let sm = 0; sm < 5; sm++) {
+            const c = pick(zone);
+            const d = wps.reduce((m, w) => Math.min(m, Math.abs(w.x - c.x) + Math.abs(w.y - c.y)), 99) + rnd();
+            if (d > bs) { bs = d; best = c; }
+          }
+          wps.push(best);
         }
         const route = [];
         for (let j = 0; j < wps.length; j++) {
@@ -434,9 +456,11 @@
       hp: maxHp, maxHp, look: hero.look, path: null, pi: 0, walk: 0, chase: null, repath: 0,
       spotted: false, hurtCd: 0, attack: 0, dust: 0, frozen: 0,
     };
-    const gSpeed = Math.min(1.35 + n * 0.025, MAX_GUARD_SPEED);
-    const baseRange = Math.min(3.0 + n * 0.04, 3.8);
-    const baseDmg = 16 + Math.min(n, 14);
+    const gSpeed = Math.min(1.5 + n * 0.025, MAX_GUARD_SPEED);
+    // the first 30 levels got sharper guards; the late game was already at the edge of what the bot can win
+    const sharp = n < 30;
+    const baseRange = Math.min(3.25 + n * 0.04, 3.8);
+    const baseDmg = 20 + Math.min(n, 14);
     const tier = gearTier(n), G = GEAR[tier];
     guards = L.guards.map((def, gi) => {
       const T = GUARD_TYPES[def.type];
@@ -445,8 +469,8 @@
         x: def.post.x + 0.5, y: def.post.y + 0.5, angle: def.startAngle, route, ri: 0,
         state: 'patrol', path: null, pi: 0, timer: 0, reaction: 0, cooldown: 0, alive: true, lastSeen: null,
         speed: gSpeed * (def.type === 'heavy' ? 0.85 : def.type === 'boss' ? 0.8 : 1), range: Math.min(baseRange * T.range * G.range, MAX_RANGE), half: T.half,
-        damage: Math.min(Math.round(baseDmg * T.dmg * G.dmg * (def.type === 'heavy' && tier >= 2 ? 1.15 : 1)), (T.weapon === 'shotgun' || T.weapon === 'cannon') ? MAX_HIT_SHOTGUN : MAX_HIT), shield: !!T.shield, rate: T.rate, type: def.type, look: guardLook(def.type, tier), weapon: def.type === 'heavy' && tier >= 2 ? 'cannon' : T.weapon,
-        reactTime: T.reaction, laser: !!(T.laser || (G.laser && T.weapon !== 'shotgun')),
+        damage: Math.min(Math.round(baseDmg * T.dmg * G.dmg * (def.type === 'heavy' && tier >= 2 ? 1.15 : 1)), (T.weapon === 'shotgun' || T.weapon === 'cannon') ? MAX_HIT_SHOTGUN : MAX_HIT), shield: !!T.shield, rate: T.rate * (sharp ? 0.85 : 1), type: def.type, look: guardLook(def.type, tier), weapon: def.type === 'heavy' && tier >= 2 ? 'cannon' : T.weapon,
+        reactTime: T.reaction, sharp, laser: !!(T.laser || (G.laser && T.weapon !== 'shotgun')),
         frozen: 0, walk: 0, muzzle: 0, alertT: 0, qT: 0, deadT: 0, follow: def.follow,
         boss: def.type === 'boss', hp: def.type === 'boss' ? 3 + Math.floor(n / 30) : 1, stun: 0, scale: def.type === 'boss' ? 1.45 : 1,
       };
@@ -598,7 +622,7 @@
     }
     // freeze mine: arms when the hero runs over it, then freezes everything around (the hero too if still close)
     for (const m of mines) {
-      if (m.state === 'armed' && Math.hypot(m.x - p.x, m.y - p.y) < 0.5) { m.state = 'fuse'; m.fuse = 0.6; sfx.beep(); }
+      if (m.state === 'armed' && Math.hypot(m.x - p.x, m.y - p.y) < 0.5) { m.state = 'fuse'; m.fuse = MINE_FUSE; m.tick = 0; sfx.arm(); }
     }
     for (const l of lasers) {
       if (p.hurtCd <= 0 && laserOn(l) && hitsLaser(l, p)) {
@@ -642,12 +666,16 @@
   // Guards hear noises (a buddy being stabbed, gunfire, explosions) through walls and come to check,
   // walking a bit faster than on patrol. Guards that can see the spot react sooner.
   function makeNoise(x, y, radius, hesitation, except) {
-    let heard = false;
-    for (const o of guards) {
-      if (o === except || !o.alive || o.frozen > 0 || o.stun > 0 || o.state === 'alert') continue;
-      const d = Math.hypot(o.x - x, o.y - y);
-      if (d > radius) continue;
+    let heard = false, sent = 0;
+    // only the two closest guards leave their round to check; the others glance over and keep patrolling,
+    // so one noise never pulls the whole map into a single pile
+    const near = guards.filter(o => o !== except && o.alive && o.frozen <= 0 && o.stun <= 0 && o.state !== 'alert'
+      && Math.hypot(o.x - x, o.y - y) <= radius).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y));
+    for (const o of near) {
+      if (o.state === 'suspect' || o.state === 'search' || o.state === 'look') { heard = true; continue; }
+      if (sent >= 2) { o.glance = { a: Math.atan2(y - o.y, x - o.x), t: 0.9 }; continue; }
       if (!findPath(o, Math.floor(x), Math.floor(y))) continue;
+      sent++;
       const sees = sightLine(o, { x, y });
       o.state = 'suspect'; o.qT = 1.4; o.searchN = 0;
       o.timer = (sees ? hesitation * 0.6 : hesitation) + Math.random() * 0.25;
@@ -707,9 +735,9 @@
       if (gd.state !== 'alert') {
         // a guard who sees the hero reacts at once: short draw time, then he fires
         const dd = Math.hypot(player.x - gd.x, player.y - gd.y);
-        gd.state = 'alert'; gd.reaction = Math.max(0.15, gd.reactTime * (0.5 + 0.45 * Math.min(1, dd / gd.range))); gd.alertT = 1.2; sfx.alert(); player.spotted = true;
+        gd.state = 'alert'; gd.reaction = Math.max(0.12, gd.reactTime * ((gd.sharp ? 0.4 : 0.5) + 0.45 * Math.min(1, dd / gd.range))); gd.alertT = 1.2; sfx.alert(); player.spotted = true;
         // he shouts: nearby guards come to help
-        makeNoise(player.x, player.y, 3.6, 0.6, gd);
+        makeNoise(player.x, player.y, gd.sharp ? 4.4 : 3.6, 0.6, gd);
       }
       gd.lastSeen = { x: player.x, y: player.y };
       turnTo(gd, Math.atan2(player.y - gd.y, player.x - gd.x), dt * 10);
@@ -733,7 +761,7 @@
     }
     if (gd.state === 'search') {
       if (followPath(gd, gd.speed * (gd.moveMul || 1.25), dt)) {
-        gd.state = 'look'; gd.timer = 1.3; gd.lookBase = gd.angle; gd.lookT = 0;
+        gd.state = 'look'; gd.timer = 1.0; gd.lookBase = gd.angle; gd.lookT = 0;
       }
       return;
     }
@@ -742,7 +770,7 @@
       gd.angle = gd.lookBase + Math.sin(gd.lookT * 3.2) * 1.2;
       if (gd.timer <= 0) {
         gd.searchN = (gd.searchN || 0) + 1;
-        if (gd.searchN > 2 || !nextSearchSpot(gd)) { gd.goal = null; goBackToRoute(gd); }
+        if (gd.searchN > 1 || !nextSearchSpot(gd)) { gd.goal = null; goBackToRoute(gd); }
       }
       return;
     }
@@ -764,6 +792,12 @@
       if (leader.lastSeen && (leader.state === 'suspect' || leader.state === 'search' || leader.state === 'look')) {
         gd.lastSeen = { ...leader.lastSeen }; gd.state = 'suspect'; gd.timer = 0.3; gd.searchN = 0; return;
       }
+    }
+    if (gd.glance) {
+      // heard something far off: turn toward it for a moment, then carry on
+      gd.glance.t -= dt; turnTo(gd, gd.glance.a, dt * 6);
+      if (gd.glance.t <= 0) gd.glance = null;
+      return;
     }
     if (!gd.route.length) return;
     // lost the route (pushed away, leader gone): walk back along a real path instead of through walls
@@ -873,6 +907,7 @@
     if (!wasFrozen) addSplat(gd.x, gd.y, 0.38 + Math.random() * 0.12);
     gd.frozen = 0;
     if (wasFrozen) {
+      gd.vanish = true; // shattered into shards: nothing left to lie down
       sfx.shatter();
       for (let i = 0; i < 16; i++) {
         const a = Math.random() * Math.PI * 2, s = 1.5 + Math.random() * 3;
@@ -939,9 +974,10 @@
   function updateMines(dt) {
     for (const m of mines) {
       if (m.state !== 'fuse') continue;
-      const before = m.fuse;
-      m.fuse -= dt;
-      if (Math.floor(before * 10) !== Math.floor(m.fuse * 10)) sfx.beep();
+      m.fuse -= dt; m.tick = (m.tick || 0) - dt;
+      // cold chirps that speed up until the burst
+      if (m.tick <= 0) { const k = 1 - m.fuse / MINE_FUSE; sfx.tick(k, true); m.tick = 0.05 + 0.13 * (1 - k); m.flash = 0.06; }
+      m.flash = Math.max(0, (m.flash || 0) - dt);
       if (m.fuse <= 0) triggerFreeze(m);
     }
   }
@@ -950,11 +986,12 @@
     for (const b of bombs) {
       if (b.state === 'armed') {
         // only the hero sets it off; the short fuse lets him run while his pursuers get caught
-        if (state === 'playing' && Math.hypot(player.x - b.x, player.y - b.y) < 0.45) { b.state = 'fuse'; b.fuse = 0.7; sfx.arm(); sfx.beep(); }
+        if (state === 'playing' && Math.hypot(player.x - b.x, player.y - b.y) < 0.45) { b.state = 'fuse'; b.fuse = BOMB_FUSE; b.tick = 0; sfx.arm(); }
       } else if (b.state === 'fuse') {
-        const before = b.fuse;
-        b.fuse -= dt;
-        if (Math.floor(before * 8) !== Math.floor(b.fuse * 8)) sfx.beep();
+        // like a real mine: tit... tit.. tit. tit-tit-tit, faster and higher until it blows
+        b.fuse -= dt; b.tick -= dt;
+        if (b.tick <= 0) { const k = 1 - b.fuse / BOMB_FUSE; sfx.tick(k); b.tick = 0.045 + 0.24 * Math.pow(1 - k, 1.4); b.flash = 0.07; vibrate(8); }
+        b.flash = Math.max(0, (b.flash || 0) - dt);
         if (b.fuse <= 0) explode(b);
       }
     }
@@ -962,7 +999,7 @@
 
   function explode(b) {
     b.state = 'done';
-    const R = 1.9;
+    const R = BLAST_R;
     sfx.explosion(); vibrate(150);
     makeNoise(b.x, b.y, 5, 0.4);
     shake = Math.max(shake, 0.55);
@@ -1012,7 +1049,7 @@
     }
   }
 
-  const FREEZE_R = 2.3;
+  const FREEZE_R = 2.3, MINE_FUSE = 0.8, BOMB_FUSE = 1.6, BLAST_R = 1.9;
   function triggerFreeze(m) {
     m.used = true; m.state = 'used';
     sfx.freeze(); vibrate(60);
@@ -1225,24 +1262,24 @@
   function drawMine(m) {
     const fuse = m.state === 'fuse';
     const pulse = 0.5 + Math.sin(time * (fuse ? 35 : 3)) * 0.5;
-    if (fuse) { ctx.strokeStyle = `rgba(150,230,255,${0.5 + pulse * 0.4})`; ctx.lineWidth = 0.05; art.circle(ctx, m.x, m.y, FREEZE_R * (1 - m.fuse / 0.6)); ctx.stroke(); }
+    if (fuse) { ctx.strokeStyle = `rgba(150,230,255,${0.5 + pulse * 0.4})`; ctx.lineWidth = 0.05; art.circle(ctx, m.x, m.y, FREEZE_R * (1 - m.fuse / MINE_FUSE)); ctx.stroke(); }
     // frost on the floor around it
-    const fr = ctx.createRadialGradient(m.x, m.y, 0.2, m.x, m.y, 0.6);
-    fr.addColorStop(0, 'rgba(200,240,255,0.35)'); fr.addColorStop(1, 'rgba(200,240,255,0)');
-    ctx.fillStyle = fr; art.circle(ctx, m.x, m.y, 0.6); ctx.fill();
+    const fr = ctx.createRadialGradient(m.x, m.y, 0.15, m.x, m.y, 0.75);
+    fr.addColorStop(0, `rgba(40,160,255,${0.6 + pulse * 0.15 + (m.flash > 0 ? 0.3 : 0)})`); fr.addColorStop(1, 'rgba(60,170,255,0)');
+    ctx.fillStyle = fr; art.circle(ctx, m.x, m.y, 0.75); ctx.fill();
     // a canister with height: cast shadow along the light, a dark side wall, then the lid
     const sh = ctx.createRadialGradient(m.x + 0.14, m.y + 0.2, 0.12, m.x + 0.14, m.y + 0.2, 0.42);
     sh.addColorStop(0, 'rgba(0,0,0,0.42)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = sh; art.ellipse(ctx, m.x + 0.14, m.y + 0.2, 0.42, 0.36); ctx.fill();
     ctx.fillStyle = 'rgba(0,0,0,0.5)'; art.ellipse(ctx, m.x, m.y + 0.1, 0.32, 0.29); ctx.fill();
     const side = ctx.createLinearGradient(m.x - 0.3, 0, m.x + 0.3, 0);
-    side.addColorStop(0, '#5d6878'); side.addColorStop(0.35, '#7c889a'); side.addColorStop(1, '#262c36');
+    side.addColorStop(0, '#1f64c4'); side.addColorStop(0.35, '#3d8ef0'); side.addColorStop(1, '#0d2f6e');
     ctx.fillStyle = side; ctx.beginPath();
     ctx.arc(m.x, m.y + 0.09, 0.3, 0, Math.PI); ctx.lineTo(m.x - 0.3, m.y); ctx.arc(m.x, m.y, 0.3, Math.PI, 0, true); ctx.closePath(); ctx.fill();
     ctx.lineWidth = 0.035; ctx.strokeStyle = art.OUT; ctx.beginPath(); ctx.arc(m.x, m.y + 0.09, 0.3, 0, Math.PI); ctx.stroke();
     ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 0.015;
     for (const fx2 of [-0.18, 0, 0.18]) { ctx.beginPath(); ctx.moveTo(m.x + fx2, m.y + 0.2); ctx.lineTo(m.x + fx2, m.y + 0.31); ctx.stroke(); }
-    metalDisc(m.x, m.y, 0.3, '#9aa6b8', '#39414f');
+    metalDisc(m.x, m.y, 0.3, '#8fd0ff', '#1a5bc0');
     ctx.lineWidth = 0.035; ctx.strokeStyle = art.OUT; art.circle(ctx, m.x, m.y, 0.3); ctx.stroke();
     // bevelled rim
     ctx.lineWidth = 0.03; ctx.strokeStyle = 'rgba(255,255,255,0.35)';
@@ -1255,7 +1292,7 @@
     }
     // glass dome with the coolant swirling inside
     const dg = ctx.createRadialGradient(m.x - 0.06, m.y - 0.07, 0.01, m.x, m.y, 0.17);
-    dg.addColorStop(0, '#ffffff'); dg.addColorStop(0.35, '#bff0ff'); dg.addColorStop(1, fuse ? '#4fd2ff' : '#2a88c9');
+    dg.addColorStop(0, '#ffffff'); dg.addColorStop(0.3, '#9fe6ff'); dg.addColorStop(1, m.flash > 0 ? '#ffffff' : fuse ? '#3fd0ff' : '#0f8cff');
     art.circle(ctx, m.x, m.y, 0.17); ctx.fillStyle = dg; ctx.fill();
     ctx.lineWidth = 0.03; ctx.strokeStyle = '#1d3550'; ctx.stroke();
     ctx.strokeStyle = `rgba(255,255,255,${0.35 + pulse * 0.3})`; ctx.lineWidth = 0.02; ctx.lineCap = 'round';
@@ -1277,12 +1314,19 @@
   // Explosive mine: an olive anti-personnel mine half buried in loose dirt, with a ribbed rim and a pressure plate.
   function drawBomb(b) {
     const fuse = b.state === 'fuse';
-    const blink = fuse ? Math.sin(time * 40) > 0 : Math.sin(time * 4) > 0.6;
+    const blink = fuse ? b.flash > 0 : Math.sin(time * 4) > 0.6;
     if (fuse) {
-      const pulse = 0.5 + Math.sin(time * 30) * 0.5;
-      ctx.strokeStyle = `rgba(255,60,60,${0.3 + pulse * 0.4})`; ctx.lineWidth = 0.05;
-      art.circle(ctx, b.x, b.y, 0.4 + pulse * 0.08); ctx.stroke();
+      // blast zone fills in as the countdown runs out
+      const k = 1 - b.fuse / BOMB_FUSE;
+      ctx.fillStyle = `rgba(255,40,40,${0.1 + k * 0.18 + (b.flash > 0 ? 0.1 : 0)})`; art.circle(ctx, b.x, b.y, BLAST_R * k); ctx.fill();
+      ctx.strokeStyle = `rgba(255,70,70,${0.5 + (b.flash > 0 ? 0.4 : 0)})`; ctx.lineWidth = 0.05;
+      art.circle(ctx, b.x, b.y, BLAST_R); ctx.stroke();
     }
+    // red danger glow on the floor, so the mine reads at a glance even in the dark
+    const hot = b.flash > 0 ? 1 : 0;
+    const halo = ctx.createRadialGradient(b.x, b.y, 0.12, b.x, b.y, 0.72);
+    halo.addColorStop(0, `rgba(255,40,40,${0.6 + 0.15 * Math.sin(time * 3) + hot * 0.3})`); halo.addColorStop(1, 'rgba(255,40,40,0)');
+    ctx.fillStyle = halo; art.circle(ctx, b.x, b.y, 0.72); ctx.fill();
     // disturbed earth
     ctx.fillStyle = 'rgba(92,72,48,0.55)';
     ctx.beginPath();
@@ -1297,7 +1341,7 @@
     const pit = ctx.createRadialGradient(b.x, b.y, 0.22, b.x, b.y, 0.36);
     pit.addColorStop(0, 'rgba(30,22,12,0.75)'); pit.addColorStop(1, 'rgba(30,22,12,0)');
     ctx.fillStyle = pit; art.circle(ctx, b.x, b.y, 0.36); ctx.fill();
-    metalDisc(b.x, b.y, 0.27, '#8a8f5a', '#3c3f22');
+    metalDisc(b.x, b.y, 0.27, '#d0414c', '#5a0a14');
     ctx.lineWidth = 0.035; ctx.strokeStyle = art.OUT; art.circle(ctx, b.x, b.y, 0.27); ctx.stroke();
     // half buried: dirt spills over the top-left lip (shadowed), the bottom-right lip catches light
     ctx.lineCap = 'round';
@@ -1308,7 +1352,7 @@
     ctx.fillStyle = 'rgba(92,72,48,0.9)';
     for (let i = 0; i < 5; i++) { const a = Math.PI * (1.0 + i * 0.16); art.ellipse(ctx, b.x + Math.cos(a) * 0.27, b.y + Math.sin(a) * 0.27, 0.06, 0.035); ctx.fill(); }
     // ribs around the casing
-    ctx.strokeStyle = 'rgba(20,22,10,0.55)'; ctx.lineWidth = 0.018;
+    ctx.strokeStyle = 'rgba(40,0,6,0.6)'; ctx.lineWidth = 0.018;
     ctx.beginPath();
     for (let i = 0; i < 16; i++) {
       const a = (Math.PI * 2 * i) / 16;
@@ -1316,9 +1360,12 @@
     }
     ctx.stroke();
     // pressure plate
-    metalDisc(b.x, b.y, 0.15, '#6c7046', '#2c2e18');
-    ctx.lineWidth = 0.025; ctx.strokeStyle = '#1b1c0e'; art.circle(ctx, b.x, b.y, 0.15); ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 0.015;
+    // explosive core: glowing red, flashes white-hot on each countdown tick
+    const core = ctx.createRadialGradient(b.x - 0.04, b.y - 0.05, 0.01, b.x, b.y, 0.15);
+    core.addColorStop(0, hot ? '#ffffff' : '#ff9a8a'); core.addColorStop(0.45, hot ? '#ff5a4a' : '#ff2a2a'); core.addColorStop(1, '#8a0010');
+    art.circle(ctx, b.x, b.y, 0.15); ctx.fillStyle = core; ctx.fill();
+    ctx.lineWidth = 0.025; ctx.strokeStyle = '#3a0008'; art.circle(ctx, b.x, b.y, 0.15); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 0.015;
     ctx.beginPath(); ctx.moveTo(b.x - 0.09, b.y); ctx.lineTo(b.x + 0.09, b.y); ctx.moveTo(b.x, b.y - 0.09); ctx.lineTo(b.x, b.y + 0.09); ctx.stroke();
     // stencilled warning band
     ctx.strokeStyle = '#d8b13a'; ctx.lineWidth = 0.022;
@@ -1526,11 +1573,21 @@
       art.circle(ctx, -0.14, 0, 0.05); ctx.fillStyle = '#a86d0a'; ctx.fill();
       ctx.restore();
     }
-    // fallen guards fade away, leaving only the stain
+    // fallen guards: the body drops, lies still a moment, then sinks and dissolves, leaving only the stain
     for (const gd of guards) {
       if (gd.alive || gd.vanish) continue;
-      // bodies stay where they fell
-      art.drawCharacter(ctx, gd.look, gd.x, gd.y, gd.angle, { weapon: gd.weapon, dead: true, alpha: 0.92, noShadow: true, scale: CHAR_SCALE * gd.scale });
+      const t = gd.deadT, k = Math.min(1, Math.max(0, (t - BODY_HOLD) / BODY_FADE));
+      if (k >= 1) { gd.vanish = true; continue; }
+      if (k > 0 && !gd.puffed) {
+        gd.puffed = true;
+        for (let i = 0; i < 7; i++) {
+          const a = Math.random() * Math.PI * 2, r = Math.random() * 0.3;
+          fx.smoke.push({ x: gd.x + Math.cos(a) * r, y: gd.y + Math.sin(a) * r, vx: Math.cos(a) * 0.4, vy: Math.sin(a) * 0.4 - 0.3, t: 0, max: 0.6, r: 0.22 + Math.random() * 0.12 });
+        }
+      }
+      const drop = Math.min(1, t / 0.12); // quick fall: the body lands a touch bigger, then settles
+      const sc = CHAR_SCALE * gd.scale * (1.08 - 0.08 * drop) * (1 - 0.25 * k);
+      art.drawCharacter(ctx, gd.look, gd.x, gd.y, gd.angle, { weapon: gd.weapon, dead: true, alpha: 0.95 * (1 - k * k), noShadow: true, scale: sc });
     }
 
     // darkness with flashlight cones cut out
@@ -1550,6 +1607,12 @@
       const grad = sctx.createRadialGradient(gd.x, gd.y, 0.1, gd.x, gd.y, gd.range);
       grad.addColorStop(0, 'rgba(0,0,0,1)'); grad.addColorStop(0.75, 'rgba(0,0,0,0.85)'); grad.addColorStop(1, 'rgba(0,0,0,0.35)');
       tracePoly(sctx, gd, poly); sctx.fillStyle = grad; sctx.fill();
+    }
+    // mines glow through the dark (their own little pool of light), so they can't be missed
+    for (const t of [...bombs.filter(b => b.state !== 'done'), ...mines.filter(m => m.state !== 'used')]) {
+      const gl = sctx.createRadialGradient(t.x, t.y, 0.05, t.x, t.y, 0.8);
+      gl.addColorStop(0, 'rgba(0,0,0,0.9)'); gl.addColorStop(1, 'rgba(0,0,0,0)');
+      sctx.fillStyle = gl; art.circle(sctx, t.x, t.y, 0.8); sctx.fill();
     }
     sctx.globalCompositeOperation = 'source-over';
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -2021,11 +2084,11 @@
     starEls.forEach((s, i) => { if (i < stars) setTimeout(() => { s.classList.add('on'); sfx.star(i); }, 350 + i * 300); });
     $('result-bonus').innerHTML = (won
       ? `Butin ${levelGems}, bonus ${bonus}` + (chest ? `, coffre ${chest}` : '')
-      : (levelGems ? `${levelGems} diamants perdus. Termine la mission pour les garder.` : 'Aucun diamant ramassé.'))
+      : 'Mission échouée : rien n\'est gagné. Termine la mission pour garder ton butin.')
       + `<br>+${xpGain} XP` + (leveled ? `, ${hero.name} passe au niveau ${heroLevel(hero.id)}` : '');
     const el = $('result-gems');
     el.parentElement.classList.toggle('lost', !won);
-    if (!won) el.textContent = levelGems ? '−' + levelGems : '0';
+    if (!won) el.textContent = '0';
     const t0 = performance.now();
     let lastShown = 0;
     if (won) (function count(now) {
