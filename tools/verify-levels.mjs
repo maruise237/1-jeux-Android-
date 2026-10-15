@@ -131,7 +131,10 @@ if (MAX) {
   console.log(failures ? `${failures} niveau(x) perdus avec le héros max` : `Héros max : niveaux ${FROM}-${TO} gagnés.`);
   process.exit(failures ? 1 : 0);
 }
-for (let lv = FROM; lv <= TO; lv++) {
+// --levels 45,71,88: only these levels
+const li = process.argv.indexOf('--levels');
+const LIST = li > 0 ? process.argv[li + 1].split(',').map(Number) : Array.from({ length: TO - FROM + 1 }, (_, i) => FROM + i);
+for (const lv of LIST) {
   let found = -1, info = null;
   for (let v = 0; v < VARIANTS && found < 0; v++) {
     const r = await page.evaluate(([lv, v, t]) => window.__playLevel(lv, v, t), [lv, v, TRIES]);
@@ -143,5 +146,5 @@ for (let lv = FROM; lv <= TO; lv++) {
 }
 await browser.close();
 server.close();
-console.log(failures ? `${failures} niveau(x) non vérifié(s)` : `Tous les niveaux ${FROM}-${TO} sont gagnables.`);
+console.log(failures ? `${failures} niveau(x) non vérifié(s)` : `Tous les niveaux vérifiés (${LIST.length}) sont gagnables.`);
 process.exit(failures ? 1 : 0);

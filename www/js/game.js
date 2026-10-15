@@ -310,9 +310,9 @@
     } else if (kind === 'lab' || kind === 'hq') {
       // rooms joined by narrow doors (the lasers settle in the doorways)
       for (let y = 4 + ri(2); y < H - 6; y += 5 + ri(2)) {
-        wallRow(y, 1, W - 2, rnd() < 0.5 ? [1 + ri(3), 6 + ri(3)] : [3 + ri(4)], 2);
+        wallRow(y, 1, W - 2, [1 + ri(3), 6 + ri(3)], 2);
         const yn = Math.min(H - 6, y + 5);
-        if (rnd() < 0.7) { const x = 3 + ri(5); for (let yy = y + 1; yy < yn - 1; yy++) g[yy][x] = 1; }
+        if (rnd() < 0.45) { const x = 3 + ri(5); for (let yy = y + 1; yy < yn - 1; yy++) g[yy][x] = 1; }
       }
       scatter(Math.round(3 * k19), kind === 'hq' ? ['planter', 'container', 'crate'] : ['metal', 'metal', 'crate']);
     } else if (kind === 'court') {
@@ -327,7 +327,7 @@
       // zigzag corridors: each wall leaves the way open on alternate sides
       let left = rnd() < 0.5;
       for (let y = 4; y < H - 7; y += 4) {
-        wallRow(y, 1, W - 2, [left ? 1 : W - 3, ...(rnd() < 0.35 ? [4 + ri(2)] : [])], 2);
+        wallRow(y, 1, W - 2, [left ? 1 : W - 3, 4 + ri(2)], 2);
         left = !left;
       }
       scatter(Math.round(2 * k19), ['crate', 'metal']);
@@ -412,7 +412,8 @@
       const far = cells.filter(c => c.d >= 7);
       // never more than one guard per 16 open tiles, so there are always shadows to hide in
       // relief level after each boss (levels 11, 21, 31...): two guards fewer
-      const cap = (n >= 45 ? 10 : 9) + (rank ? 1 : 0) + (tier >= 4 ? 1 : 0);
+      // the lab and the minefield have narrow corridors: one guard fewer there
+      const cap = (n >= 45 ? 10 : 9) + (rank ? 1 : 0) + (tier >= 4 ? 1 : 0) - (kind === 'lab' || kind === 'minefield' ? 1 : 0);
       const nGuards = Math.min(n <= 2 ? n + 1 : 3 + Math.floor((n - 1) / 4) - (n > 10 && n % 10 === 1 ? 2 : 0), cap, Math.floor(open / 16));
       const shieldCap = maxShields(n) + (tier >= 3 ? 1 : 0) + (rank === 2 ? 1 : 0);
       if (far.length < nGuards * 3) continue;
@@ -551,8 +552,8 @@
             y = e;
           }
         }
-        // never more than 4 lasers: the lab bonus and the very-hard bonus do not stack
-        const want = Math.min(4, (n >= 40 ? 3 : n >= 10 ? 2 : 1) + (rank === 2 ? 1 : 0) + (kind === 'lab' ? 1 : 0));
+        // the lab's doorways already attract the lasers: no extra one there, and never more than 4
+        const want = Math.min(4, (n >= 40 ? 3 : n >= 10 ? 2 : 1) + (rank === 2 ? 1 : 0));
         const onT = Math.min(1.2 + 0.015 * n, 2.0) + (tier >= 1 ? 0.2 : 0) + (rank === 1 ? 0.15 : 0);
         for (let tries = 0; tries < 30 && lasers.length < want && cands.length; tries++) {
           const c = cands.splice(ri(cands.length), 1)[0];
@@ -578,7 +579,7 @@
         const routePts = guards.flatMap(gd => gd.route);
         const spots = free.filter(c => c.d >= 6 && !mines.some(m => Math.floor(m.x) === c.x && Math.floor(m.y) === c.y)
           && routePts.some(q => Math.hypot(q.x - c.x - 0.5, q.y - c.y - 0.5) < 1.6));
-        for (let q = 0, want = (n >= 25 ? 2 : 1) + (kind === 'minefield' ? 2 : 0); q < want && spots.length; q++) {
+        for (let q = 0, want = (n >= 25 ? 2 : 1) + (kind === 'minefield' ? 1 : 0); q < want && spots.length; q++) {
           const c = spots.splice(ri(spots.length), 1)[0];
           bombs.push({ x: c.x + 0.5, y: c.y + 0.5 });
         }
