@@ -109,9 +109,9 @@ KT.art = (() => {
   // ---------- Map ----------
   // Each theme changes the floor and the look of the interior walls.
   const THEMES = {
-    concrete: { base: '#c9cac6', stain: [70, 72, 66], line: 'rgba(60,62,58,0.07)', wall: 'fence' },
-    warehouse: { base: '#c2b7a4', stain: [90, 70, 45], line: 'rgba(80,60,40,0.08)', wall: 'fence' },
-    lab: { base: '#c6ccd2', stain: [50, 60, 75], line: 'rgba(50,60,80,0.08)', wall: 'fence' },
+    concrete: { base: '#c9cac6', stain: [70, 72, 66], line: 'rgba(60,62,58,0.07)', wall: 'block' },
+    warehouse: { base: '#b8a888', stain: [90, 70, 45], line: 'rgba(80,60,40,0.08)', wall: 'steel', lanes: true },
+    lab: { base: '#d2dade', stain: [50, 60, 75], line: 'rgba(50,60,80,0.12)', wall: 'lab', tiles: 1 },
     interior: { base: '#86b9bb', stain: [30, 70, 80], line: 'rgba(20,60,70,0.16)', wall: 'panel', tiles: 0.5 },
     garden: { base: '#bcc3b2', stain: [70, 80, 60], line: 'rgba(60,70,50,0.14)', wall: 'hedge', tiles: 1 },
   };
@@ -136,7 +136,7 @@ KT.art = (() => {
     g.fillStyle = th.base; g.fillRect(0, 0, L.W, L.H);
     // mottled concrete: large soft stains
     const [sr, sg, sb] = th.stain;
-    for (let i = 0; i < L.W * L.H * 0.35; i++) {
+    for (let i = 0; i < L.W * L.H * 0.14; i++) {
       const x = rnd() * L.W, y = rnd() * L.H, r = 0.3 + rnd() * 1.1;
       const gr = g.createRadialGradient(x, y, 0, x, y, r);
       const a = 0.03 + rnd() * 0.06;
@@ -155,6 +155,16 @@ KT.art = (() => {
     for (let y = 0; y <= L.H; y += step) { g.moveTo(0, y); g.lineTo(L.W, y); }
     for (let x = 0; x <= L.W; x += step) { g.moveTo(x, 0); g.lineTo(x, L.H); }
     g.stroke();
+    for (let y = 0; y < L.H; y += step) for (let x = 0; x < L.W; x += step) {
+      const v = (rnd() - 0.5) * 0.08;
+      g.fillStyle = v > 0 ? `rgba(255,255,255,${v})` : `rgba(0,0,0,${-v})`; g.fillRect(x, y, step, step);
+      g.fillStyle = 'rgba(255,255,255,0.09)'; g.fillRect(x, y, step, 0.02);
+      g.fillStyle = 'rgba(0,0,0,0.08)'; g.fillRect(x, y + step - 0.02, step, 0.02);
+    }
+    if (th.lanes) { // painted forklift lanes in the warehouse
+      g.fillStyle = 'rgba(230,190,40,0.35)';
+      for (let x = 3; x < L.W - 2; x += 5) g.fillRect(x, 1, 0.08, L.H - 2);
+    }
     // small cracks
     g.strokeStyle = 'rgba(40,40,40,0.18)'; g.lineWidth = 0.015;
     for (let i = 0; i < L.H * 0.6; i++) {
@@ -179,7 +189,7 @@ KT.art = (() => {
         continue;
       }
       const style = (THEMES[L.theme] || THEMES.concrete).wall;
-      const topH = isW(x, y + 1) ? 1 : 0.8;
+      const topH = isW(x, y + 1) ? 1 : 0.7; // the bottom strip is the wall's lit-from-above front face
       if (style === 'hedge') {
         g.fillStyle = '#245e22'; g.fillRect(x, y, 1, 1);
         g.fillStyle = '#3a8c33'; g.fillRect(x, y, 1, topH);
@@ -196,16 +206,42 @@ KT.art = (() => {
         g.fillStyle = 'rgba(255,255,255,0.18)'; g.fillRect(x + 0.06, y + 0.05, 0.88, 0.07);
         g.fillStyle = '#a8bde0';
         for (const [rx, ry] of [[0.15, 0.2], [0.85, 0.2], [0.15, topH - 0.15], [0.85, topH - 0.15]]) { circle(g, x + rx, y + ry, 0.03); g.fill(); }
+      } else if (style === 'steel') {
+        // corrugated steel: vertical ribs catching the light
+        g.fillStyle = '#3a4450'; g.fillRect(x, y, 1, 1);
+        g.fillStyle = '#5d6b7a'; g.fillRect(x, y, 1, topH);
+        for (let k = 0; k < 6; k++) {
+          const rx = x + 0.04 + k * 0.16;
+          g.fillStyle = 'rgba(255,255,255,0.16)'; g.fillRect(rx, y, 0.05, topH);
+          g.fillStyle = 'rgba(0,0,0,0.18)'; g.fillRect(rx + 0.08, y, 0.04, topH);
+          if (topH < 1) { g.fillStyle = 'rgba(255,255,255,0.1)'; g.fillRect(rx, y + topH, 0.05, 1 - topH); }
+        }
+      } else if (style === 'lab') {
+        // white wall panels with a cyan seam
+        g.fillStyle = '#9fb0b8'; g.fillRect(x, y, 1, 1);
+        g.fillStyle = '#e3e9ec'; g.fillRect(x, y, 1, topH);
+        g.fillStyle = 'rgba(40,70,90,0.18)'; g.fillRect(x + 0.49, y, 0.02, topH);
+        g.fillStyle = '#4fd0e0'; g.fillRect(x, y + topH * 0.5 - 0.02, 1, 0.04);
+        if (topH < 1) { g.fillStyle = 'rgba(80,210,230,0.45)'; g.fillRect(x, y + topH + 0.1, 1, 0.03); }
       } else {
-        g.fillStyle = '#6f6d44'; g.fillRect(x, y, 1, 1);
-        g.fillStyle = '#8c8a58'; g.fillRect(x, y, 1, topH);
-        g.strokeStyle = '#6a6840'; g.lineWidth = 0.035; g.beginPath();
-        for (let k = 0; k < 5; k++) {
-          const yy = y + 0.12 + k * 0.15, off = (k % 2) * 0.12;
-          for (let xx = x + 0.05 + off; xx < x + 0.95; xx += 0.24) { g.moveTo(xx, yy); g.lineTo(Math.min(x + 0.95, xx + 0.13), yy); }
+        // cinder blocks laid in a staggered bond
+        g.fillStyle = '#5f615e'; g.fillRect(x, y, 1, 1);
+        g.fillStyle = '#8d8f8c'; g.fillRect(x, y, 1, topH);
+        g.strokeStyle = 'rgba(50,52,50,0.55)'; g.lineWidth = 0.025; g.beginPath();
+        const rows = topH < 1 ? 3 : 4, rh = topH / rows;
+        for (let k = 1; k < rows; k++) { g.moveTo(x, y + k * rh); g.lineTo(x + 1, y + k * rh); }
+        for (let k = 0; k < rows; k++) {
+          for (const jx of (k + y) % 2 ? [0.25, 0.75] : [0.5]) { g.moveTo(x + jx, y + k * rh); g.lineTo(x + jx, y + (k + 1) * rh); }
         }
         g.stroke();
+        if (topH < 1) { g.strokeStyle = 'rgba(30,32,30,0.4)'; g.beginPath(); g.moveTo(x + 0.33, y + topH); g.lineTo(x + 0.33, y + 1); g.moveTo(x + 0.83, y + topH); g.lineTo(x + 0.83, y + 1); g.stroke(); }
       }
+      if (topH < 1) {
+        // front face: darker toward the floor, lit lip at the top edge
+        g.fillStyle = lin(g, 0, y + topH, 0, y + 1, 'rgba(0,0,0,0)', 'rgba(0,0,0,0.3)'); g.fillRect(x, y + topH, 1, 1 - topH);
+        g.fillStyle = 'rgba(255,255,255,0.22)'; g.fillRect(x, y + topH - 0.03, 1, 0.03);
+      }
+      if (!isW(x, y - 1)) { g.fillStyle = 'rgba(255,255,255,0.14)'; g.fillRect(x, y, 1, 0.05); }
     }
     // outlines on the edges facing the floor
     g.strokeStyle = '#2b2b26'; g.lineWidth = 0.06; g.lineCap = 'square';
@@ -313,14 +349,22 @@ KT.art = (() => {
     for (const r of L.rects) if (!rects.includes(r)) for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) {
       g.fillStyle = '#34363b'; g.fillRect(x, y, 1, 1); g.fillStyle = '#44474d'; g.fillRect(x + 0.06, y + 0.06, 0.88, 0.88);
     }
-    // soft drop shadows toward the bottom-right
-    g.fillStyle = 'rgba(0,0,0,0.22)';
+    // soft drop shadows toward the bottom-right, drawn on their own layer and blurred
+    const sc = document.createElement('canvas'); sc.width = c.width; sc.height = c.height;
+    const sg = sc.getContext('2d'); sg.scale(px, px); sg.fillStyle = '#000';
     for (let y = 0; y < L.H; y++) for (let x = 0; x < L.W; x++) {
-      if (L.grid[y][x] === 1 || L.grid[y][x] === 3) g.fillRect(x + 0.12, y + 0.16, 1, 1);
+      if (L.grid[y][x] === 1 || L.grid[y][x] === 3) sg.fillRect(x + 0.2, y + 0.28, 1, 1);
     }
     for (const r of rects) {
       if (r.type === 'planter') continue;
-      rrect(g, r.x + 0.12, r.y + 0.18, r.w - 0.04, r.h - 0.04, 0.1); g.fill();
+      rrect(sg, r.x + 0.14, r.y + 0.2, r.w - 0.04, r.h - 0.04, 0.1); sg.fill();
+    }
+    g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 0.34;
+    g.filter = `blur(${Math.max(1, px * 0.12)}px)`; g.drawImage(sc, 0, 0); g.restore();
+    // tight contact shadow right at the base of the walls
+    g.fillStyle = 'rgba(0,0,0,0.16)';
+    for (let y = 0; y < L.H; y++) for (let x = 0; x < L.W; x++) {
+      if ((L.grid[y][x] === 1 || L.grid[y][x] === 3) && y + 1 < L.H && L.grid[y + 1][x] === 0) g.fillRect(x, y + 1, 1, 0.07);
     }
     drawWalls(g, L);
     for (const r of rects) drawObstacle(g, r);

@@ -64,3 +64,53 @@ chaque niveau doit rester gagnable (`npm run verify-levels`).
 | Détails « faits par une IA » | Émojis remplacés par des icônes dessinées (son, musique, vibration, clé) ; plus de capitales espacées, de séparateurs « · » ni de pied de page en double ; textes d'astuce sans « ⚠ », « 👆 », « 💥 ». |
 
 Pas de modèle CC0 vu de dessus trouvé pour ces objets (Kenney, OpenGameArt) : ils sont dessinés dans le code, dans le style des personnages.
+
+## Audit du studio CCGS (game design, UX, direction artistique)
+
+Quatre agents du kit Claude Code Game Studios ont audité le jeu : game-designer avec level-designer, ux-designer avec accessibility-specialist, art-director avec technical-artist, et qa-lead avec performance-analyst. Voici ce qui a été appliqué.
+
+**Gameplay**
+- **Foncer de face sur un garde ne garantit plus la victoire.** Le garde commence à viser pendant qu'il reconnaît le héros. La zone de repérage instantané passe de 1,3 à 0,9 case.
+- **Le laser devient un fil d'alarme.**
+  - Le toucher déclenche une alarme : les gardes à moins de 5 cases accourent.
+  - Il brûle 8 % de la vie, quel que soit le héros.
+  - Il arrête le déplacement du héros et ne coûte pas les 3 étoiles.
+  - Le chemin tracé au toucher contourne les lasers quand c'est possible.
+  - Le laser reste allumé plus longtemps au fil des niveaux : de 1,2 s à 2 s.
+- **Ses propres explosions ne coûtent plus les 3 étoiles.** Les étoiles veulent dire « aucun garde ne m'a vu ».
+- **Gardes à bouclier.** Toucher un garde à bouclier dirige vers la case derrière lui.
+- **La difficulté continue de monter jusqu'au niveau 60.**
+  - 3 lasers à partir du niveau 40.
+  - Les patrouilles en binôme deviennent plus fréquentes.
+  - 10 gardes au maximum à partir du niveau 45.
+  - Un niveau de répit après chaque boss, avec 2 gardes de moins (niveaux 11, 21, 31…).
+- **Économie.**
+  - La barre « Nouvel assassin » ne donne plus que les héros à 150 diamants ou moins, et progresse de 20 % par victoire.
+  - Nouveau bouton « Entraîner » : il fait gagner un niveau au héros pour 25 × son niveau en diamants.
+  - Les missions rapportent selon la progression : 40 + 4 × le niveau atteint.
+  - Héros rééquilibrés : Nova obtient +10 % de vie, Phantom +35 % de vitesse, Kami +40 % de vitesse et +60 % de vie. Le bonus de vitesse par niveau de héros passe de 1,5 % à 1 %.
+
+**Interface et accessibilité**
+- **Niveau 1.** L'astuce explique les faisceaux de lumière et l'attaque de dos. Elle reste au moins 4 s à l'écran.
+- **Gardes en alerte.** Leur cône a un bord pointillé animé, pour que l'alerte ne repose plus seulement sur la couleur. Leur flèche hors écran est plus grande et porte un « ! ».
+- **Boutique.** Elle affiche « Il manque N » quand on n'a pas assez de diamants.
+- **Écran de défaite.** Il donne le nombre de gardes éliminés et un conseil.
+- **Autres réglages.**
+  - Barre de vie plus grande.
+  - L'œil de détection ne se superpose plus à la bulle de dialogue.
+  - Les boutons de mission indiquent « Récupérer ».
+  - Les boutons ronds font 48 px.
+  - `aria-pressed` sur les interrupteurs.
+  - Respect de « réduire les animations ».
+
+**Direction artistique**
+- **Pénombre.** Une pénombre teintée selon le thème et un vignettage d'écran font lire les lampes torches comme de la vraie lumière.
+- **Murs.**
+  - Les murs ont une face avant, une arête éclairée et une ombre de contact.
+  - Les ombres portées sont floues.
+  - Chaque thème a son matériau : parpaings pour le béton, tôle ondulée pour l'entrepôt, panneaux blancs à liseré cyan pour le labo.
+- **Sol.** Les dalles ont des nuances. L'entrepôt a des lignes jaunes au sol. Il y a moins de taches.
+- **Pièges.**
+  - La mine de glace est un vrai cylindre : flanc, ombre portée dans l'axe de la lumière.
+  - La mine explosive est enterrée dans un trou, avec de la terre sur le rebord.
+- **Diamants et héros.** Les diamants brillent dans le noir. Un anneau discret au sol permet de repérer le héros.

@@ -42,7 +42,7 @@ button { font-family: inherit; color: inherit; border: 0; cursor: pointer; }
 @keyframes bump { 50% { transform: scale(1.18); } }
 
 .round-btn {
-  width: 46px; height: 46px; border-radius: 50%;
+  width: 48px; height: 48px; border-radius: 50%;
   background: linear-gradient(#5b84ff, var(--blue)); border: 3px solid var(--ink);
   box-shadow: 0 4px 0 var(--blue-d), 0 6px 0 var(--ink); font-size: 20px;
   display: inline-flex; align-items: center; justify-content: center;
@@ -174,6 +174,10 @@ button { font-family: inherit; color: inherit; border: 0; cursor: pointer; }
 .hero-price { display: flex; align-items: center; gap: 4px; margin-top: 3px; background: var(--ink); border-radius: 999px; padding: 2px 10px 2px 4px; font-size: 15px; }
 .hero-price .gem-ico { width: 18px; height: 18px; }
 .hero-price.poor { color: #ff8a8a; }
+.hero-train { display: flex; align-items: center; gap: 4px; margin-top: 3px; background: var(--ink); border-radius: 999px; padding: 4px 10px 4px 8px; font-size: 13px; min-height: 28px; }
+.hero-train .gem-ico { width: 15px; height: 15px; }
+.hero-train.poor { color: #ff8a8a; }
+.mission .btn.bump { animation: bump 1.2s infinite; }
 
 /* ---------- result ---------- */
 #result.lost .ribbon { background: #4a4c60; box-shadow: 0 6px 0 #2c2e3d, 0 9px 0 var(--ink); }
@@ -226,3 +230,7 @@ button { font-family: inherit; color: inherit; border: 0; cursor: pointer; }
 .wheel-pin { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 16px solid transparent; border-right: 16px solid transparent; border-top: 30px solid #ff3b4f; filter: drop-shadow(0 3px 0 var(--ink)); }
 #wheel-result { margin: 0; font-size: 22px; color: var(--yellow); min-height: 28px; text-shadow: 0 2px 0 var(--ink); }
 #banner.clear .banner-title { color: #7dff5a; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01s !important; animation-iteration-count: 1 !important; transition-duration: .01s !important; }
+}
