@@ -23,6 +23,11 @@ export async function readJson(req, limit = 64 * 1024) {
     if (raw.length > limit) throw Object.assign(new Error('trop gros'), { status: 413 });
     try { return raw ? JSON.parse(raw) : {}; } catch { throw Object.assign(new Error('JSON invalide'), { status: 400 }); }
   }
+  // a JSON body sent as a form (e.g. curl -d without a content type) arrives as { '<json>': '' }
+  if (raw && typeof raw === 'object') {
+    const keys = Object.keys(raw);
+    if (keys.length === 1 && raw[keys[0]] === '' && /^[\[{]/.test(keys[0])) { try { return JSON.parse(keys[0]); } catch { /* fall through */ } }
+  }
   return raw || {};
 }
 

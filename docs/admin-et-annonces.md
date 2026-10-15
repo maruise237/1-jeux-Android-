@@ -18,7 +18,15 @@ Neon (base de données Postgres gratuite, ajoutée depuis Vercel)
 
 Si `www/js/online-config.js` a une adresse `api` vide, le jeu reste 100 % hors ligne : rien n'est envoyé et aucune annonce ne s'affiche.
 
-## Mise en route (une seule fois)
+## En ligne
+
+- **Panneau admin :** https://shadow-strike-admin.vercel.app (projet Vercel `shadow-strike-admin`, base Neon `shadow-strike-db` à Francfort).
+- **Politique de confidentialité :** https://shadow-strike-admin.vercel.app/confidentialite
+- Le jeu est relié au serveur dans `www/js/online-config.js`.
+- **Mot de passe admin :** variable `ADMIN_PASSWORD` du projet Vercel. Pour le changer : Settings → Environment Variables, puis Redeploy.
+- **Mettre à jour le serveur :** `cd server && npx vercel deploy --prod` (avec un jeton Vercel).
+
+## Mise en route (une seule fois, déjà faite)
 
 1. **Vercel.** Ouvre le projet `shadow-strike-admin`, puis **Storage → Create Database → Neon** (gratuit) et connecte-le au projet. Vercel ajoute `DATABASE_URL` tout seul.
 2. **Mot de passe admin.** Dans **Settings → Environment Variables**, ajoute `ADMIN_PASSWORD` : au moins 10 caractères, à garder pour toi. Coche Production.
