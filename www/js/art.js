@@ -63,18 +63,45 @@ KT.art = (() => {
     g.restore();
   }
 
-  function drawGem(g, x, y, r, rot = 0) {
-    g.save(); g.translate(x, y); g.rotate(rot);
+  // Brilliant-cut diamond seen slightly from above: crown facets on top, pavilion below.
+  // `spin` turns it on itself (flying loot), `glint` (0..1) adds a star-shaped sparkle.
+  const GEM_LIGHT = ['#e9fbff', '#9fe6ff', '#5cc8ff', '#2f98e8', '#1a69c4', '#124f9c'];
+  function drawGem(g, x, y, r, spin = 0, glint = 0) {
+    g.save(); g.translate(x, y);
+    const sx = Math.cos(spin), k = Math.max(0.28, Math.abs(sx));
+    g.scale(k, 1);
+    const girdle = [-1, -0.5, 0, 0.5, 1].map(u => [u * r, -0.18 * r]);
+    const table = [-0.56, -0.19, 0.19, 0.56].map(u => [u * r, -0.6 * r]);
+    const culet = [0, 0.9 * r];
+    const tri = (a, b, c, col) => { g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.lineTo(c[0], c[1]); g.closePath(); g.fillStyle = col; g.fill(); };
+    // the light comes from the top left; turning the gem slides the bright facets across
+    const shift = sx < 0 ? 1 : 0;
+    const L = i => GEM_LIGHT[Math.max(0, Math.min(5, i))];
+    // pavilion (lower half): four long facets meeting at the culet
+    [3, 4, 2, 5].forEach((c, i) => tri(girdle[i], girdle[i + 1], culet, L(c + (i % 2 ? shift : -shift))));
+    // crown: zig-zag of triangles between the girdle and the table
+    const crown = [[girdle[0], table[0], girdle[1], 2], [table[0], girdle[1], table[1], 1], [girdle[1], table[1], girdle[2], 3],
+      [table[1], girdle[2], table[2], 1], [girdle[2], table[2], girdle[3], 2], [table[2], girdle[3], table[3], 3], [girdle[3], table[3], girdle[4], 4]];
+    crown.forEach(([a, b, c, col]) => tri(a, b, c, L(col + shift)));
+    // table: the flat top, thin because we look at it from the side
+    g.beginPath(); g.moveTo(table[0][0], table[0][1]); g.lineTo(table[3][0], table[3][1]);
+    g.lineTo(table[3][0] * 0.86, -0.7 * r); g.lineTo(table[0][0] * 0.86, -0.7 * r); g.closePath();
+    g.fillStyle = L(shift); g.fill();
+    // fine facet lines, then the outline
+    g.lineWidth = r * 0.05; g.strokeStyle = 'rgba(255,255,255,0.45)'; g.lineJoin = 'round';
+    g.beginPath(); g.moveTo(girdle[0][0], girdle[0][1]); g.lineTo(girdle[4][0], girdle[4][1]); g.stroke();
     g.beginPath();
-    for (let i = 0; i < 6; i++) { const a = Math.PI / 3 * i - Math.PI / 2; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
-    g.closePath();
-    g.fillStyle = '#45d4ff'; g.fill();
-    g.lineWidth = r * 0.2; g.strokeStyle = '#13609c'; g.stroke();
-    g.beginPath();
-    for (let i = 0; i < 6; i++) { const a = Math.PI / 3 * i - Math.PI / 2; g.lineTo(Math.cos(a) * r * 0.55, Math.sin(a) * r * 0.55); }
-    g.closePath(); g.fillStyle = '#b5f3ff'; g.fill();
-    g.fillStyle = '#ffffff';
-    g.fillRect(-r * 0.35, -r * 0.45, r * 0.18, r * 0.18);
+    g.moveTo(table[0][0] * 0.86, -0.7 * r); g.lineTo(-r, -0.18 * r); g.lineTo(0, 0.9 * r); g.lineTo(r, -0.18 * r); g.lineTo(table[3][0] * 0.86, -0.7 * r); g.closePath();
+    g.lineWidth = r * 0.16; g.strokeStyle = '#0d2f5c'; g.stroke();
+    // sparkle
+    if (glint > 0) {
+      g.scale(1 / k, 1);
+      const s = r * (0.35 + 0.55 * glint), cx = -0.32 * r * k, cy = -0.5 * r;
+      g.fillStyle = `rgba(255,255,255,${0.6 + 0.4 * glint})`;
+      g.beginPath();
+      g.moveTo(cx, cy - s); g.quadraticCurveTo(cx, cy, cx + s, cy); g.quadraticCurveTo(cx, cy, cx, cy + s);
+      g.quadraticCurveTo(cx, cy, cx - s, cy); g.quadraticCurveTo(cx, cy, cx, cy - s); g.fill();
+    }
     g.restore();
   }
 

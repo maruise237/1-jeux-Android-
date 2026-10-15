@@ -52,3 +52,15 @@ chaque niveau doit rester gagnable (`npm run verify-levels`).
 - [UX Planet — Game Design UX Best Practices](https://uxplanet.org/game-design-ux-best-practices-the-ultimate-guide-4a3078c32099)
 - [Adrian Crook — Best Practices For Mobile Game Onboarding](https://adriancrook.com/?p=8055)
 - [PocketGamer.biz — First-time user experience](https://www.pocketgamer.biz/news/77289/pgc-digital-how-to-enhance-the-first-time-user-experience/)
+
+## Passe visuelle « moins généré » (retours joueur)
+
+| Retour | Correction |
+|---|---|
+| On gardait les diamants en mourant | Les diamants ramassés pendant le niveau sont perdus si on meurt ; l'écran d'échec affiche « −N » en rouge. On garde seulement l'XP. |
+| Les diamants ressemblaient à des carrés | Vrai diamant taille brillant (facettes, éclat qui scintille, rotation quand il vole) ; même dessin en SVG pour l'icône du HUD et des menus. Les caisses vertes sont remplacées par des diamants posés au sol, ramassés au contact. |
+| Pièges plats | Mine de glace : boîtier métal avec ombre portée, boulons, dôme de verre, givre et vapeur. Mine explosive : mine kaki à moitié enterrée, bord strié, plaque de pression, voyant. |
+| Laser | Émetteur fixé au mur d'un côté, récepteur en face, faisceau lumineux qui scintille, poussière dans le rayon, lueur rouge au sol, préchauffe visible avant l'allumage. |
+| Détails « faits par une IA » | Émojis remplacés par des icônes dessinées (son, musique, vibration, clé) ; plus de capitales espacées, de séparateurs « · » ni de pied de page en double ; textes d'astuce sans « ⚠ », « 👆 », « 💥 ». |
+
+Pas de modèle CC0 vu de dessus trouvé pour ces objets (Kenney, OpenGameArt) : ils sont dessinés dans le code, dans le style des personnages.

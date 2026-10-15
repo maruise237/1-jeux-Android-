@@ -444,19 +444,19 @@
     state = 'playing';
     showScreen(null);
     buildHud();
-    if (guards.some(g => g.boss)) { showBanner('😈 COMBAT DE BOSS', `Niveau ${n} · Abats Le Colosse et ses gardes`); sfx.alert(); }
+    if (guards.some(g => g.boss)) { showBanner('COMBAT DE BOSS', `Abats le Colosse et ses gardes`); sfx.alert(); }
     else showBanner('NIVEAU ' + n, `Élimine ${guards.length} gardes`);
     let tip = null;
     const types = [...new Set(guards.map(g => g.type))];
     const newType = types.find(t => t !== 'thug' && !save.tips['enemy_' + t]);
     if (guards.some(g => g.boss) && !save.tips.boss) { tip = 'Boss : il faut plusieurs coups de couteau !<br>Après chaque coup il riposte : éloigne-toi puis reviens.'; save.tips.boss = 1; }
-    else if (tier > 0 && !save.tips['gear' + tier]) { tip = `⚠ Les ennemis s'équipent : <b>${G.name}</b> !<br>Plus de dégâts et plus de portée.`; save.tips['gear' + tier] = 1; }
-    else if (newType) tip = `⚠ Nouveaux ennemis : <b>${GUARD_TYPES[newType].name}</b> !` + (GUARD_TYPES[newType].tip ? '<br>' + GUARD_TYPES[newType].tip : '');
+    else if (tier > 0 && !save.tips['gear' + tier]) { tip = `Les ennemis s'équipent : <b>${G.name}</b>.<br>Plus de dégâts et plus de portée.`; save.tips['gear' + tier] = 1; }
+    else if (newType) tip = `Nouveaux ennemis : <b>${GUARD_TYPES[newType].name}</b>.` + (GUARD_TYPES[newType].tip ? '<br>' + GUARD_TYPES[newType].tip : '');
     else if (n === 1) tip = 'Touche le sol pour te déplacer.<br>Touche un garde pour l\'éliminer par surprise !';
     else if (lasers.length && !save.tips.laser) { tip = 'Attention aux lasers rouges !<br>Passe quand ils sont éteints.'; save.tips.laser = 1; }
-    else if (bombs.length && !save.tips.bomb) { tip = 'Mine explosive 💥 : passe dessus et fuis vite !<br>L\'explosion détruit les murs et tue tes poursuivants.'; save.tips.bomb = 1; }
-    else if (mines.length && !save.tips.mine) { tip = 'Mine de glace ❄ : passe dessus quand on te poursuit,<br>elle gèle tout autour… toi aussi si tu restes près !'; save.tips.mine = 1; }
-    else if (hideSet.size && !save.tips.grass) { tip = 'Cache-toi dans l\'herbe 🌿 :<br>les gardes ne te voient pas.'; save.tips.grass = 1; }
+    else if (bombs.length && !save.tips.bomb) { tip = 'Mine explosive : passe dessus et fuis vite.<br>L\'explosion détruit les murs et tue tes poursuivants.'; save.tips.bomb = 1; }
+    else if (mines.length && !save.tips.mine) { tip = 'Mine de glace : passe dessus quand on te poursuit,<br>elle gèle tout autour… toi aussi si tu restes près !'; save.tips.mine = 1; }
+    else if (hideSet.size && !save.tips.grass) { tip = 'Cache-toi dans l\'herbe :<br>les gardes ne te voient pas.'; save.tips.grass = 1; }
     for (const t of types) save.tips['enemy_' + t] = 1;
     showTip(tip);
     persist();
@@ -541,8 +541,7 @@
     // loot crates open after standing next to them for a moment
     for (const pk of pickups) {
       if (pk.taken) continue;
-      if (Math.hypot(pk.x - p.x, pk.y - p.y) < 0.95) pk.open += dt; else pk.open = Math.max(0, pk.open - dt * 2);
-      if (pk.open >= 0.8) {
+      if (Math.hypot(pk.x - p.x, pk.y - p.y) < 0.6) {
         pk.taken = true;
         sfx.pickup();
         spawnGems(pk.x, pk.y, pk.value);
@@ -551,7 +550,7 @@
     }
     if (keyItem && !keyItem.taken && Math.hypot(keyItem.x - p.x, keyItem.y - p.y) < 0.55) {
       keyItem.taken = true; levelKey = 1; sfx.pickup();
-      fx.texts.push({ x: keyItem.x, y: keyItem.y - 0.3, text: '🔑 ' + Math.min(3, save.keys + 1) + '/3', color: '#ffd34d', t: 1.3, max: 1.3, big: true });
+      fx.texts.push({ x: keyItem.x, y: keyItem.y - 0.3, text: 'Clé ' + Math.min(3, save.keys + 1) + '/3', color: '#ffd34d', t: 1.3, max: 1.3, big: true });
     }
     // freeze mine: arms when the hero runs over it, then freezes everything around (the hero too if still close)
     for (const m of mines) {
@@ -1145,46 +1144,165 @@
     g.setTransform(dpr * ts, 0, 0, dpr * ts, dpr * (-cam.x * ts + sx), dpr * (HUD_H - cam.y * ts + sy));
   }
 
-  function drawMine(m) {
-    const pulse = 0.5 + Math.sin(time * (m.state === 'fuse' ? 35 : 5)) * 0.5;
-    if (m.state === 'fuse') { ctx.strokeStyle = `rgba(150,230,255,${0.5 + pulse * 0.4})`; ctx.lineWidth = 0.05; art.circle(ctx, m.x, m.y, FREEZE_R * (1 - m.fuse / 0.6)); ctx.stroke(); }
-    ctx.fillStyle = `rgba(94,231,255,${0.15 + pulse * 0.2})`;
-    art.circle(ctx, m.x, m.y, 0.42 + pulse * 0.06); ctx.fill();
-    art.circle(ctx, m.x, m.y, 0.3);
-    ctx.fillStyle = '#4b5a72'; ctx.fill(); ctx.lineWidth = 0.05; ctx.strokeStyle = art.OUT; ctx.stroke();
-    art.circle(ctx, m.x, m.y, 0.2); ctx.fillStyle = '#d9f6ff'; ctx.fill();
-    ctx.strokeStyle = '#1b8fd1'; ctx.lineWidth = 0.035; ctx.lineCap = 'round';
-    ctx.beginPath();
-    for (let i = 0; i < 3; i++) {
-      const a = Math.PI / 3 * i + time * 0.6;
-      ctx.moveTo(m.x + Math.cos(a) * 0.15, m.y + Math.sin(a) * 0.15);
-      ctx.lineTo(m.x - Math.cos(a) * 0.15, m.y - Math.sin(a) * 0.15);
-    }
-    ctx.stroke();
-    art.circle(ctx, m.x, m.y, 0.04); ctx.fillStyle = '#ff4f4f'; ctx.fill();
+  // Ground shadow shared by the traps, so they sit on the floor instead of being painted on it.
+  function trapShadow(x, y, r) {
+    const sh = ctx.createRadialGradient(x + 0.05, y + 0.08, r * 0.6, x + 0.05, y + 0.08, r * 1.15);
+    sh.addColorStop(0, 'rgba(0,0,0,0.38)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = sh; art.circle(ctx, x + 0.05, y + 0.08, r * 1.15); ctx.fill();
+  }
+  // Brushed-metal disc lit from the top left.
+  function metalDisc(x, y, r, light, dark) {
+    const gr = ctx.createRadialGradient(x - r * 0.4, y - r * 0.45, r * 0.1, x, y, r);
+    gr.addColorStop(0, light); gr.addColorStop(1, dark);
+    art.circle(ctx, x, y, r); ctx.fillStyle = gr; ctx.fill();
   }
 
+  // Freeze mine: a squat cryo canister with a frosted glass dome and four bolts.
+  function drawMine(m) {
+    const fuse = m.state === 'fuse';
+    const pulse = 0.5 + Math.sin(time * (fuse ? 35 : 3)) * 0.5;
+    if (fuse) { ctx.strokeStyle = `rgba(150,230,255,${0.5 + pulse * 0.4})`; ctx.lineWidth = 0.05; art.circle(ctx, m.x, m.y, FREEZE_R * (1 - m.fuse / 0.6)); ctx.stroke(); }
+    // frost on the floor around it
+    const fr = ctx.createRadialGradient(m.x, m.y, 0.2, m.x, m.y, 0.6);
+    fr.addColorStop(0, 'rgba(200,240,255,0.35)'); fr.addColorStop(1, 'rgba(200,240,255,0)');
+    ctx.fillStyle = fr; art.circle(ctx, m.x, m.y, 0.6); ctx.fill();
+    trapShadow(m.x, m.y, 0.3);
+    metalDisc(m.x, m.y, 0.3, '#9aa6b8', '#39414f');
+    ctx.lineWidth = 0.035; ctx.strokeStyle = art.OUT; art.circle(ctx, m.x, m.y, 0.3); ctx.stroke();
+    // bevelled rim
+    ctx.lineWidth = 0.03; ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.beginPath(); ctx.arc(m.x, m.y, 0.26, Math.PI * 0.95, Math.PI * 1.75); ctx.stroke();
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath(); ctx.arc(m.x, m.y, 0.26, -0.2, Math.PI * 0.8); ctx.stroke();
+    for (let i = 0; i < 4; i++) {
+      const a = Math.PI / 4 + Math.PI / 2 * i, bx = m.x + Math.cos(a) * 0.23, by = m.y + Math.sin(a) * 0.23;
+      metalDisc(bx, by, 0.03, '#e3e8ef', '#4a5361');
+    }
+    // glass dome with the coolant swirling inside
+    const dg = ctx.createRadialGradient(m.x - 0.06, m.y - 0.07, 0.01, m.x, m.y, 0.17);
+    dg.addColorStop(0, '#ffffff'); dg.addColorStop(0.35, '#bff0ff'); dg.addColorStop(1, fuse ? '#4fd2ff' : '#2a88c9');
+    art.circle(ctx, m.x, m.y, 0.17); ctx.fillStyle = dg; ctx.fill();
+    ctx.lineWidth = 0.03; ctx.strokeStyle = '#1d3550'; ctx.stroke();
+    ctx.strokeStyle = `rgba(255,255,255,${0.35 + pulse * 0.3})`; ctx.lineWidth = 0.02; ctx.lineCap = 'round';
+    for (let i = 0; i < 3; i++) {
+      const a = time * 1.4 + i * 2.1;
+      ctx.beginPath(); ctx.arc(m.x, m.y, 0.07 + i * 0.025, a, a + 1.2); ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(255,255,255,0.85)'; art.ellipse(ctx, m.x - 0.06, m.y - 0.08, 0.045, 0.025); ctx.fill();
+    // status light
+    art.circle(ctx, m.x + 0.2, m.y - 0.2, 0.035); ctx.fillStyle = fuse ? (pulse > 0.5 ? '#ffffff' : '#5ee7ff') : (pulse > 0.8 ? '#7dffb0' : '#1f6b45'); ctx.fill();
+    // cold vapour
+    for (let i = 0; i < 3; i++) {
+      const t = (time * 0.6 + i / 3) % 1, a = i * 2.3 + m.x;
+      ctx.fillStyle = `rgba(235,250,255,${0.35 * (1 - t)})`;
+      art.circle(ctx, m.x + Math.cos(a) * (0.2 + t * 0.25), m.y + Math.sin(a) * (0.2 + t * 0.25) - t * 0.15, 0.05 + t * 0.06); ctx.fill();
+    }
+  }
+
+  // Explosive mine: an olive anti-personnel mine half buried in loose dirt, with a ribbed rim and a pressure plate.
+  function drawBomb(b) {
+    const fuse = b.state === 'fuse';
+    const blink = fuse ? Math.sin(time * 40) > 0 : Math.sin(time * 4) > 0.6;
+    if (fuse) {
+      const pulse = 0.5 + Math.sin(time * 30) * 0.5;
+      ctx.strokeStyle = `rgba(255,60,60,${0.3 + pulse * 0.4})`; ctx.lineWidth = 0.05;
+      art.circle(ctx, b.x, b.y, 0.4 + pulse * 0.08); ctx.stroke();
+    }
+    // disturbed earth
+    ctx.fillStyle = 'rgba(92,72,48,0.55)';
+    ctx.beginPath();
+    for (let i = 0; i <= 12; i++) {
+      const a = (Math.PI * 2 * i) / 12, r = 0.38 + Math.sin(i * 2.7 + b.x * 5) * 0.04;
+      ctx.lineTo(b.x + Math.cos(a) * r, b.y + Math.sin(a) * r * 0.9);
+    }
+    ctx.fill();
+    ctx.fillStyle = 'rgba(60,45,28,0.7)';
+    for (let i = 0; i < 6; i++) { const a = i * 1.07 + b.y * 3; art.circle(ctx, b.x + Math.cos(a) * 0.33, b.y + Math.sin(a) * 0.3, 0.022); ctx.fill(); }
+    trapShadow(b.x, b.y, 0.27);
+    metalDisc(b.x, b.y, 0.27, '#8a8f5a', '#3c3f22');
+    ctx.lineWidth = 0.035; ctx.strokeStyle = art.OUT; art.circle(ctx, b.x, b.y, 0.27); ctx.stroke();
+    // ribs around the casing
+    ctx.strokeStyle = 'rgba(20,22,10,0.55)'; ctx.lineWidth = 0.018;
+    ctx.beginPath();
+    for (let i = 0; i < 16; i++) {
+      const a = (Math.PI * 2 * i) / 16;
+      ctx.moveTo(b.x + Math.cos(a) * 0.2, b.y + Math.sin(a) * 0.2); ctx.lineTo(b.x + Math.cos(a) * 0.26, b.y + Math.sin(a) * 0.26);
+    }
+    ctx.stroke();
+    // pressure plate
+    metalDisc(b.x, b.y, 0.15, '#6c7046', '#2c2e18');
+    ctx.lineWidth = 0.025; ctx.strokeStyle = '#1b1c0e'; art.circle(ctx, b.x, b.y, 0.15); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 0.015;
+    ctx.beginPath(); ctx.moveTo(b.x - 0.09, b.y); ctx.lineTo(b.x + 0.09, b.y); ctx.moveTo(b.x, b.y - 0.09); ctx.lineTo(b.x, b.y + 0.09); ctx.stroke();
+    // stencilled warning band
+    ctx.strokeStyle = '#d8b13a'; ctx.lineWidth = 0.022;
+    ctx.beginPath(); ctx.arc(b.x, b.y, 0.18, Math.PI * 1.1, Math.PI * 1.4); ctx.stroke();
+    ctx.beginPath(); ctx.arc(b.x, b.y, 0.18, Math.PI * 0.1, Math.PI * 0.4); ctx.stroke();
+    // arming light
+    art.circle(ctx, b.x + 0.1, b.y - 0.1, 0.035); ctx.fillStyle = blink ? '#ff3b3b' : '#5a1414'; ctx.fill();
+    if (blink) {
+      const gl = ctx.createRadialGradient(b.x + 0.1, b.y - 0.1, 0, b.x + 0.1, b.y - 0.1, 0.18);
+      gl.addColorStop(0, 'rgba(255,60,60,0.6)'); gl.addColorStop(1, 'rgba(255,60,60,0)');
+      ctx.fillStyle = gl; art.circle(ctx, b.x + 0.1, b.y - 0.1, 0.18); ctx.fill();
+    }
+  }
+
+  // Tripwire laser: an emitter bolted to one wall shoots a beam into a receiver on the opposite wall.
+  function laserBox(p, dx, dy, emitter, on, warn) {
+    const nx = -dy, ny = dx; // across the beam
+    ctx.save(); ctx.translate(p.x, p.y); ctx.transform(dx, dy, nx, ny, 0, 0);
+    // housing sunk into the wall, sticking out a little
+    trapShadow(0.02, 0, 0.16);
+    const hg = ctx.createLinearGradient(0, -0.17, 0, 0.17);
+    hg.addColorStop(0, '#7d8697'); hg.addColorStop(0.5, '#4a5160'); hg.addColorStop(1, '#262a33');
+    art.rrect(ctx, -0.2, -0.17, 0.3, 0.34, 0.05); ctx.fillStyle = hg; ctx.fill();
+    ctx.lineWidth = 0.035; ctx.strokeStyle = art.OUT; ctx.stroke();
+    ctx.fillStyle = '#1a1d24'; ctx.fillRect(-0.16, -0.17, 0.035, 0.34);
+    for (const yy of [-0.11, 0.11]) { art.circle(ctx, -0.07, yy, 0.022); ctx.fillStyle = '#c8ced8'; ctx.fill(); }
+    // lens
+    const lit = emitter ? (on ? 1 : warn ? 0.5 + 0.5 * Math.sin(time * 40) : 0.15) : (on ? 0.8 : 0.1);
+    art.rrect(ctx, 0.06, -0.08, 0.07, 0.16, 0.03); ctx.fillStyle = '#111'; ctx.fill();
+    art.circle(ctx, 0.1, 0, 0.055);
+    ctx.fillStyle = `rgb(${110 + lit * 145 | 0},${30 + lit * 60 | 0},${30 + lit * 60 | 0})`; ctx.fill();
+    if (lit > 0.3) {
+      const gl = ctx.createRadialGradient(0.12, 0, 0, 0.12, 0, 0.3);
+      gl.addColorStop(0, `rgba(255,70,60,${0.55 * lit})`); gl.addColorStop(1, 'rgba(255,70,60,0)');
+      ctx.fillStyle = gl; art.circle(ctx, 0.12, 0, 0.3); ctx.fill();
+    }
+    ctx.restore();
+  }
   function drawLaser(l) {
     const on = laserOn(l), warn = !on && laserWarn(l);
     const p1 = l.h ? { x: l.a, y: l.c } : { x: l.c, y: l.a };
     const p2 = l.h ? { x: l.b, y: l.c } : { x: l.c, y: l.b };
+    const dx = l.h ? 1 : 0, dy = l.h ? 0 : 1;
+    const s1 = { x: p1.x + dx * 0.12, y: p1.y + dy * 0.12 }, s2 = { x: p2.x - dx * 0.12, y: p2.y - dy * 0.12 };
+    const line = () => { ctx.beginPath(); ctx.moveTo(s1.x, s1.y); ctx.lineTo(s2.x, s2.y); };
     if (on) {
-      ctx.lineCap = 'round';
-      ctx.strokeStyle = 'rgba(255,40,40,0.25)'; ctx.lineWidth = 0.35 + Math.sin(time * 40) * 0.04;
-      ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
-      ctx.strokeStyle = '#ff3b3b'; ctx.lineWidth = 0.12; ctx.stroke();
-      ctx.strokeStyle = '#ffe2e2'; ctx.lineWidth = 0.04; ctx.stroke();
-    } else if (warn && Math.sin(time * 40) > 0) {
-      ctx.setLineDash([0.12, 0.1]);
-      ctx.strokeStyle = 'rgba(255,60,60,0.7)'; ctx.lineWidth = 0.04;
-      ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
-      ctx.setLineDash([]);
+      ctx.save(); ctx.lineCap = 'butt';
+      // red light spilling on the floor
+      ctx.strokeStyle = 'rgba(255,40,30,0.07)'; ctx.lineWidth = 0.6; line(); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,40,30,0.07)'; ctx.lineWidth = 0.36; line(); ctx.stroke();
+      ctx.globalCompositeOperation = 'lighter';
+      const flick = 0.85 + Math.sin(time * 53) * 0.08 + Math.sin(time * 31) * 0.07;
+      ctx.strokeStyle = `rgba(255,30,20,${0.35 * flick})`; ctx.lineWidth = 0.22; line(); ctx.stroke();
+      ctx.strokeStyle = `rgba(255,60,40,${0.8 * flick})`; ctx.lineWidth = 0.08; line(); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,235,225,0.95)'; ctx.lineWidth = 0.025; line(); ctx.stroke();
+      // dust drifting through the beam
+      const len = Math.hypot(s2.x - s1.x, s2.y - s1.y);
+      for (let i = 0; i < 6; i++) {
+        const u = ((time * 0.35 + i * 0.37 + l.c) % 1), off = Math.sin(time * 2 + i * 1.7) * 0.05;
+        ctx.fillStyle = `rgba(255,190,170,${0.7 * Math.sin(u * Math.PI)})`;
+        art.circle(ctx, s1.x + dx * u * len - dy * off, s1.y + dy * u * len + dx * off, 0.018); ctx.fill();
+      }
+      ctx.restore();
+    } else if (warn) {
+      ctx.save(); ctx.setLineDash([0.08, 0.12]); ctx.lineDashOffset = -time * 2;
+      ctx.strokeStyle = `rgba(255,70,60,${0.25 + 0.35 * (Math.sin(time * 40) > 0)})`; ctx.lineWidth = 0.025; line(); ctx.stroke();
+      ctx.restore();
     }
-    for (const p of [p1, p2]) {
-      art.rrect(ctx, p.x - 0.13, p.y - 0.13, 0.26, 0.26, 0.05);
-      ctx.fillStyle = '#3a3d4c'; ctx.fill(); ctx.lineWidth = 0.04; ctx.strokeStyle = art.OUT; ctx.stroke();
-      art.circle(ctx, p.x, p.y, 0.07); ctx.fillStyle = on ? '#ff3b3b' : warn ? '#ffb02e' : '#7a2a2a'; ctx.fill();
-    }
+    laserBox(p1, dx, dy, true, on, warn);
+    laserBox(p2, -dx, -dy, false, on, warn);
   }
 
   // Orange arrow that follows the real route around walls and obstacles, with rounded corners.
@@ -1229,17 +1347,6 @@
     ctx.beginPath(); ctx.moveTo(0.22, 0); ctx.lineTo(-0.12, -0.19); ctx.lineTo(-0.12, 0.19); ctx.closePath();
     ctx.fillStyle = '#ff8a1e'; ctx.fill(); ctx.lineWidth = 0.035; ctx.strokeStyle = 'rgba(80,30,0,0.6)'; ctx.stroke();
     ctx.restore();
-  }
-
-  function drawBomb(b) {
-    const blink = b.state === 'fuse' ? Math.sin(time * 40) > 0 : Math.sin(time * 4) > 0.3;
-    const pulse = 0.5 + Math.sin(time * (b.state === 'fuse' ? 30 : 4)) * 0.5;
-    ctx.strokeStyle = `rgba(255,60,80,${0.25 + pulse * 0.35})`; ctx.lineWidth = 0.05;
-    art.circle(ctx, b.x, b.y, 0.36 + pulse * 0.08); ctx.stroke();
-    art.circle(ctx, b.x, b.y, 0.26); ctx.fillStyle = '#c9ccd6'; ctx.fill(); ctx.lineWidth = 0.045; ctx.strokeStyle = art.OUT; ctx.stroke();
-    art.circle(ctx, b.x, b.y, 0.17); ctx.fillStyle = '#e7a6b3'; ctx.fill();
-    art.circle(ctx, b.x, b.y, 0.09); ctx.fillStyle = blink ? '#ff2a3d' : '#7a1020'; ctx.fill();
-    if (blink) { ctx.fillStyle = 'rgba(255,60,80,0.35)'; art.circle(ctx, b.x, b.y, 0.2); ctx.fill(); }
   }
 
   function drawChaseMarker(gd) {
@@ -1315,16 +1422,14 @@
     for (const m of mines) if (m.state !== 'used') drawMine(m);
     for (const pk of pickups) {
       if (pk.taken) continue;
-      art.rrect(ctx, pk.x - 0.3, pk.y - 0.3, 0.6, 0.6, 0.1);
-      ctx.fillStyle = '#3d4654'; ctx.fill(); ctx.lineWidth = 0.045; ctx.strokeStyle = art.OUT; ctx.stroke();
-      art.rrect(ctx, pk.x - 0.22, pk.y - 0.22, 0.44, 0.44, 0.06);
-      ctx.fillStyle = `rgb(${90 + Math.sin(time * 4 + pk.x) * 30 | 0},220,90)`; ctx.fill();
-      art.drawGem(ctx, pk.x, pk.y, 0.15, 0);
-      if (Math.sin(time * 3 + pk.y) > 0.92) { ctx.fillStyle = '#ffffff'; ctx.fillRect(pk.x + 0.08, pk.y - 0.2, 0.05, 0.05); }
-      if (pk.open > 0) {
-        ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 0.07; ctx.lineCap = 'round';
-        ctx.beginPath(); ctx.arc(pk.x, pk.y, 0.5, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, pk.open / 0.8)); ctx.stroke();
-      }
+      // a few loose diamonds lying on the floor, each catching the light in turn
+      ctx.fillStyle = 'rgba(0,0,0,0.22)'; art.ellipse(ctx, pk.x, pk.y + 0.16, 0.34, 0.1); ctx.fill();
+      ctx.fillStyle = `rgba(120,220,255,${0.12 + Math.sin(time * 3 + pk.x) * 0.06})`; art.circle(ctx, pk.x, pk.y, 0.42); ctx.fill();
+      const bob = Math.sin(time * 2.4 + pk.x * 3) * 0.025;
+      const glint = i => Math.max(0, Math.sin(time * 2.2 + pk.y * 5 + i * 2.1) * 4 - 3);
+      art.drawGem(ctx, pk.x - 0.17, pk.y + 0.06, 0.1, 0.5, glint(1));
+      art.drawGem(ctx, pk.x + 0.17, pk.y + 0.08, 0.09, -0.4, glint(2));
+      art.drawGem(ctx, pk.x, pk.y - 0.04 + bob, 0.15, 0, glint(0));
     }
     if (keyItem && !keyItem.taken) {
       const kx = keyItem.x, ky = keyItem.y + Math.sin(time * 3) * 0.05;
@@ -1458,7 +1563,7 @@
       }
     }
     ctx.globalAlpha = 1;
-    for (const g of fx.gems) art.drawGem(ctx, g.x, g.y, 0.13, g.rot);
+    for (const g of fx.gems) art.drawGem(ctx, g.x, g.y, 0.14, g.rot, Math.max(0, Math.cos(g.rot) * 3 - 2));
     for (const f of fx.fireballs) {
       const k = f.t / f.max;
       const gr = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r * (0.4 + k * 0.7));
@@ -1618,7 +1723,7 @@
   function showTip(html) {
     const t = $('tip');
     if (!html) { t.classList.add('hidden'); return; }
-    t.innerHTML = `<span class="hand">👆</span><span>${html}</span>`;
+    t.innerHTML = `<span>${html}</span>`;
     t.classList.remove('hidden');
   }
   function hideTip() { $('tip').classList.add('hidden'); }
@@ -1631,7 +1736,7 @@
   function updateHud() {
     const keys = (save.keys || 0) + levelKey;
     $('hud-keys').classList.toggle('hidden', keys === 0);
-    $('hud-keys').textContent = '🔑 ' + Math.min(keys, 3) + '/3';
+    $('hud-keys').innerHTML = '<i class="key-ico"></i>' + Math.min(keys, 3) + '/3';
     const dead = guards.filter(g => !g.alive).length, kn = $('hud-kills-n');
     const txt = dead + '/' + guards.length;
     if (kn.textContent !== txt) {
@@ -1696,7 +1801,7 @@
     holder.appendChild(heroPortrait(currentHero().look, 130));
     const ch2 = currentHero(), lv2 = heroLevel(ch2.id);
     const pct = lv2 >= MAX_HERO_LV ? 100 : Math.round(100 * (heroXp(ch2.id) - xpFor(lv2)) / (xpFor(lv2 + 1) - xpFor(lv2)));
-    $('menu-hero-name').innerHTML = `${ch2.name} · NIV ${lv2}<span class="xpbar"><i style="width:${pct}%"></i></span>`;
+    $('menu-hero-name').innerHTML = `${ch2.name}<small>niv. ${lv2}</small><span class="xpbar"><i style="width:${pct}%"></i></span>`;
     refreshToggles();
     showScreen('menu');
   }
@@ -1723,7 +1828,7 @@
       const card = document.createElement('button');
       card.className = 'hero-card' + (selected ? ' selected' : '') + (owned ? '' : ' locked');
       card.appendChild(heroPortrait(h.look, 84, { locked: !owned }));
-      const name = document.createElement('div'); name.className = 'hero-name'; name.textContent = owned ? `${h.name} · NIV ${heroLevel(h.id)}` : h.name;
+      const name = document.createElement('div'); name.className = 'hero-name'; name.innerHTML = owned ? `${h.name} <small>niv. ${heroLevel(h.id)}</small>` : h.name;
       const lab = document.createElement('div'); lab.className = 'hero-label'; lab.textContent = selected ? 'ÉQUIPÉ' : h.label;
       if (h.spd && !selected) lab.classList.add('speed');
       if (h.hp && !h.spd && !selected) lab.classList.add('health');
@@ -1756,7 +1861,8 @@
     const bonus = won ? 5 * stars + 2 * n : 0;
     let chest = 0;
     if (won && levelKey) { save.keys = (save.keys || 0) + 1; if (save.keys >= 3) { save.keys = 0; chest = 100 + n * 5; } }
-    const total = levelGems + bonus + chest;
+    // dying forfeits the diamonds picked up during the level: only a finished mission pays
+    const total = won ? levelGems + bonus + chest : 0;
     save.gems += total;
     const killed = guards.filter(g => !g.alive);
     const xpGain = killed.length * 10 + killed.filter(g => g.boss).length * 60 + (won ? 25 : 0);
@@ -1778,12 +1884,16 @@
     starEls.forEach(s => s.classList.remove('on'));
     $('result-stars').classList.toggle('hidden', !won);
     starEls.forEach((s, i) => { if (i < stars) setTimeout(() => { s.classList.add('on'); sfx.star(i); }, 350 + i * 300); });
-    $('result-bonus').textContent = (won ? `Butin ${levelGems} + bonus ${bonus}` + (chest ? ` + coffre 🔑 ${chest}` : '') : `Butin conservé : ${levelGems}`)
-      + ` · +${xpGain} XP` + (leveled ? ` · ⬆ ${hero.name} niveau ${heroLevel(hero.id)} !` : '');
+    $('result-bonus').innerHTML = (won
+      ? `Butin ${levelGems}, bonus ${bonus}` + (chest ? `, coffre ${chest}` : '')
+      : (levelGems ? `${levelGems} diamants perdus. Termine la mission pour les garder.` : 'Aucun diamant ramassé.'))
+      + `<br>+${xpGain} XP` + (leveled ? `, ${hero.name} passe au niveau ${heroLevel(hero.id)}` : '');
     const el = $('result-gems');
+    el.parentElement.classList.toggle('lost', !won);
+    if (!won) el.textContent = levelGems ? '−' + levelGems : '0';
     const t0 = performance.now();
     let lastShown = 0;
-    (function count(now) {
+    if (won) (function count(now) {
       const p = Math.min(1, (now - t0) / 900);
       const v = Math.round(total * p);
       el.textContent = '+' + v;
@@ -1818,7 +1928,7 @@
 
   // ---------- Lucky wheel (no ads: offered every 5 levels) ----------
   const PRIZES = [
-    { label: '50', gems: 50, color: '#8e5ad6' }, { label: '🔑', key: 1, color: '#ffc93c' },
+    { label: '50', gems: 50, color: '#8e5ad6' }, { label: 'CLÉ', key: 1, color: '#ffc93c' },
     { label: '100', gems: 100, color: '#8e5ad6' }, { label: 'XP+', xp: 120, color: '#ffc93c' },
     { label: '30', gems: 30, color: '#8e5ad6' }, { label: '250', gems: 250, color: '#ffc93c' },
     { label: '75', gems: 75, color: '#8e5ad6' }, { label: '150', gems: 150, color: '#ffc93c' },
@@ -1835,7 +1945,7 @@
       g.save(); g.rotate(i * sl); g.translate(0, -R0 * 0.62);
       g.font = '52px "Lilita One", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
       g.lineWidth = 10; g.strokeStyle = '#1c1a2b'; g.strokeText(p.label, 0, 0); g.fillStyle = '#ffffff'; g.fillText(p.label, 0, 0);
-      if (p.gems) { g.translate(0, 46); art.drawGem(g, 0, 0, 18, 0); }
+      if (p.gems) { g.translate(0, 46); art.drawGem(g, 0, 0, 20, 0, 0.6); }
       g.restore();
     });
     g.beginPath(); g.arc(0, 0, R0 - 8, 0, Math.PI * 2); g.lineWidth = 14; g.strokeStyle = '#1c1a2b'; g.stroke();
@@ -1868,7 +1978,7 @@
       if (p.key) save.keys = Math.min(2, (save.keys || 0) + 1);
       if (p.xp) addXp(currentHero().id, p.xp);
       persist(); sfx.win();
-      $('wheel-result').textContent = p.gems ? `+${p.gems} gemmes !` : p.key ? '+1 clé 🔑 !' : `+${p.xp} XP !`;
+      $('wheel-result').textContent = p.gems ? `+${p.gems} gemmes !` : p.key ? '+1 clé' : `+${p.xp} XP !`;
       $('btn-spin').classList.add('hidden'); $('btn-wheel-close').classList.remove('hidden');
     })(t0);
   }
@@ -1917,7 +2027,7 @@
 
   // Hook for automated tests.
   window.__shadowStrike = {
-    save, generateLevel, startLevel, kill, triggerFreeze, canSee, findPath, isWallTile, angleDiff, GUARD_TYPES,
+    save, generateLevel, startLevel, kill, finish, triggerFreeze, canSee, findPath, isWallTile, angleDiff, GUARD_TYPES,
     tick(n, dt = 1 / 60) { for (let i = 0; i < n; i++) update(dt); },
     get level() { return L; }, get time() { return time; },
     get state() { return state; }, get guards() { return guards; }, get player() { return player; },
