@@ -40,9 +40,9 @@ Après **3 défaites de suite sur le même niveau**, les gardes y deviennent 10 
 |---|---|---|
 | 51 | Le Jardin | Beaucoup d'herbes hautes, peu de murs |
 | 61 | Les Docks | Allées de conteneurs |
-| 71 | Le Laboratoire | Pièces reliées par des portes, avec des lasers dans les portes |
+| 71 | Le Laboratoire | Pièces reliées par des portes (2 par mur), avec les lasers dans les portes ; 1 garde de moins |
 | 81 | La Cour | Place centrale entourée de piliers, herbe dans les coins |
-| 91 | Le Champ de mines | Couloirs en zigzag, 2 mines explosives de plus |
+| 91 | Le Champ de mines | Couloirs en zigzag (2 passages par mur), 1 mine explosive de plus ; 1 garde de moins |
 | 100 | Le QG | Boss avec deux élites en escorte |
 
 Après sa découverte, chaque carte entre dans la rotation : environ 40 % de cartes classiques et 60 % de cartes spéciales.
@@ -52,7 +52,11 @@ Après sa découverte, chaque carte entre dans la rotation : environ 40 % de car
 - **Défi éclair** (dès le niveau 6) : chrono ⚡ dans l'interface de jeu. Finir avant la fin du chrono rapporte +10 + n° du niveau en diamants.
 - **Bandeau « Nouvelle carte : … »** à chaque découverte.
 
-## Vérification
+## Vérification (faite le 15/10/2026)
+- Niveaux 1–120 gagnés par le robot avec l'assassin le plus faible.
+- Niveaux 31–120 gagnés aussi avec un assassin au maximum (Kami niveau 20, toutes les améliorations, couteau Plasma) face aux gardes adaptés.
+- Au premier passage, le Laboratoire et le Champ de mines étaient trop chargés (6 niveaux impossibles) : ils ont été adoucis comme indiqué plus haut.
+
 - `npm run verify-levels -- --from 31 --to 120` : le robot joue avec l'assassin le plus faible et garde, pour chaque niveau, la première carte qu'il arrive à gagner.
 - `npm run verify-levels -- --from 31 --to 120 --max` : rejoue ces cartes avec un assassin au maximum, face aux gardes adaptés.
 - Ensuite, ajuster avec les vrais chiffres du panneau admin : taux de victoire par niveau, comparé aux objectifs du tableau ci-dessus.
