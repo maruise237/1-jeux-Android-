@@ -20,6 +20,14 @@ Jeu mobile d'infiltration en vue du dessus. Tu es un assassin armé d'un couteau
   à travers les murs. Les gardes proches hésitent, puis viennent vérifier en marchant plus vite ;
   sur place, ils regardent à gauche et à droite et fouillent 1 ou 2 recoins avant de reprendre leur ronde.
   Un garde qui repère le héros appelle ses voisins. Un garde bloqué recalcule son chemin.
+- **Jauge de détection** : un œil se remplit au-dessus du garde qui t'aperçoit (vite de près, lentement
+  de loin) et sa lampe vire à l'orange ; sors du cône avant qu'il soit plein et le garde vient seulement
+  vérifier. À bout portant, la détection est immédiate.
+- **Sensations** : arrêt sur image de 60 ms et flash à chaque élimination au couteau, secousse orientée,
+  séries « DOUBLE ! / TRIPLE ! / MULTI » avec gemmes bonus, caméra qui anticipe le déplacement.
+- **Son dynamique** : la musique se tend quand on est repéré et baisse pendant les explosions,
+  battement de cœur quand la vie est basse, pas de sons empilés en rafale.
+- **Options** : son, musique et vibrations activables séparément.
 - **Pièges** : lasers rouges clignotants, mines de glace qui gèlent les gardes et, dès le niveau 12,
   **mines explosives** (rouges) : le héros les déclenche en passant dessus, puis doit fuir ;
   l'explosion tue les poursuivants, blesse le héros s'il est trop près et **détruit les murs**.
@@ -49,6 +57,8 @@ Jeu mobile d'infiltration en vue du dessus. Tu es un assassin armé d'un couteau
 - **Aucune publicité, aucun achat intégré.**
 
 Code, nom et graphismes 100 % originaux, © KamTech Studio.
+
+Revue complète (recherches, critique produit, décisions) : `docs/revue-gameplay.md`.
 
 ## Jouer dans le navigateur
 
@@ -148,6 +158,7 @@ Police Lilita One par Juan Montoreano, licence SIL Open Font License (`www/fonts
 
 Bruitages (`www/sfx/`), tous dans le domaine public (CC0), raccourcis et convertis en MP3 mono :
 
-- Kenney (www.kenney.nl) : packs *RPG Audio*, *Impact Sounds*, *Sci-fi Sounds*, *Interface Sounds*.
+- Kenney (www.kenney.nl) : packs *RPG Audio*, *Impact Sounds*, *Sci-fi Sounds*, *Interface Sounds*,
+  *Digital Audio*.
 - *The Free Firearm Sound Library* (freefirearmsfx.com, via OpenGameArt) : tirs de pistolet,
   mitraillette, fusil d'assaut, fusil à pompe et fusil lourd.

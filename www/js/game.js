@@ -71,7 +71,7 @@
 
   // ---------- Save ----------
   function loadSave() {
-    const base = { level: 1, gems: 0, keys: 0, owned: ['kenji'], selected: 'kenji', sfx: true, music: true, stars: {}, tips: {} };
+    const base = { level: 1, gems: 0, keys: 0, owned: ['kenji'], selected: 'kenji', sfx: true, music: true, vibe: true, stars: {}, tips: {} };
     try {
       const s = JSON.parse(localStorage.getItem(SAVE_KEY));
       if (s && typeof s === 'object') return Object.assign(base, s);
@@ -389,9 +389,10 @@
   let state = 'menu';
   let L = null, player = null, guards = [], lasers = [], mines = [], bombs = [], pickups = [], decals = [];
   let hideSet = new Set(), keyItem = null, spawnT = 0;
-  let fx = null, levelGems = 0, shake = 0, endTimer = 0, hurtFlash = 0, time = 0, slowmo = 1;
+  let fx = null, levelGems = 0, shake = 0, endTimer = 0, hurtFlash = 0, time = 0, slowmo = 1, hitStop = 0, combo = 0, comboT = -9, heartT = 0;
   let marker = null, gemSoundCd = 0, mapCanvas = null, levelKey = 0;
-  const cam = { x: 0, y: 0 };
+  const cam = { x: 0, y: 0 }, lead = { x: 0, y: 0 };
+  let camKick = { x: 0, y: 0 };
   const resetFx = () => ({ parts: [], gems: [], texts: [], rings: [], tracers: [], ripples: [], slashes: [], smoke: [], fireballs: [] });
   fx = resetFx();
 
@@ -413,6 +414,8 @@
     const baseRange = Math.min(3.0 + n * 0.04, 3.8);
     const baseDmg = 16 + Math.min(n, 14);
     const tier = gearTier(n), G = GEAR[tier];
+    // time a guard needs to recognise the hero at full range (shorter on later levels)
+    const detectTime = Math.max(0.35, 0.7 - n * 0.008);
     guards = L.guards.map((def, gi) => {
       const T = GUARD_TYPES[def.type];
       const route = def.route;
@@ -422,7 +425,7 @@
         speed: gSpeed * (def.type === 'heavy' ? 0.85 : def.type === 'boss' ? 0.8 : 1), range: Math.min(baseRange * T.range * G.range, MAX_RANGE), half: T.half,
         damage: Math.min(Math.round(baseDmg * T.dmg * G.dmg * (def.type === 'heavy' && tier >= 2 ? 1.15 : 1)), (T.weapon === 'shotgun' || T.weapon === 'cannon') ? MAX_HIT_SHOTGUN : MAX_HIT), shield: !!T.shield, rate: T.rate, type: def.type, look: guardLook(def.type, tier), weapon: def.type === 'heavy' && tier >= 2 ? 'cannon' : T.weapon,
         reactTime: T.reaction, laser: !!(T.laser || (G.laser && T.weapon !== 'shotgun')),
-        frozen: 0, walk: 0, muzzle: 0, alertT: 0, qT: 0, deadT: 0, follow: def.follow,
+        frozen: 0, walk: 0, muzzle: 0, alertT: 0, qT: 0, deadT: 0, follow: def.follow, aware: 0, detect: detectTime,
         boss: def.type === 'boss', hp: def.type === 'boss' ? 3 + Math.floor(n / 30) : 1, stun: 0, scale: def.type === 'boss' ? 1.45 : 1,
       };
     });
@@ -435,7 +438,7 @@
     decals = [];
     pickups = L.pickups.map(p => ({ ...p, taken: false, open: 0 }));
     fx = resetFx();
-    levelGems = 0; levelKey = 0; shake = 0; endTimer = 0; hurtFlash = 0; time = 0; slowmo = 1; marker = null;
+    levelGems = 0; levelKey = 0; shake = 0; endTimer = 0; hurtFlash = 0; time = 0; slowmo = 1; marker = null; hitStop = 0; combo = 0; comboT = -9;
     buildMap();
     updateCamera(0, true);
     state = 'playing';
@@ -650,7 +653,24 @@
   }
 
   function stepGuard(gd, dt) {
-    if (state === 'playing' && canSee(gd, player)) {
+    const seen = state === 'playing' && canSee(gd, player);
+    // detection gauge: a guard needs a moment to recognise the hero (instant at point-blank range),
+    // which gives the player a fair chance to slip out of the light
+    if (seen && gd.state !== 'alert') {
+      const d = Math.hypot(player.x - gd.x, player.y - gd.y);
+      const fill = d < 1.3 ? 100 : 1 / (gd.detect * (0.35 + 0.65 * d / gd.range));
+      gd.aware = Math.min(1, gd.aware + dt * fill);
+      gd.lastSeen = { x: player.x, y: player.y };
+      if (gd.aware < 1) { turnTo(gd, Math.atan2(player.y - gd.y, player.x - gd.x), dt * 2.5); return; }
+    } else if (!seen && gd.aware > 0 && gd.state !== 'alert') {
+      // lost sight before being sure: he comes to check where he saw something
+      if (gd.aware > 0.3 && gd.lastSeen && (gd.state === 'patrol' || gd.state === 'return')) {
+        gd.state = 'suspect'; gd.timer = 0.4; gd.qT = 1.2; gd.searchN = 0; sfx.suspect();
+      }
+      gd.aware = Math.max(0, gd.aware - dt * 0.8);
+    }
+    if (seen) {
+      gd.aware = 0;
       if (gd.state !== 'alert') {
         gd.state = 'alert'; gd.reaction = gd.reactTime; gd.alertT = 1.2; sfx.alert(); player.spotted = true;
         // he shouts: nearby guards come to help
@@ -829,7 +849,24 @@
       const a = Math.random() * Math.PI * 2, s = 2 + Math.random() * 3;
       fx.parts.push({ x: gd.x, y: gd.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, t: 0.35, max: 0.35, r: 0.05, c: '#fff6c2' });
     }
-    const gain = 4 + Math.floor(Math.random() * 4) + Math.floor(save.level / 5);
+    let gain = 4 + Math.floor(Math.random() * 4) + Math.floor(save.level / 5);
+    // knife kills freeze the action for a split second and flash the victim: every kill lands
+    if (!byBlast) {
+      hitStop = 0.06;
+      fx.parts.push({ x: gd.x, y: gd.y, vx: 0, vy: 0, t: 0.09, max: 0.09, r: 0.55, c: 'rgba(255,255,255,0.85)' });
+      const a = player.angle;
+      camKick = { x: Math.cos(a) * 0.12, y: Math.sin(a) * 0.12 };
+    }
+    // kill streaks: chained kills within 2.5 s give a small bonus
+    combo = time - comboT < 2.5 ? combo + 1 : 1;
+    comboT = time;
+    if (combo >= 2) {
+      const label = combo === 2 ? 'DOUBLE !' : combo === 3 ? 'TRIPLE !' : 'MULTI ×' + combo;
+      const bonus = 2 * combo;
+      gain += bonus;
+      fx.texts.push({ x: gd.x, y: gd.y - 1.0, text: label, color: '#ffd34d', t: 1.3, max: 1.3, big: true });
+      sfx.combo(combo);
+    }
     spawnGems(gd.x, gd.y, gain);
     fx.texts.push({ x: gd.x, y: gd.y - 0.4, text: '+' + gain, color: '#7dff5a', t: 1.1, max: 1.1, big: true });
     shake = Math.max(shake, 0.15);
@@ -979,7 +1016,7 @@
     if (won) { sfx.win(); showBanner('TERMINÉ !', '', 'clear'); } else sfx.lose();
   }
 
-  function vibrate(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* ignore */ } }
+  function vibrate(ms) { if (save.vibe === false) return; try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* ignore */ } }
 
   function updateFx(dt) {
     for (const p of fx.parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.9; p.vy *= 0.9; p.t -= dt; }
@@ -1019,9 +1056,16 @@
       endTimer -= rawDt;
       if (endTimer <= 0) showResult(state === 'won');
     }
-    const dt = rawDt * (state === 'playing' ? 1 : slowmo);
+    hitStop = Math.max(0, hitStop - rawDt);
+    const dt = rawDt * (state === 'playing' ? (hitStop > 0 ? 0.06 : 1) : slowmo);
     time += dt;
     if (state === 'playing') updatePlayer(dt);
+    // music follows the action; a heartbeat warns when health is low
+    audio.setTension(state === 'playing' && guards.some(g => g.alive && g.state === 'alert') ? 1 : 0);
+    if (state === 'playing' && player.hp / player.maxHp < 0.35) {
+      heartT -= rawDt;
+      if (heartT <= 0) { sfx.heart(); heartT = 0.95; }
+    } else heartT = 0;
     if (state === 'playing' || state === 'won' || state === 'lost') {
       for (const gd of guards) updateGuard(gd, dt);
       separateGuards(dt);
@@ -1034,6 +1078,7 @@
     updateCamera(rawDt, false);
     spawnT = Math.max(0, spawnT - rawDt);
     shake = Math.max(0, shake - rawDt);
+    camKick.x *= Math.exp(-rawDt * 14); camKick.y *= Math.exp(-rawDt * 14);
     hurtFlash = Math.max(0, hurtFlash - rawDt);
   }
 
@@ -1060,8 +1105,14 @@
   function updateCamera(dt, snap) {
     if (!player) return;
     const vw = cw / ts, vh = (ch - HUD_H) / ts;
-    const tx = vw >= W ? (W - vw) / 2 : Math.max(0, Math.min(W - vw, player.x - vw / 2));
-    const ty = vh >= H ? (H - vh) / 2 : Math.max(0, Math.min(H - vh, player.y - vh / 2));
+    // look-ahead: the camera leans up to one tile towards where the hero is heading
+    const moving = state === 'playing' && player.path && player.pi < player.path.length;
+    const kl = 1 - Math.exp(-dt * 2.5);
+    lead.x += ((moving ? Math.cos(player.angle) : 0) - lead.x) * kl;
+    lead.y += ((moving ? Math.sin(player.angle) * 1.3 : 0) - lead.y) * kl;
+    if (snap) { lead.x = 0; lead.y = 0; }
+    const tx = vw >= W ? (W - vw) / 2 : Math.max(0, Math.min(W - vw, player.x + lead.x - vw / 2));
+    const ty = vh >= H ? (H - vh) / 2 : Math.max(0, Math.min(H - vh, player.y + lead.y - vh / 2));
     if (snap) { cam.x = tx; cam.y = ty; return; }
     const k = 1 - Math.exp(-dt * 6);
     cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k;
@@ -1221,8 +1272,8 @@
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     if (!L || !mapCanvas) return;
 
-    const sx = shake > 0 ? (Math.random() - 0.5) * 10 * shake * 3 : 0;
-    const sy = shake > 0 ? (Math.random() - 0.5) * 10 * shake * 3 : 0;
+    const sx = (shake > 0 ? (Math.random() - 0.5) * 10 * shake * 3 : 0) + camKick.x * ts;
+    const sy = (shake > 0 ? (Math.random() - 0.5) * 10 * shake * 3 : 0) + camKick.y * ts;
     worldTransform(ctx, sx, sy);
     ctx.drawImage(mapCanvas, 0, 0, W, H);
 
@@ -1311,7 +1362,9 @@
     ctx.drawImage(shadeCanvas, 0, 0);
     worldTransform(ctx, sx, sy);
     for (const [gd, poly] of polys) {
-      const c = gd.state === 'alert' ? '255,90,80' : '255,255,250';
+      // the light warms from white to orange while the guard is noticing the hero, red once alerted
+      const k = gd.aware;
+      const c = gd.state === 'alert' ? '255,90,80' : k > 0 ? `255,${Math.round(255 - 110 * k)},${Math.round(250 - 200 * k)}` : '255,255,250';
       const grad = ctx.createRadialGradient(gd.x, gd.y, 0.1, gd.x, gd.y, gd.range);
       grad.addColorStop(0, `rgba(${c},0.5)`); grad.addColorStop(0.7, `rgba(${c},0.34)`); grad.addColorStop(1, `rgba(${c},0.18)`);
       ctx.save();
@@ -1460,8 +1513,22 @@
         ctx.restore();
       }
     }
+    // detection gauges: an eye that fills up above each guard that is noticing the hero
     for (const gd of guards) {
-      if (!gd.alive || (gd.alertT <= 0 && gd.qT <= 0)) continue;
+      if (!gd.alive || gd.aware <= 0 || gd.state === 'alert') continue;
+      const s = toScreen(gd.x, gd.y - 0.95);
+      const x = s.x + sx, y = s.y + sy, r = 13, k = gd.aware;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.beginPath(); ctx.arc(x, y, r + 3, 0, Math.PI * 2); ctx.fillStyle = 'rgba(28,26,43,0.85)'; ctx.fill();
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * k); ctx.closePath();
+      ctx.fillStyle = k < 0.6 ? '#ffc93c' : '#ff6a2a'; ctx.fill();
+      // eye pictogram
+      ctx.beginPath(); ctx.ellipse(x, y, 8, 5, 0, 0, Math.PI * 2); ctx.fillStyle = '#ffffff'; ctx.fill();
+      ctx.lineWidth = 1.5; ctx.strokeStyle = '#1c1a2b'; ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, y, 2.6, 0, Math.PI * 2); ctx.fillStyle = '#1c1a2b'; ctx.fill();
+    }
+    for (const gd of guards) {
+      if (!gd.alive || (gd.alertT <= 0 && gd.qT <= 0) || (gd.aware > 0 && gd.state !== 'alert')) continue;
       const s = toScreen(gd.x, gd.y - 0.9);
       const pop = Math.min(1, (gd.alertT > 0 ? 1.2 - gd.alertT : 1 - gd.qT) * 8);
       screenText(gd.alertT > 0 ? '!' : '?', s.x + sx, s.y + sy, 30 * pop, gd.alertT > 0 ? '#ff2a2a' : '#ff5a3d', { stroke: '#ffffff' });
@@ -1635,13 +1702,14 @@
   }
 
   function refreshToggles() {
-    for (const k of ['sfx', 'music']) {
+    for (const k of ['sfx', 'music', 'vibe']) {
       document.querySelectorAll(`[data-toggle="${k}"]`).forEach(b => b.classList.toggle('off', !save[k]));
     }
   }
   function toggle(k) {
     save[k] = !save[k]; persist();
     audio.init(); audio.set({ sfx: save.sfx, music: save.music });
+    if (k === 'vibe' && save.vibe) vibrate(40);
     refreshToggles();
   }
   document.querySelectorAll('[data-toggle]').forEach(b => b.addEventListener('click', () => { toggle(b.dataset.toggle); sfx.button(); }));

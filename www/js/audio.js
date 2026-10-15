@@ -26,7 +26,7 @@ KT.audio = (() => {
   // ---------- Recorded samples ----------
   const SAMPLES = ['pistol', 'smg', 'rifle', 'shotgun', 'cannon', 'slash1', 'slash2', 'draw', 'hit1', 'hit2', 'body',
     'clang', 'shatter', 'hurt', 'freeze', 'boom', 'crunch', 'zap', 'click', 'latch', 'coins', 'chest', 'ui', 'ui2',
-    'step0', 'step1', 'step2', 'step3', 'grass0', 'grass1'];
+    'step0', 'step1', 'step2', 'step3', 'grass0', 'grass1', 'combo', 'levelup', 'confirm'];
   const buf = {};
   function loadSamples() {
     for (const n of SAMPLES) {
@@ -36,13 +36,22 @@ KT.audio = (() => {
     }
   }
   // plays a sample with a little random pitch so repeated sounds never feel robotic; false if not loaded yet
+  // the same sample fired again within 40 ms is dropped, and at most 14 samples play at once:
+  // bursts (several kills, gem showers) stay clean instead of turning into noise
+  const lastPlay = {};
+  let voices = 0;
   function play(name, { v = 1, rate = 1, vary = 0.08, at = 0 } = {}) {
     const b = buf[name];
     if (!ctx || !b) return false;
+    const now = ctx.currentTime;
+    if (!at && lastPlay[name] && now - lastPlay[name] < 0.04) return true;
+    if (voices >= 14) return true;
+    lastPlay[name] = now; voices++;
     const s = ctx.createBufferSource(), g = ctx.createGain();
     s.buffer = b; s.playbackRate.value = rate * (1 + (Math.random() * 2 - 1) * vary);
     g.gain.value = v;
     s.connect(g); g.connect(sfxGain);
+    s.onended = () => { voices--; };
     s.start(Math.max(ctx.currentTime, at || 0));
     return true;
   }
@@ -54,6 +63,18 @@ KT.audio = (() => {
     musicGain.gain.value = settings.music ? 0.2 : 0;
   }
   function set(s) { Object.assign(settings, s); apply(); }
+  // music dips under big events (explosions) then comes back smoothly
+  function duck(depth = 0.25, hold = 0.6) {
+    if (!ctx || !settings.music) return;
+    const g = musicGain.gain, t = ctx.currentTime, base = 0.2;
+    g.cancelScheduledValues(t); g.setValueAtTime(g.value, t);
+    g.linearRampToValueAtTime(base * depth, t + 0.05);
+    g.setValueAtTime(base * depth, t + hold);
+    g.linearRampToValueAtTime(base, t + hold + 1.2);
+  }
+  // 0 = sneaking, 1 = spotted: adds a pulsing tension layer to the music, faded in and out
+  let tension = 0, tensionTarget = 0;
+  function setTension(v) { tensionTarget = v; }
   function suspend() { if (ctx && ctx.state === 'running') ctx.suspend(); }
   function resume() { if (ctx && ctx.state === 'suspended') ctx.resume(); }
 
@@ -134,8 +155,9 @@ KT.audio = (() => {
       tone({ type: 'sine', f: 150, f2: 50, t: 0.18, v: 0.5 });
     },
     laser() { play('zap', { v: 0.8 }) || tone({ type: 'sawtooth', f: 200, f2: 110, t: 0.3, v: 0.16 }); },
-    pickup() { play('chest', { v: 0.6, rate: 1.3 }); [880, 1175, 1568].forEach((f, i) => tone({ type: 'triangle', f, t: 0.12, v: 0.12, at: later(i * 0.06) })); },
+    pickup() { play('chest', { v: 0.6, rate: 1.3 }); play('confirm', { v: 0.5 }); [880, 1175, 1568].forEach((f, i) => tone({ type: 'triangle', f, t: 0.12, v: 0.12, at: later(i * 0.06) })); },
     win() {
+      play('levelup', { v: 0.5, at: later(0.5) });
       [523, 659, 784, 1047].forEach((f, i) => tone({ type: 'triangle', f, t: 0.25, v: 0.22, at: later(i * 0.11) }));
       tone({ type: 'triangle', f: 1319, t: 0.7, v: 0.18, at: later(0.46) });
     },
@@ -143,6 +165,7 @@ KT.audio = (() => {
     star(i) { tone({ type: 'triangle', f: 880 * Math.pow(1.26, i), t: 0.2, v: 0.2 }); tone({ type: 'sine', f: 1760 * Math.pow(1.26, i), t: 0.3, v: 0.06 }); },
     beep() { play('click', { v: 0.7, rate: 1.4 }) || tone({ type: 'square', f: 1750, t: 0.06, v: 0.12 }); },
     explosion() {
+      duck(0.2, 0.8);
       if (play('boom', { v: 1, vary: 0.03 })) { play('crunch', { v: 0.8 }); return; }
       noise({ t: 1.2, v: 0.9, type: 'lowpass', f: 900, f2: 120 });
       tone({ type: 'sine', f: 90, f2: 30, t: 0.9, v: 0.9 });
@@ -153,6 +176,14 @@ KT.audio = (() => {
       [1250, 1870, 2730].forEach((f, i) => tone({ type: 'square', f, t: 0.25, v: 0.06 / (i + 1) }));
     },
     coin() { play('coins', { v: 0.35, rate: 1.2 }) || tone({ type: 'square', f: 1600, f2: 2000, t: 0.04, v: 0.05 }); },
+    heart() {
+      tone({ type: 'sine', f: 62, f2: 40, t: 0.14, v: 0.55 });
+      tone({ type: 'sine', f: 58, f2: 38, t: 0.12, v: 0.4, at: later(0.2) });
+    },
+    combo(n) {
+      if (play('combo', { v: 0.6, rate: 1 + (n - 2) * 0.12, vary: 0 })) return;
+      [0, 4, 7, 12].slice(0, Math.min(4, n + 1)).forEach((st, i) => tone({ type: 'triangle', f: 660 * Math.pow(2, st / 12), t: 0.12, v: 0.13, at: later(i * 0.05) }));
+    },
     step(grass) { play(grass ? any('grass0', 'grass1') : any('step0', 'step1', 'step2', 'step3'), { v: grass ? 0.25 : 0.18, vary: 0.12 }); },
     unsheathe() { play('draw', { v: 0.5 }); },
     arm() { play('latch', { v: 0.8 }); },
@@ -168,6 +199,12 @@ KT.audio = (() => {
 
   function scheduleStep(t) {
     const [root, third] = CHORDS[bar % 4];
+    tension += (tensionTarget - tension) * (tensionTarget > tension ? 0.25 : 0.04);
+    if (tension > 0.05) {
+      tone({ type: 'square', f: midi(root - 24), t: STEP * 0.8, v: 0.1 * tension, at: t, out: musicGain });
+      noise({ t: 0.025, v: 0.1 * tension, type: 'highpass', f: 9000, at: t, out: musicGain });
+      if (step % 4 === 0) tone({ type: 'sawtooth', f: midi(root + 12 + (bar % 2 ? 1 : 0)), t: STEP * 3, v: 0.03 * tension, at: t, out: musicGain });
+    }
     if (step === 0 || step === 8) tone({ type: 'sine', f: 120, f2: 42, t: 0.18, v: 0.6, at: t, out: musicGain });
     if (step === 4 || step === 12) noise({ t: 0.1, v: 0.18, type: 'bandpass', f: 1800, q: 0.6, at: t, out: musicGain });
     if (step % 2 === 1) noise({ t: 0.03, v: step % 4 === 3 ? 0.14 : 0.08, type: 'highpass', f: 8000, at: t, out: musicGain });
@@ -194,5 +231,5 @@ KT.audio = (() => {
     }, 30);
   }
 
-  return { init, set, settings, sfx, suspend, resume };
+  return { init, set, settings, sfx, suspend, resume, duck, setTension };
 })();
