@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="data:,">
+  <title>Shadow Strike Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <main id="login" class="login hidden">
+    <form id="login-form" class="login-card">
+      <h1><span>Shadow</span> <b>Strike</b></h1>
+      <p>Espace administrateur KamTech</p>
+      <label for="pw">Mot de passe</label>
+      <input id="pw" type="password" autocomplete="current-password" required minlength="10">
+      <p id="login-error" class="form-error" role="alert"></p>
+      <button class="primary" type="submit">Se connecter</button>
+    </form>
+  </main>
+
+  <div id="app" class="hidden">
+    <header class="top">
+      <div class="brand"><span>Shadow</span> <b>Strike</b> <small>Admin</small></div>
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-view="stats" aria-selected="true">Statistiques</button>
+        <button role="tab" data-view="promos" aria-selected="false">Annonces</button>
+      </nav>
+      <div class="top-right">
+        <label class="period">Période
+          <select id="days">
+            <option value="7">7 jours</option>
+            <option value="30" selected>30 jours</option>
+            <option value="90">90 jours</option>
+            <option value="365">1 an</option>
+          </select>
+        </label>
+        <button id="logout" class="ghost">Déconnexion</button>
+      </div>
+    </header>
+
+    <section id="view-stats" class="view">
+      <div id="stats-empty" class="empty hidden">
+        <h2>Aucune donnée pour l'instant</h2>
+        <p>Les statistiques arrivent dès qu'un joueur lance une version du jeu reliée à ce serveur. Sans connexion, le téléphone les garde et les envoie plus tard.</p>
+      </div>
+      <div class="kpis" id="kpis"></div>
+      <div class="grid2">
+        <figure class="panel">
+          <figcaption><h2>Joueurs actifs par jour</h2><p>Appareils différents qui ont ouvert le jeu.</p></figcaption>
+          <div class="chart" id="chart-active"></div>
+        </figure>
+        <figure class="panel">
+          <figcaption><h2>Nouveaux joueurs par jour</h2><p>Premières ouvertures du jeu.</p></figcaption>
+          <div class="chart" id="chart-installs"></div>
+        </figure>
+      </div>
+      <figure class="panel">
+        <figcaption><h2>Jusqu'où vont les joueurs</h2><p>Nombre de joueurs selon le niveau le plus haut atteint. Un gros pic indique où beaucoup abandonnent.</p></figcaption>
+        <div class="chart" id="chart-reach"></div>
+      </figure>
+      <div class="panel">
+        <h2>Difficulté par niveau</h2>
+        <p class="sub">Un taux de victoire sous 35 % signale un niveau bloquant.</p>
+        <div class="table-wrap"><table id="t-levels"></table></div>
+      </div>
+      <div class="grid2">
+        <div class="panel">
+          <h2>Boutique</h2>
+          <p class="sub">Ce que les joueurs achètent avec leurs diamants.</p>
+          <div class="table-wrap"><table id="t-buys"></table></div>
+        </div>
+        <div class="panel">
+          <h2>Versions installées</h2>
+          <p class="sub">Joueurs actifs sur la période, par version du jeu.</p>
+          <div class="table-wrap"><table id="t-versions"></table></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-promos" class="view hidden">
+      <div class="promos-head">
+        <div>
+          <h2>Annonces KamTech</h2>
+          <p class="sub">Pop-up affichée dans le menu après une partie, au plus une fois par session, jamais au lancement ni pendant un niveau.</p>
+        </div>
+        <button id="new-promo" class="primary">Nouvelle annonce</button>
+      </div>
+      <div id="promo-list" class="promo-list"></div>
+
+      <dialog id="editor">
+        <form id="promo-form" method="dialog">
+          <div class="editor-cols">
+            <div class="fields">
+              <h2 id="editor-title">Nouvelle annonce</h2>
+              <label>Titre <small>60 caractères max</small><input name="title" maxlength="60" required></label>
+              <label>Texte <small>240 caractères max</small><textarea name="body" maxlength="240" rows="3"></textarea></label>
+              <div class="row2">
+                <label>Bouton<input name="cta_label" maxlength="24" placeholder="En savoir plus"></label>
+                <label>Niveau minimum<input name="min_level" type="number" min="1" max="1000" value="3"></label>
+              </div>
+              <label>Lien du bouton<input name="url" type="url" placeholder="https://" required pattern="https://.+"></label>
+              <label>Image (facultatif)<input name="image_url" type="url" placeholder="https://… .jpg ou .png" pattern="https://.+"></label>
+              <div class="row2">
+                <label>Début (facultatif)<input name="starts_at" type="datetime-local"></label>
+                <label>Fin (facultatif)<input name="ends_at" type="datetime-local"></label>
+              </div>
+              <div class="row2">
+                <label>Revoir au plus toutes les<select name="every_hours">
+                  <option value="24">24 heures</option><option value="72">3 jours</option><option value="168">7 jours</option><option value="720">30 jours</option>
+                </select></label>
+                <label>Priorité<input name="priority" type="number" min="-100" max="100" value="0"></label>
+              </div>
+              <label class="check"><input name="active" type="checkbox"> Activer dès l'enregistrement</label>
+              <p id="form-error" class="form-error" role="alert"></p>
+              <div class="actions">
+                <button type="button" id="cancel" class="ghost">Annuler</button>
+                <button type="submit" class="primary">Enregistrer</button>
+              </div>
+            </div>
+            <div class="preview-col">
+              <p class="preview-lab">Aperçu dans le jeu</p>
+              <div class="phone">
+                <div class="pv-card">
+                  <span class="pv-tag">Annonce KamTech</span>
+                  <img id="pv-img" alt="" hidden>
+                  <h3 id="pv-title">Ton titre ici</h3>
+                  <p id="pv-body"></p>
+                  <span id="pv-cta" class="pv-cta">En savoir plus</span>
+                  <span class="pv-later">Plus tard</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </dialog>
+    </section>
+    <div id="tooltip" class="tooltip" role="status" hidden></div>
+  </div>
+  <script src="admin.js"></script>
+</body>
+</html>

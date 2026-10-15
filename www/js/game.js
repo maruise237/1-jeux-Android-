@@ -556,6 +556,8 @@
     state = 'playing';
     showScreen(null);
     buildHud();
+    levelsThisSession++;
+    online.track('level_start', n, { hero: hero.id });
     if (guards.some(g => g.boss)) { showBanner('COMBAT DE BOSS', `Abats le Colosse et ses gardes`); sfx.alert(); }
     else showBanner('NIVEAU ' + n, `Élimine ${guards.length} gardes`);
     let tip = null;
@@ -1939,9 +1941,12 @@
   // ---------- UI ----------
   const $ = id => document.getElementById(id);
   const fr = t => t.replace(/ ([!?:;»])/g, '\u00a0$1');
+  // anonymous stats (no-op when the game has no server configured)
+  const online = window.KamOnline || { track() {}, pickPromo() { return null; }, markSeen() {}, openLink() {}, refreshPromos() {} };
   const SCREENS = ['menu', 'heroes', 'result', 'pause', 'wheel', 'shop'];
   function showScreen(id) {
     for (const s of SCREENS) $(s).classList.toggle('hidden', s !== id);
+    if (id !== 'menu') hidePromo();
     $('hud').classList.toggle('hidden', !(id === null || id === 'pause'));
     document.body.classList.toggle('paused', id === 'pause');
   }
@@ -2051,7 +2056,36 @@
     refreshBadges();
     refreshToggles();
     showScreen('menu');
+    if (levelsThisSession > 0 && !promoShown) setTimeout(maybeShowPromo, 700);
   }
+
+  // ---------- KamTech announcements (set in the admin panel) ----------
+  // Google Play rules: never at launch or during a level, clearly labelled, closable at once
+  let levelsThisSession = 0, promoShown = false, promoNow = null;
+  function maybeShowPromo() {
+    if (promoShown || state !== 'menu' || $('menu').classList.contains('hidden')) return;
+    const p = online.pickPromo(save.level);
+    if (!p) return;
+    promoShown = true; promoNow = p;
+    online.markSeen(p.id);
+    $('promo-title').textContent = fr(p.title);
+    $('promo-body').textContent = fr(p.body || '');
+    $('promo-body').classList.toggle('hidden', !p.body);
+    $('btn-promo-go').textContent = p.cta_label || 'En savoir plus';
+    const img = $('promo-img');
+    const src = online.safeUrl && online.safeUrl(p.image_url);
+    img.classList.add('hidden');
+    if (src) { img.onload = () => img.classList.remove('hidden'); img.onerror = () => img.classList.add('hidden'); img.src = src; }
+    $('promo').classList.remove('hidden');
+    online.track('promo_view', save.level, { promo: p.id });
+  }
+  function hidePromo() { $('promo').classList.add('hidden'); promoNow = null; }
+  $('btn-promo-go').addEventListener('click', () => {
+    if (!promoNow) return;
+    sfx.button(); online.track('promo_click', save.level, { promo: promoNow.id });
+    online.openLink(promoNow.url); hidePromo();
+  });
+  for (const id of ['btn-promo-close', 'btn-promo-later']) $(id).addEventListener('click', () => { sfx.tap(); hidePromo(); });
 
   function refreshToggles() {
     for (const k of ['sfx', 'music', 'vibe']) {
@@ -2096,6 +2130,7 @@
           e.stopPropagation();
           if (save.gems < cost) { tr.innerHTML = `Il manque <i class="gem-ico"></i>${cost - save.gems}`; sfx.hurt(); return; }
           save.gems -= cost; save.xp = save.xp || {}; save.xp[h.id] = Math.max(heroXp(h.id), xpFor(lv + 1));
+          online.track('purchase', save.level, { item: 'train-' + h.id, price: cost });
           sfx.pickup(); persist(); renderHeroes();
         };
         card.appendChild(tr);
@@ -2103,7 +2138,7 @@
       card.onclick = () => {
         if (selected) return;
         if (owned) { save.selected = h.id; sfx.button(); }
-        else if (save.gems >= h.price) { save.gems -= h.price; save.owned.push(h.id); save.selected = h.id; sfx.pickup(); }
+        else if (save.gems >= h.price) { save.gems -= h.price; save.owned.push(h.id); save.selected = h.id; sfx.pickup(); online.track('purchase', save.level, { item: 'h-' + h.id, price: h.price }); }
         else {
           card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); sfx.hurt();
           card.querySelector('.hero-price').innerHTML = `Il manque <i class="gem-ico"></i>${h.price - save.gems}`;
@@ -2151,6 +2186,7 @@
     }
     armed = null;
     save.gems -= price; done(); persist();
+    online.track('purchase', save.level, { item: key, price });
     sfx.pickup(); vibrate(30);
     renderShop();
   }
@@ -2244,6 +2280,7 @@
     const xpGain = killed.length * 10 + killed.filter(g => g.boss).length * 60 + (won ? 25 : 0);
     const hero = currentHero();
     const leveled = addXp(hero.id, xpGain);
+    online.track('level_end', n, { won, stars, secs: Math.round(time), kills: killed.length, guards: guards.length, hp: Math.round(100 * k), hero: hero.id });
     if (won) { save.stars[n] = Math.max(save.stars[n] || 0, stars); save.level++; }
     if (won && !player.spotted) missionState('stealth').done = true;
     if (won && player.hp >= player.maxHp) missionState('nodmg').done = true;
@@ -2420,6 +2457,7 @@
     if (state === 'playing') return pause();
     if (state === 'paused') return resume();
     if (spinning) return;
+    if (!$('promo').classList.contains('hidden')) return hidePromo();
     if (visible('wheel')) return showScreen('result');
     if (visible('shop') || visible('heroes') || visible('result')) { sfx.button(); return showMenu(); }
     if (visible('menu')) { const App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App; if (App) App.exitApp(); }
