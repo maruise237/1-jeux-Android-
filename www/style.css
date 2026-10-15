@@ -116,10 +116,12 @@ footer { color: rgba(255,255,255,.45); font-size: 13px; letter-spacing: .1em; }
 #hud button { pointer-events: auto; }
 .hud-center { display: flex; flex-direction: column; align-items: center; gap: 5px; }
 .pill { background: var(--ink); border-radius: 999px; padding: 4px 14px; font-size: 17px; color: var(--yellow); }
-#hud-pips { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; max-width: 180px; }
-.pip { width: 14px; height: 14px; border-radius: 50%; background: #ff5050; border: 2px solid var(--ink); transition: transform .2s, background .2s; }
-.pip.dead { background: #4a4c60; transform: scale(.8); }
-
+.kills { display: flex; align-items: center; gap: 6px; font-size: 22px; text-shadow: 0 2px 0 var(--ink), 2px 0 0 var(--ink), -2px 0 0 var(--ink), 0 -2px 0 var(--ink); }
+.kills.bump { animation: bump .25s; }
+.crosshair { position: relative; width: 22px; height: 22px; border: 3px solid #36e04a; border-radius: 50%; box-shadow: 0 0 0 2px var(--ink); }
+.crosshair::before, .crosshair::after { content: ''; position: absolute; background: #36e04a; box-shadow: 0 0 0 1px var(--ink); }
+.crosshair::before { left: 50%; top: -6px; bottom: -6px; width: 3px; transform: translateX(-50%); }
+.crosshair::after { top: 50%; left: -6px; right: -6px; height: 3px; transform: translateY(-50%); }
 #banner { position: fixed; top: 32%; left: 0; right: 0; text-align: center; pointer-events: none; opacity: 0; }
 #banner.show { animation: banner 1.9s ease-out forwards; }
 @keyframes banner {

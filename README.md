@@ -11,7 +11,13 @@ Jeu mobile d'infiltration en vue du dessus. Tu es un assassin armé d'un couteau
   (fusil à pompe, gros dégâts mais lents) → commandos d'élite.
   Tous les 10 niveaux, leurs armes s'améliorent (renforcées → visée laser → armes en or).
   Lampe torche, alerte « ! », hésitation « ? » quand un collègue tombe à portée de vue.
-- **Pièges** : lasers rouges clignotants, mines de glace qui gèlent les gardes.
+- **Pièges** : lasers rouges clignotants, mines de glace qui gèlent les gardes et, dès le niveau 12,
+  **mines explosives** : elles sautent quand quelqu'un marche dessus, tuent les gardes proches,
+  blessent le héros et **détruisent les murs** (traces de brûlure et fumée).
+- **Décor** : salles reliées par des passages balisés jaune/noir, clôtures, conteneurs, piliers,
+  carrés de gazon, sol en béton taché ; les gardes éliminés laissent une tache au sol.
+- **Interface** : compteur de cibles (viseur), points de vie en milliers et dégâts affichés,
+  flèche orange vers la destination ou la cible.
 - **Butin** : explosion de gemmes 💎 aspirées vers le héros, bonus et 1 à 3 étoiles par mission.
 - **10 héros** à débloquer (+Vitesse / +Vie), dont Kami, le héros KamTech.
 - **Héros détaillés** : visages, coiffures, tenues, couteaux de combat (lame dorée, de glace,

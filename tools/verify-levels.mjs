@@ -47,7 +47,8 @@ await page.evaluate(() => {
       const hit = l.h ? Math.abs(pt.y - l.c) < 0.45 && pt.x > l.a - 0.2 && pt.x < l.b + 0.2 : Math.abs(pt.x - l.c) < 0.45 && pt.y > l.a - 0.2 && pt.y < l.b + 0.2;
       return hot && hit;
     });
-    const unsafe = pt => seen(pt) || near(pt) || onLaser(pt);
+    const nearBomb = pt => (s.bombs || []).some(b => b.state !== 'done' && Math.hypot(b.x - pt.x, b.y - pt.y) < (b.state === 'fuse' ? 2.4 : 0.85));
+    const unsafe = pt => seen(pt) || near(pt) || onLaser(pt) || nearBomb(pt);
     const pathUnsafe = (path, look = 1.4) => {
       let prev = { x: P.x, y: P.y }, acc = 0;
       for (const q of path) {
