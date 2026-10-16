@@ -599,6 +599,13 @@ window.KT = window.KT || {};
     } else if (c.hair === 'bald' || c.hair === 'mohawk') {
       g.fillStyle = 'rgba(255,255,255,0.35)'; ellipse(g, hx - 0.02, -0.09, 0.06, 0.035); g.fill();
     }
+    // cloth mask over the nose and mouth, below the eyes (Kenji, as on the store icon)
+    if (c.scarf && !o.dead) {
+      g.save(); circle(g, hx, 0, R); g.clip();
+      g.beginPath(); g.moveTo(hx + 0.14, -0.25); g.quadraticCurveTo(hx + 0.155, 0, hx + 0.14, 0.25); g.lineTo(hx + 0.3, 0.25); g.lineTo(hx + 0.3, -0.25); g.closePath();
+      fs(g, lin(g, hx + 0.15, -0.2, hx + 0.22, 0.2, [[0, shade(c.scarf, 0.2)], [1, shade(c.scarf, -0.2)]]), 0.03);
+      g.restore();
+    }
   }
 
   // ---------- Full character ----------

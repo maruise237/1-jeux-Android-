@@ -45,9 +45,9 @@ En plus : la roue de la chance affiche ses chances (« Gratuit · chaque case a 
 1. **Compte développeur personnel récent :** un **test fermé avec au moins 12 testeurs pendant 14 jours d'affilée** est obligatoire avant la production. Lance-le tôt (famille, amis, groupe WhatsApp).
 2. **AAB signé** : la version 1.0 (versionCode 1) est construite. La clé d'importation `signature/shadow-strike-upload.jks` et son mot de passe ne sont jamais envoyés sur GitHub. Garde-les en lieu sûr. Accepte la **signature d'application par Play** au premier envoi.
    Pour reconstruire : remets `signature/` et `android/keystore.properties` en place, puis lance `npx cap sync android && cd android && ./gradlew bundleRelease`. Le fichier sort dans `android/app/build/outputs/bundle/release/`.
-3. Augmente `versionCode` à chaque envoi (`android/app/build.gradle`, actuellement 1).
+3. Augmente `versionCode` à chaque envoi (`android/app/build.gradle`, actuellement 2).
 4. **Fiche Play Store :**
-   - icône 512 × 512 (déjà générée par `tools/make-icon.mjs`) ;
+   - icône 512 × 512 (`icone-512.png`, générée par `tools/store-assets.mjs` à partir de `assets/icon-only.png`) ;
    - image de présentation 1024 × 500 ;
    - au moins 2 captures d'écran **en jeu**, pas l'écran de démarrage ;
    - une description qui ne promet que ce que le jeu fait vraiment ;

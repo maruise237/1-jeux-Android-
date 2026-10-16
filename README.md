@@ -118,8 +118,7 @@ npm run android:open     # ouvre Android Studio
 
 Dans Android Studio : **Run ▶** pour tester sur ton téléphone (mode développeur + débogage USB activés).
 
-L'icône est dessinée à partir du héros du jeu (vu de dessus, couteau levé, fond rouge) : `node tools/make-icon.mjs`
-recrée `assets/icon-only.png` et ses calques, puis lance `npx @capacitor/assets generate --android`.
+L'icône est un gros plan de Kenji (masque vert, bandeau rouge, kunai) sur fond rouge. Elle est dessinée par `node tools/icon-lab.mjs <dossier>`, puis installée dans `assets/` et les mipmaps Android par `node tools/apply-icon.mjs <dossier>/final-2-closeup.png`.
 
 ## Signer l'APK au nom de KamTech (Play Store)
 

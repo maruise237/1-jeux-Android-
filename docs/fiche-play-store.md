@@ -45,7 +45,7 @@ Shadow Strike est un jeu de KamTech Studio. Un bug, un niveau qui te paraît imp
 
 | Case | Fichier | Texte alternatif |
 |---|---|---|
-| Icône | `icone-512.png` | Assassin vu de dessus, couteau levé, sur fond rouge |
+| Icône | `icone-512.png` | Kenji, assassin au masque vert et bandeau rouge, tient un kunai sur fond rouge |
 | Image de présentation | `image-presentation-1024x500.png` | Titre Shadow Strike entre deux scènes de jeu en vue de dessus |
 | Capture 1 | `capture-1.png` | L'assassin élimine un garde au couteau et fait jaillir des gemmes |
 | Capture 2 | `capture-2.png` | L'assassin se faufile derrière un garde, hors de sa lampe, près d'un laser |
