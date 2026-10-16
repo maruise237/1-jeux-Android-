@@ -59,6 +59,13 @@ const res = await p.evaluate((V) => {
     g.save(); g.scale(k, k);
     art.drawCharacter(g, kenji, hx / k, hy / k, ang, { attack: true, noShadow: true });
     g.restore();
+    // icon-only readability: a light halo around the head separates it from the shoulders at 48px
+    g.save(); g.translate(hx, hy); g.rotate(ang);
+    g.beginPath(); g.arc(0.03 * k, 0, 0.245 * k, -2.5, 0.9);
+    g.lineWidth = 0.032 * k; g.strokeStyle = 'rgba(255,236,220,0.85)'; g.stroke();
+    g.restore();
+    g.save(); g.scale(k, k);
+    g.restore();
     return c.toDataURL('image/png');
   }
 
@@ -181,7 +188,8 @@ const res = await p.evaluate((V) => {
     // headband with the metal plate
     ink(P([[310, 428], [512, 366, 714, 428], [714, 480], [512, 418, 310, 480]]), lin(g, 0, 366, 0, 480, [[0, '#ff5d5d'], [0.6, BAND], [1, '#a01e28']]), 14, [[0, 10, 'rgba(255,255,255,0.35)', 10]]);
     ink(P([[448, 398], [512, 382, 576, 398], [580, 448], [512, 434, 444, 448]]), lin(g, 0, 384, 0, 448, [[0, '#f4f7fb'], [1, '#8d97a8']]), 10);
-    g.strokeStyle = '#4e5869'; g.lineWidth = 7; g.beginPath(); g.moveTo(488, 404); g.lineTo(536, 430); g.moveTo(536, 404); g.lineTo(488, 430); g.stroke();
+    ink(P([[512, 398], [540, 416], [512, 434], [484, 416]]), lin(g, 0, 398, 0, 434, [[0, '#b9c3d3'], [1, '#5f6b7e']]), 6);
+    ink(() => { g.beginPath(); g.arc(512, 416, 7, 0, Math.PI * 2); }, '#ff4fa3', 4);
     // front fringe spikes over the band
     const fringe = P([[302, 446], [306, 360, 360, 300], [372, 360, 392, 430], [418, 330, 470, 300], [470, 360, 482, 400], [520, 320, 590, 296], [580, 350, 594, 396], [640, 330, 702, 320], [690, 380, 722, 446], [690, 380, 512, 352], [400, 352, 302, 446]]);
     inkB(fringe, lin(g, 0, 290, 0, 440, [[0, '#6b472e'], [1, '#35210f']]), 14, [[14, 18, 'rgba(255,215,170,0.3)']]);
@@ -217,7 +225,7 @@ const res = await p.evaluate((V) => {
     return c.toDataURL('image/png');
   }
   return { 'final-1-gameplay': gameplay(), 'final-2-closeup': closeup() };
-}, { HERO_K: +(process.env.HK || 560), HERO_X: +(process.env.HX || 351), HERO_Y: +(process.env.HY || 692), HERO_A: +(process.env.HA || -0.75), CONE: (process.env.CONE || '1120,110,3.07,0.21').split(',').map(Number), HAIR_N: +(process.env.HN || 5), HAIR_IN: +(process.env.HI || 230), HAIR_OUT: +(process.env.HO || 370) });
+}, { HERO_K: +(process.env.HK || 560), HERO_X: +(process.env.HX || 359), HERO_Y: +(process.env.HY || 610), HERO_A: +(process.env.HA || -0.75), CONE: (process.env.CONE || '1120,40,3.1,0.17').split(',').map(Number), HAIR_N: +(process.env.HN || 5), HAIR_IN: +(process.env.HI || 230), HAIR_OUT: +(process.env.HO || 370) });
 for (const [k, v] of Object.entries(res)) fs.writeFileSync(path.join(out, k + '.png'), Buffer.from(v.split(',')[1], 'base64'));
 await b.close(); server.close();
 console.log('ok ->', out);
