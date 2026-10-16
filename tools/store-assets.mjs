@@ -24,40 +24,60 @@ await new Promise(r => server.listen(0, r));
 const url = `http://localhost:${server.address().port}/index.html`;
 const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
 
-// 1. Raw gameplay captures (360x640 @3x = 1080x1920), level banner and tips hidden.
-async function capture(level, { screen, prep } = {}) {
-  const p = await browser.newPage({ viewport: { width: 360, height: 640 }, deviceScaleFactor: 3, hasTouch: true, isMobile: true });
+// 1. Raw gameplay captures, 1080x1920. With zoom, the frame is a 1.5x close-up centred on `focus`
+// (the hero by default) so characters stay readable at store thumbnail size.
+const ZW = 240, ZH = 1920 / 4.5;
+async function capture(level, { screen, prep, arg = null, zoom = false, focus } = {}) {
+  const p = await browser.newPage({ viewport: { width: 360, height: 640 }, deviceScaleFactor: zoom ? 4.5 : 3, hasTouch: true, isMobile: true });
   p.on('pageerror', e => console.log('page error', e.message));
   await p.goto(url); await p.waitForTimeout(500);
   await p.evaluate(l => { const s = window.__shadowStrike.save; s.level = l; s.gems = 2450; }, level);
   await p.evaluate(() => document.getElementById('btn-heroes-close')?.click()); await p.waitForTimeout(250);
+  let clip;
   if (screen) { await p.click(screen); await p.waitForTimeout(400); }
   else {
     await p.click('#btn-play'); await p.waitForTimeout(4500);
     await p.evaluate(() => window.__shadowStrike.tick(120));
-    if (prep) await p.evaluate(prep);
+    if (prep) await p.evaluate(prep, arg);
     await p.addStyleTag({ content: '#tip{display:none!important}' });
     await p.waitForTimeout(400);
+    if (zoom) {
+      const c = await p.evaluate(f => { const S = window.__shadowStrike; const t = f === 'boss' ? S.guards.find(g => g.type === 'boss') : S.player; return S.toScreen(t.x, t.y); }, focus);
+      clip = { x: Math.max(0, Math.min(360 - ZW, c.x - ZW / 2)), y: Math.max(0, Math.min(640 - ZH, c.y - ZH * 0.55)), width: ZW, height: ZH };
+    }
   }
-  const png = await p.screenshot({ type: 'png' }); await p.close();
+  const png = await p.screenshot({ type: 'png', clip }); await p.close();
   return 'data:image/png;base64,' + png.toString('base64');
 }
-// Kill the guard nearest to the hero, so the shot shows the strike and the gem burst.
-const strike = () => {
-  const S = window.__shadowStrike, pl = S.player;
-  const g = S.guards.filter(g => g.alive).sort((a, b) => Math.hypot(a.x - pl.x, a.y - pl.y) - Math.hypot(b.x - pl.x, b.y - pl.y))[0];
-  pl.x = g.x - 20; pl.y = g.y; S.kill(g); S.tick(6);
+// World units are tiles. Put the hero on a free tile `d` tiles behind guard `g` (outside its cone).
+const placeBehindSrc = `(S, g, ds) => { const pl = S.player;
+  for (const d of ds) for (const da of [0, 0.5, -0.5, 1, -1]) {
+    const a = g.angle + Math.PI + da, x = g.x + Math.cos(a) * d, y = g.y + Math.sin(a) * d;
+    if (!S.isWallTile(Math.floor(x), Math.floor(y))) { pl.x = x; pl.y = y; pl.angle = a + Math.PI; pl.path = null; return true; }
+  } return false; }`;
+// Hero right behind the guard it just killed: strike flash and gem burst both visible.
+const strike = src => {
+  const S = window.__shadowStrike, place = eval(src), pl = S.player;
+  const g = S.guards.filter(g => g.alive && g.type !== 'boss').sort((a, b) => Math.hypot(a.x - pl.x, a.y - pl.y) - Math.hypot(b.x - pl.x, b.y - pl.y))[0];
+  place(S, g, [0.7, 0.9]); S.kill(g); S.tick(3);
+};
+// Hero sneaking up behind a guard (the boss for `type: 'boss'`), just outside the back of its cone.
+const behind = ([src, type]) => {
+  const S = window.__shadowStrike, place = eval(src), pl = S.player;
+  const g = S.guards.filter(g => g.alive && (!type || g.type === type)).sort((a, b) => Math.hypot(a.x - pl.x, a.y - pl.y) - Math.hypot(b.x - pl.x, b.y - pl.y))[0];
+  g.frozen = 0; place(S, g, [1.3, 1.6, 1.0]); S.tick(1, 0);
 };
 const winAll = () => { const S = window.__shadowStrike; for (const g of S.guards) if (g.alive) S.kill(g); S.tick(240); };
 
-// Order follows the "first 3" rule: core action, stealth twist, boss.
+const RED = ['#ff3a4c', '#8a0f22'], NAVY = ['#2b2f6b', '#14163a'];
+// Order: the first 3 carry the promise (the kill, the stealth, the heroes to unlock).
 const shots = [
-  { cap: ['Frappe dans l\'ombre', 'sans un bruit'], img: await capture(12, { prep: strike }), bg: ['#ff3a4c', '#8a0f22'] },
-  { cap: ['Reste hors de la lumière', 'des lampes torches'], img: await capture(27), bg: ['#ffb020', '#c24a00'] },
-  { cap: ['Un boss à abattre', 'tous les 10 niveaux'], img: await capture(10), bg: ['#9b5cff', '#3d1c8f'] },
-  { cap: ['Mines, lasers et herbes', 'pour te cacher'], img: await capture(3), bg: ['#18c2a0', '#06624f'] },
-  { cap: ['10 assassins', 'à débloquer'], img: await capture(8, { screen: '#btn-heroes' }), bg: ['#2f8cff', '#123d8f'] },
-  { cap: ['Gemmes, étoiles', 'et roue de la chance'], img: await capture(15, { prep: winAll }), bg: ['#ff5fa2', '#8f1650'] },
+  { cap: ['<b>Frappe</b>', 'dans l\'ombre'], img: await capture(12, { prep: strike, arg: placeBehindSrc, zoom: true }), bg: RED },
+  { cap: ['<b>Évite</b>', 'la lumière'], img: await capture(18, { prep: behind, arg: [placeBehindSrc], zoom: true }), bg: RED },
+  { cap: ['<b>Débloque</b>', '10 assassins'], img: await capture(8, { screen: '#btn-heroes' }), bg: RED },
+  { cap: ['<b>Abats</b> le boss', 'du 10e niveau'], img: await capture(10, { prep: behind, arg: [placeBehindSrc, 'boss'], zoom: true, focus: 'boss' }), bg: NAVY },
+  { cap: ['<b>Piège</b> les gardes', 'avec les mines'], img: await capture(27), bg: NAVY },
+  { cap: ['<b>Gagne</b> gemmes', 'et étoiles'], img: await capture(15, { prep: winAll }), bg: NAVY },
 ];
 
 const font = 'data:font/woff2;base64,' + fs.readFileSync(path.join(root, 'fonts/lilita-one-latin.woff2')).toString('base64');
@@ -69,9 +89,11 @@ for (const [i, s] of shots.entries()) {
   await p.setContent(`<style>${css}
     body{width:1080px;height:1920px;background:linear-gradient(160deg,${s.bg[0]},${s.bg[1]})}
     .cap{height:340px;display:flex;flex-direction:column;justify-content:center;align-items:center;color:#fff;
-      font-size:92px;line-height:1.02;text-align:center;text-shadow:0 7px 0 rgba(0,0,0,.35)}
-    .shot{position:absolute;left:90px;top:340px;width:900px;height:1600px;border-radius:44px 44px 0 0;overflow:hidden;
-      box-shadow:0 -10px 50px rgba(0,0,0,.45);border:8px solid rgba(255,255,255,.9);border-bottom:0}
+      font-size:112px;line-height:1;text-align:center;-webkit-text-stroke:6px #2a0710;paint-order:stroke fill;
+      text-shadow:0 7px 0 rgba(0,0,0,.35)}
+    .cap b{font-weight:normal;color:#ffd84d}
+    .shot{position:absolute;left:40px;top:340px;width:1000px;height:1600px;border-radius:44px 44px 0 0;overflow:hidden;
+      box-shadow:0 -10px 50px rgba(0,0,0,.45);border:6px solid rgba(255,255,255,.9);border-bottom:0}
     .shot img{width:100%;display:block}</style>
     <div class=cap><div>${s.cap[0]}</div><div>${s.cap[1]}</div></div><div class=shot><img src="${s.img}"></div>`);
   await p.waitForTimeout(300);
@@ -86,18 +108,18 @@ for (const [i, s] of shots.entries()) {
     body{width:1024px;height:500px;background:radial-gradient(circle at 50% 45%,#ff4d5e 0%,#d0142f 55%,#7a0a1d 100%)}
     .streak{position:absolute;left:-100px;top:225px;width:1300px;height:60px;transform:rotate(-12deg);
       background:linear-gradient(90deg,transparent,rgba(255,225,230,.35),transparent)}
-    .ph{position:absolute;top:40px;width:230px;height:410px;border-radius:26px;overflow:hidden;border:6px solid #fff;
+    .ph{position:absolute;top:58px;width:210px;height:374px;border-radius:26px;overflow:hidden;border:6px solid #fff;
       box-shadow:0 14px 34px rgba(60,0,10,.55)}
     .ph img{width:100%;display:block}
-    .l{left:44px;transform:rotate(-6deg)} .r{right:44px;transform:rotate(6deg)}
+    .l{left:30px;transform:rotate(-6deg)} .r{right:30px;transform:rotate(6deg)}
     .t{position:absolute;left:0;right:0;top:118px;text-align:center;line-height:.92}
-    .a{font-size:118px;color:#fff;text-shadow:0 7px 0 #4a0010}
-    .b{font-size:118px;color:#ffd84d;text-shadow:0 7px 0 #4a0010}
-    .s{position:absolute;left:0;right:0;top:372px;text-align:center;font-size:32px;color:#fff;text-shadow:0 3px 0 #4a0010}</style>
+    .a{font-size:104px;color:#fff;text-shadow:0 7px 0 #4a0010}
+    .b{font-size:104px;color:#ffd84d;text-shadow:0 7px 0 #4a0010}
+    .s{position:absolute;left:0;right:0;top:384px;text-align:center}.s span{display:inline-block;font-size:28px;color:#fff;background:rgba(74,0,16,.6);padding:6px 22px;border-radius:20px}</style>
     <div class=streak></div>
-    <div class="ph l"><img src="${shots[0].img}"></div><div class="ph r"><img src="${shots[1].img}"></div>
+    <div class="ph l"><img src="${shots[0].img}"></div><div class="ph r"><img src="${shots[3].img}"></div>
     <div class=t><div class=a>SHADOW</div><div class=b>STRIKE</div></div>
-    <div class=s>Infiltre-toi. Frappe dans l'ombre.</div>`);
+    <div class=s><span>Frappe dans l'ombre</span></div>`);
   await p.waitForTimeout(300);
   await p.screenshot({ path: path.join(out, 'image-presentation-1024x500.png') });
   await p.close();

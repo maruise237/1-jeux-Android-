@@ -2651,6 +2651,6 @@
     tick(n, dt = 1 / 60) { for (let i = 0; i < n; i++) update(dt); },
     get level() { return L; }, get time() { return time; },
     get state() { return state; }, get guards() { return guards; }, get player() { return player; },
-    heroLevel, get mines() { return mines; }, get hideSet() { return hideSet; }, inGrass: p => inGrass(p), get lasers() { return lasers; }, get bombs() { return bombs; },
+    heroLevel, toScreen, get mines() { return mines; }, get hideSet() { return hideSet; }, inGrass: p => inGrass(p), get lasers() { return lasers; }, get bombs() { return bombs; },
   };
 })();
