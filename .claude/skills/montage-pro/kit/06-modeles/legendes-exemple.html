@@ -1,0 +1,323 @@
+<title>Légendes KAMTECH</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout : une colonne de lecture ; chaque vidéo = un bloc, trois cartes plateforme à copier */
+:root {
+  --bg: #F3F4F6; --surface: #FFFFFF; --ink: #16181D; --muted: #5E6470; --line: #DADDE3;
+  --accent: #2D47C8; --ok: #1F7A4D; --warn: #A15C00;
+  --tt: #111111; --tt2: #25F4EE; --ig: #C1358B; --yt: #D9251D;
+  --code-bg: #F7F8FA;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121318; --surface: #1B1D24; --ink: #ECEEF2; --muted: #A2A8B4; --line: #2E323C;
+  --accent: #8EA2FF; --ok: #5FD39A; --warn: #F0B35A; --tt: #F2F2F2; --tt2: #25F4EE; --ig: #F06BB8; --yt: #FF6A62;
+  --code-bg: #15171D; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121318; --surface: #1B1D24; --ink: #ECEEF2; --muted: #A2A8B4; --line: #2E323C;
+  --accent: #8EA2FF; --ok: #5FD39A; --warn: #F0B35A; --tt: #F2F2F2; --tt2: #25F4EE; --ig: #F06BB8; --yt: #FF6A62;
+  --code-bg: #15171D; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--body); margin: 0 }
+.wrap { max-width: 860px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 64px; display: grid; gap: 28px }
+h1, h2 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -.01em }
+h1 { font-size: clamp(30px, 6vw, 44px); font-weight: 800; line-height: 1.05 }
+h2 { font-size: 24px; font-weight: 800 }
+p { margin: 0 }
+.lede { color: var(--muted); max-width: 62ch }
+.eyebrow { font: 500 12px/1 var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted) }
+
+.filtres { display: flex; flex-wrap: wrap; gap: 8px; position: sticky; top: env(safe-area-inset-top, 0px); background: var(--bg); padding-block: 10px; z-index: 2 }
+.filtres button { font: 600 14px/1 var(--body); padding: 10px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer }
+.filtres button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink) }
+.filtres button:focus-visible, .copier:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px }
+
+.regles { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px }
+.regle { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 6px; align-content: start; min-width: 0 }
+.regle ul { margin: 0; padding-left: 18px; display: grid; gap: 4px }
+.regle h3 { margin: 0; font: 600 15px/1.2 var(--body); display: flex; align-items: center; gap: 8px }
+.pastille { width: 10px; height: 10px; border-radius: 3px; flex: none }
+.p-tt { background: var(--tt); box-shadow: 3px 0 0 var(--tt2) } .p-ig { background: var(--ig) } .p-yt { background: var(--yt) }
+
+.video { display: grid; gap: 14px; padding-top: 22px; border-top: 1px solid var(--line) }
+.video-tete { display: grid; gap: 6px }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--muted); font: 13px/1.4 var(--mono) }
+.cle { display: inline-flex; align-items: center; gap: 6px; font: 600 13px/1 var(--body); color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); padding: 6px 10px; border-radius: 999px; width: fit-content }
+.cartes { display: grid; gap: 12px }
+.carte { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 10px; min-width: 0 }
+.carte-tete { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap }
+.carte-tete h3 { margin: 0; font: 600 15px/1.2 var(--body); display: flex; align-items: center; gap: 8px }
+.champ { display: grid; gap: 6px; min-width: 0 }
+.champ-tete { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap }
+.etiquette { font: 500 12px/1 var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .06em }
+.compte { font: 12px/1 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums }
+.compte.ok { color: var(--ok) } .compte.trop { color: var(--warn) }
+pre { margin: 0; white-space: pre-wrap; word-break: break-word; font: 14px/1.55 var(--body); background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px; min-width: 0 }
+.copier { font: 600 13px/1 var(--body); padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; white-space: nowrap }
+.copier.fait { color: var(--ok); border-color: var(--ok) }
+.note { font-size: 13px; color: var(--muted) }
+.sources { font-size: 13px; color: var(--muted); display: grid; gap: 4px }
+.sources a { color: var(--accent) }
+[hidden] { display: none !important }
+@media (prefers-reduced-motion: no-preference) { .copier { transition: color .15s, border-color .15s } }
+</style>
+
+<main class="wrap">
+  <header style="display:grid;gap:10px">
+    <span class="eyebrow">KAMTECH · octobre 2026 · 5 vidéos × 3 plateformes</span>
+    <h1>Légendes et hashtags prêts à coller</h1>
+    <p class="lede">Une légende par vidéo et par plateforme, écrite selon les règles 2026 de chaque appli. Le bouton copie le texte complet, hashtags compris. Les compteurs indiquent si tu restes dans les limites.</p>
+  </header>
+
+  <section style="display:grid;gap:12px" aria-labelledby="t-regles">
+    <h2 id="t-regles">Ce qui change selon la plateforme</h2>
+    <div class="regles">
+      <div class="regle">
+        <h3><span class="pastille p-tt"></span>TikTok</h3>
+        <ul>
+          <li>La légende sert de moteur de recherche : mets les mots que les gens tapent (« outils IA », « salon de beauté »).</li>
+          <li>3 à 5 hashtags précis. Pas de #fyp ni #viral.</li>
+          <li>Les liens ne sont pas cliquables en légende : écris l'adresse en texte et mets le lien dans ta bio.</li>
+        </ul>
+      </div>
+      <div class="regle">
+        <h3><span class="pastille p-ig"></span>Instagram Reels</h3>
+        <ul>
+          <li><strong>5 hashtags maximum</strong> depuis décembre 2025 : au-delà, Instagram bloque ou retire.</li>
+          <li>Hashtags et mots-clés dans la légende, pas en commentaire.</li>
+          <li>Seule la 1re ligne (~125 caractères) est visible : le CTA « commente MOT » va en haut.</li>
+        </ul>
+      </div>
+      <div class="regle">
+        <h3><span class="pastille p-yt"></span>YouTube Shorts</h3>
+        <ul>
+          <li>Titre de 60 à 80 caractères, mot-clé au début, <strong>sans hashtag</strong>.</li>
+          <li>3 à 5 hashtags à la fin de la description, dont #shorts : les 3 premiers s'affichent au-dessus du titre.</li>
+          <li>Les liens en description ne sont pas cliquables : utilise « vidéo associée » dans YouTube Studio.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="note">Avant de publier une vidéo avec « commente MOT » : prévois de répondre en privé à chaque commentaire, ou branche un outil de réponse automatique (connecté à l'API officielle de Meta). Une promesse d'envoi sans réponse fait perdre la confiance.</p>
+  </section>
+
+  <nav class="filtres" aria-label="Filtrer par plateforme">
+    <button type="button" id="f-tout" data-f="tout" aria-pressed="true">Toutes</button>
+    <button type="button" id="f-tt" data-f="tt" aria-pressed="false">TikTok</button>
+    <button type="button" id="f-ig" data-f="ig" aria-pressed="false">Instagram</button>
+    <button type="button" id="f-yt" data-f="yt" aria-pressed="false">YouTube Shorts</button>
+  </nav>
+
+  <div id="videos" style="display:grid;gap:28px"></div>
+
+  <section class="sources" aria-labelledby="t-sources">
+    <h2 id="t-sources" style="font-size:18px">Sources des règles (vérifiées le 4 octobre 2026)</h2>
+    <a href="https://later.com/blog/ultimate-guide-to-using-instagram-hashtags/">Later : Instagram, limite de 5 hashtags</a>
+    <a href="https://recurpost.com/instagram-scheduler/instagram-hashtag-limits-and-placement-rules/">RecurPost : placement des hashtags Instagram</a>
+    <a href="https://sproutsocial.com/insights/tiktok-seo/">Sprout Social : SEO TikTok 2026</a>
+    <a href="https://metricool.com/tiktok-seo/">Metricool : guide SEO TikTok 2026</a>
+    <a href="https://hashtagtools.io/blog/youtube-shorts-hashtags-title-vs-description-2026">Hashtagtools : hashtags Shorts, titre ou description</a>
+    <a href="https://searchenginejournal.com/youtube-adds-shorts-links-limits-links-elsewhere/495463">Search Engine Journal : liens non cliquables dans les Shorts</a>
+  </section>
+</main>
+
+<script>
+const V = [
+{
+  id: 'kamforms-3-outils', titre: 'Reel « 3 outils IA » (KlingAI, Nano Banana, KamForms)', fichier: 'reel_kamforms.mp4', duree: '11,5 s', cle: 'le nom de l\'outil',
+  tt: `3 outils IA à connaître : vidéos, photos et formulaires 👇
+
+🎬 KlingAI pour générer des vidéos
+📸 Nano Banana (Google Gemini) pour générer des photos
+📝 KamForms pour créer un formulaire en une phrase et recevoir les réponses sur WhatsApp
+
+Commente le nom de l'outil et je t'envoie le lien en privé.
+
+#outilsia #intelligenceartificielle #astuceia #ia #kamforms`,
+  ig: `Commente le nom de l'outil 👇 je t'envoie le lien en privé.
+
+3 outils IA à connaître :
+🎬 KlingAI : générer des vidéos
+📸 Nano Banana (Google Gemini) : générer des photos
+📝 KamForms : créer un formulaire en une phrase, partager le lien sur WhatsApp et recevoir les réponses
+
+Enregistre la vidéo pour la retrouver.
+
+#outilsia #intelligenceartificielle #astuceia #entrepreneuriat #kamforms`,
+  ytTitre: `3 outils IA pour créer des vidéos, des photos et des formulaires`,
+  ytDesc: `Les 3 outils IA que je recommande : KlingAI pour les vidéos, Nano Banana (Google Gemini) pour les photos, et KamForms pour créer un formulaire en une phrase et recevoir les réponses sur WhatsApp.
+
+Liens (à taper dans ton navigateur) :
+KlingAI : klingai.com
+Nano Banana : gemini.google.com
+KamForms : kamforms.com
+
+#outilsia #ia #shorts`
+},
+{
+  id: 'chatgpt-kamforms', titre: 'Reel « ChatGPT / KamForms » (démo du formulaire)', fichier: 'reel_kamforms_2.mp4', duree: '10,5 s', cle: 'FORMULAIRE',
+  tt: `ChatGPT pour mes photos, KamForms pour mes formulaires sur WhatsApp ✅
+
+Tu décris ton formulaire en une phrase, l'IA prépare les questions, tu partages le lien dans tes groupes WhatsApp et les réponses arrivent sur ton téléphone.
+
+Gratuit pour commencer : kamforms.com
+Commente FORMULAIRE et je t'envoie le lien 👇
+
+#formulaire #whatsapp #chatgpt #outilsia #kamforms`,
+  ig: `Commente « FORMULAIRE » 👇 je t'envoie le lien en privé.
+
+ChatGPT pour mes photos. KamForms pour mes formulaires interactifs, directement sur WhatsApp.
+1. Tu décris ton formulaire en une phrase
+2. L'IA crée les questions
+3. Tu partages le lien dans tes groupes WhatsApp
+
+Gratuit pour commencer, lien en bio.
+
+#formulaire #whatsapp #chatgpt #outilsia #kamforms`,
+  ytTitre: `Créer un formulaire WhatsApp avec l'IA en une phrase (KamForms)`,
+  ytDesc: `ChatGPT génère mes photos, KamForms génère mes formulaires interactifs directement sur WhatsApp. Tu décris ton besoin, l'IA crée les questions, tu partages le lien et les réponses arrivent sur ton téléphone. Gratuit pour commencer.
+
+KamForms : kamforms.com (à taper dans ton navigateur)
+
+#kamforms #formulaire #shorts`
+},
+{
+  id: 'djoumi', titre: 'Reel Djoumi « 3 applis pour un salon de beauté »', fichier: 'reel_djoumi.mp4', duree: '22 s', cle: 'SALON',
+  tt: `Tu as un salon de beauté ? Voici les 3 applis à utiliser 💇🏾‍♀️
+
+1. ChatGPT pour créer tes visuels de pub
+2. Google Flow pour les animer
+3. Djoumi pour gérer tes réservations et tes rappels clientes sur WhatsApp
+
+Tu mets ton lien de réservation dans ta bio TikTok, Instagram ou Facebook, et tes clientes réservent toutes seules. Le rappel part la veille sur WhatsApp.
+
+Premier mois offert : djoumi.com
+Commente SALON et je t'envoie le lien 👇
+
+#salondebeaute #coiffeuse #salondecoiffure #djoumi #cameroun`,
+  ig: `Commente « SALON » 👇 je t'envoie le lien en privé.
+
+Les 3 applis à utiliser si tu as un salon de beauté :
+1. ChatGPT : tes visuels de pub
+2. Google Flow : les animer
+3. Djoumi : réservations et rappels WhatsApp, avec ton lien de réservation à mettre en bio
+
+Tes clientes choisissent leur soin, leur jour et leur heure. Toi, tu restes avec la cliente assise devant toi.
+Premier mois offert, lien en bio.
+
+#salondebeaute #coiffeuse #salondecoiffure #djoumi #cameroun`,
+  ytTitre: `3 applis pour ton salon de beauté (réservations sur WhatsApp)`,
+  ytDesc: `Si tu as un salon de beauté : ChatGPT pour tes visuels de pub, Google Flow pour les animer, et Djoumi pour gérer tes réservations et tes rappels clientes sur WhatsApp. Ton lien de réservation se met dans ta bio TikTok, Instagram ou Facebook. Premier mois offert.
+
+Djoumi : djoumi.com (à taper dans ton navigateur)
+
+#salondebeaute #djoumi #shorts`
+},
+{
+  id: 'podcast-court', titre: 'Podcast « Mariuse × Claude », version courte', fichier: 'podcast_claude_court_pro.mp4', duree: '1 min 31', cle: 'la tâche que tu vas confier à l\'IA',
+  tt: `J'ai interviewé une IA… et c'est elle qui a monté cette vidéo 🎬
+
+Le monteur vidéo va-t-il disparaître ? Réponse de Claude : non, il monte d'un étage. L'IA coupe, sous-titre et cale les effets. L'humain garde le goût, le rythme et l'histoire.
+
+Commente la tâche que tu vas confier à l'IA cette semaine 👇
+
+#intelligenceartificielle #montagevideo #claudeai #ia #kamtech`,
+  ig: `Commente la tâche que tu vas confier à l'IA cette semaine 👇
+
+J'ai interviewé Claude, une IA, et c'est elle qui a monté cette vidéo. Sa réponse sur l'avenir du montage vidéo : l'IA monte, l'humain juge.
+
+Abonne-toi pour la suite de la série « l'IA expliquée en français ».
+
+#intelligenceartificielle #montagevideo #claudeai #ia #kamtech`,
+  ytTitre: `J'ai demandé à une IA si le monteur vidéo va disparaître`,
+  ytDesc: `Podcast à une voix : je pose mes questions, Claude (l'IA d'Anthropic) répond au montage, et c'est lui qui a monté cette vidéo. L'avenir du métier de monteur, du motion design, et un conseil pour commencer avec l'IA dès aujourd'hui.
+
+Dis-moi en commentaire la tâche que tu vas confier à l'IA.
+
+#intelligenceartificielle #montagevideo #shorts`
+},
+{
+  id: 'podcast-long', titre: 'Podcast « Mariuse × Claude », version longue', fichier: 'podcast_claude_pro.mp4', duree: '2 min 06', cle: 'la tâche que tu vas confier à l\'IA',
+  tt: `5 questions à une IA sur l'avenir du montage vidéo 🎙️ (et c'est elle qui a monté la vidéo)
+
+1. La révolution du montage avec l'IA
+2. Le monteur vidéo va-t-il disparaître ?
+3. L'avenir du motion design
+4. Expliquer l'IA en français
+5. Son conseil pour toi
+
+Commente la tâche que tu vas confier à l'IA cette semaine 👇
+
+#intelligenceartificielle #montagevideo #motiondesign #claudeai #kamtech`,
+  ig: `Commente la tâche que tu vas confier à l'IA cette semaine 👇
+
+5 questions à Claude sur l'avenir du montage vidéo et du motion design. C'est lui qui a monté cette vidéo, et il l'avoue : il ne peut pas entendre le son, c'est moi qui valide.
+
+Son conseil : arrête de regarder l'IA, utilise-la.
+
+#intelligenceartificielle #montagevideo #motiondesign #claudeai #kamtech`,
+  ytTitre: `Podcast avec une IA : l'avenir du montage vidéo et du motion design`,
+  ytDesc: `Podcast à une voix : je pose 5 questions, Claude (l'IA d'Anthropic) répond pendant le montage, et c'est lui qui a monté la vidéo. La révolution du montage, l'avenir du monteur vidéo et du motion design, l'IA expliquée en français, et un conseil pour commencer dès aujourd'hui.
+
+Dis-moi en commentaire la tâche que tu vas confier à l'IA.
+
+#intelligenceartificielle #motiondesign #shorts`
+}];
+
+const PF = {
+  tt: { nom: 'TikTok', cls: 'p-tt', champs: [['tt', 'Légende', 4000]] },
+  ig: { nom: 'Instagram Reels', cls: 'p-ig', champs: [['ig', 'Légende', 2200]] },
+  yt: { nom: 'YouTube Shorts', cls: 'p-yt', champs: [['ytTitre', 'Titre', 100], ['ytDesc', 'Description', 5000]] },
+};
+const nbHash = s => (s.match(/#[\p{L}\p{N}_]+/gu) || []).length;
+
+function carte(v, k) {
+  const p = PF[k]; const c = document.createElement('div'); c.className = 'carte'; c.dataset.pf = k;
+  c.innerHTML = `<div class="carte-tete"><h3><span class="pastille ${p.cls}"></span>${p.nom}</h3></div>`;
+  for (const [cle, lab, max] of p.champs) {
+    const txt = v[cle], n = [...txt].length, h = nbHash(txt);
+    const limiteH = k === 'ig' ? 5 : (cle === 'ytTitre' ? 0 : 5);
+    const ok = n <= max && h <= limiteH;
+    const id = `${v.id}-${cle}`;
+    const champ = document.createElement('div'); champ.className = 'champ';
+    champ.innerHTML = `<div class="champ-tete"><span class="etiquette">${lab}</span>
+      <span class="compte ${ok ? 'ok' : 'trop'}">${n} / ${max} car.${cle === 'ytTitre' ? '' : ` · ${h} hashtag${h > 1 ? 's' : ''}`}</span>
+      <button type="button" class="copier" id="c-${id}" data-cible="${id}">Copier</button></div>
+      <pre id="${id}"></pre>`;
+    champ.querySelector('pre').textContent = txt;
+    c.appendChild(champ);
+  }
+  return c;
+}
+
+const racine = document.getElementById('videos');
+for (const v of V) {
+  const s = document.createElement('section'); s.className = 'video'; s.id = v.id;
+  s.innerHTML = `<div class="video-tete"><h2></h2>
+    <div class="meta"><span>${v.fichier}</span><span>${v.duree}</span></div>
+    <span class="cle">Mot à commenter : ${v.cle}</span></div><div class="cartes"></div>`;
+  s.querySelector('h2').textContent = v.titre;
+  const cs = s.querySelector('.cartes'); for (const k of ['tt', 'ig', 'yt']) cs.appendChild(carte(v, k));
+  racine.appendChild(s);
+}
+
+racine.addEventListener('click', e => {
+  const b = e.target.closest('.copier'); if (!b) return;
+  const pre = document.getElementById(b.dataset.cible);
+  const fini = () => { b.textContent = 'Copié'; b.classList.add('fait'); setTimeout(() => { b.textContent = 'Copier'; b.classList.remove('fait') }, 1600) };
+  const selection = () => { const r = document.createRange(); r.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = 'Texte sélectionné'; };
+  try { navigator.clipboard.writeText(pre.textContent).then(fini, selection) } catch (_) { selection() }
+});
+
+function filtrer(f) {
+  document.querySelectorAll('.filtres button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.f === f)));
+  document.querySelectorAll('.carte').forEach(c => { c.hidden = f !== 'tout' && c.dataset.pf !== f });
+  try { localStorage.setItem('filtre', f) } catch (_) {}
+}
+document.querySelector('.filtres').addEventListener('click', e => { const b = e.target.closest('button'); if (b) filtrer(b.dataset.f) });
+try { const f = localStorage.getItem('filtre'); if (f) filtrer(f) } catch (_) {}
+</script>

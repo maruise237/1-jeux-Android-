@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<title>Shadow Strike — bande-annonce</title>
+<style>
+@font-face{font-family:L;src:url(../../www/fonts/lilita-one-latin.woff2)}
+@font-face{font-family:S;src:url(../fonts/InstrumentSerif-Italic.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{overflow:hidden;background:#14163a}
+#stage{position:relative;overflow:hidden;background:#14163a;font-family:L,sans-serif;color:#fff}
+.abs{position:absolute;will-change:transform,opacity;transform-origin:50% 50%}
+.type{line-height:.9}
+.g{font-size:200px;-webkit-text-stroke:14px #1a0710;paint-order:stroke fill;text-shadow:0 14px 0 rgba(26,7,16,.55)}
+.s{font-family:S;font-size:92px;text-shadow:0 4px 18px rgba(0,0,0,.75),0 2px 2px rgba(0,0,0,.8)}
+.red{color:#ff3a4c}.yel{color:#ffd84d}
+</style></head>
+<body><div id="stage"></div>
+<script src="../lib/scene.js"></script>
+<script>
+// Music: musique_trailer.wav from 16.0 s (120 BPM). Hits at 4, 8, 10, 12, 22-24, silence 28.5-30, last hit at 30.
+// No voice: the Play Store promo autoplays muted, so the type carries the message.
+window.DUREE = 32.6;
+const LAND = W > H;
+// ---- layout: portrait = full-frame gameplay; landscape = gameplay card on one side, blurred copy behind ----
+const PW = 540, PH = 960, PY = 60;
+const panelX = side => side === 'l' ? 170 : W - 170 - PW;
+function shot(name, map, t0, t1, { z = 1, at = 'hero', ay = .55, side = 'r' } = {}) {
+  if (!LAND) { const c = clip(name, map, { cam: { z, at, ay } }); return cut(c, t0, t1); }
+  const bg = clip(name, map, { cam: { z: 1, at: [540, 960] }, filter: 'blur(26px) brightness(.42) saturate(1.3)' });
+  cut(bg, t0, t1);
+  const c = clip(name, map, { x: panelX(side), y: PY, w: PW, h: PH, cam: { z, at, ay }, style: 'border-radius:36px;box-shadow:0 0 0 7px #fff,0 30px 60px rgba(0,0,0,.6)' });
+  return cut(c, t0, t1);
+}
+// text: portrait position / landscape column (opposite the gameplay card)
+const col = side => side === 'r' ? `left:150px;width:${W - PW - 400}px;text-align:left` : `left:${170 + PW + 110}px;width:${W - PW - 420}px;text-align:left`;
+const P = (portrait, top, side) => LAND ? `${col(side)};top:${top}px` : `left:0;width:${W}px;text-align:center;${portrait}`;
+const gs = (p, l) => `font-size:${LAND ? l : p}px`;
+
+// ---- 0 → 2 : the hook, a triple kill ----
+const map1 = [[0, 3.3], [2, 5.3]];
+const s1 = shot('test12', map1, 0, 2, { z: 1.5, side: 'r' });
+rise('<div class="s">Tu n\'as qu\'un</div>', .08, 2, P('top:260px', 330, 'r'));
+slam(`<div class="g" style="${gs(200, 170)}">COUTEAU</div>`, .45, 2, P('top:380px', 450, 'r'));
+clipEvents('test12', map1, 'kill').forEach(e => { flash(e.vt, .12, .45); sfx('lame', e.vt); });
+
+// ---- 2 → 4 : they have flashlights ----
+shot('mines27', [[2, .7], [4, 2.7]], 2, 4, { z: 1.08, at: [540, 1000], side: 'l' });
+rise('<div class="s">Eux, ils ont</div>', 2.1, 4, P('top:1280px', 330, 'l'));
+slam(`<div class="g yel" style="${gs(160, 150)}">DES LAMPES</div>`, 2.5, 4, P('top:1400px', 450, 'l'));
+
+// ---- 4 → 5.5 : tap a guard ----
+const map3 = [[4, 0], [5.5, 1.5]];
+const s3 = shot('frost52', map3, 4, 5.5, { z: 1.5, side: 'r' });
+clipEvents('frost52', map3, 'tap').forEach(e => { tapRing(s3, e); sfx('tap', e.vt); });
+slam(`<div class="g" style="${gs(220, 180)}">TOUCHE</div>`, 4.0, 5.5, P('top:250px', 330, 'r'));
+rise('<div class="s">un garde</div>', 4.3, 5.5, P('top:480px', 520, 'r'));
+
+// ---- 5.5 → 7 : get behind him ----
+const map4 = [[5.5, 1.0], [7, 2.5]];
+const s4 = shot('lila33', map4, 5.5, 7, { z: 1.6, side: 'l' });
+clipEvents('lila33', map4, 'kill').forEach(e => { flash(e.vt, .12, .45); sfx('lame', e.vt); });
+slam(`<div class="g yel" style="${gs(220, 180)}">PASSE</div>`, 5.5, 7, P('top:1330px', 330, 'l'));
+rise('<div class="s">dans son dos</div>', 5.8, 7, P('top:1560px', 520, 'l'));
+
+// ---- 7 → 8 : light plate, one word ----
+plate('#f4ead8', 7, 8);
+slam(`<div class="g red" style="${gs(250, 230)};-webkit-text-stroke:0;text-shadow:none">FRAPPE.</div>`, 7.0, 8, LAND ? `left:0;width:${W}px;text-align:center;top:420px` : `left:0;width:${W}px;text-align:center;top:840px`);
+const slash = mk('', `left:${-W * .2}px;top:${H * .5 - 8}px;width:${W * 1.4}px;height:16px;background:#14163a;border-radius:8px`);
+cut(slash, 7.45, 8); slash.def.o = 1; slash.def.r0 = -14; A(slash, 7.45, .14, { s: [0, 1] }, 'expo');
+sfx('whoosh', 7.45, .7); sfx('lame', 7.45, 1.2);
+
+// ---- 8 → 10 : kill reel ----
+const map6a = [[8, 10.4], [9, 11.1]], map6b = [[9, 1.0], [10, 2.2]];
+shot('mines27', map6a, 8, 9, { z: 1.7, side: 'r' });
+shot('boss10', map6b, 9, 10, { z: 1.6, side: 'l' });
+[...clipEvents('mines27', map6a, 'kill').map(e => e.vt), ...clipEvents('boss10', map6b, 'kill').map(e => e.vt)]
+  .forEach(t => { flash(t, .12, .5); sfx('lame', t); });
+sfx('impact', 8, .6);
+
+// ---- 10 → 12 : one flashlight and it's over ----
+const map7 = [[10, 1.0], [11.3, 2.65]];
+shot('fail45', map7, 10, 11.3, { z: 1.5, side: 'l' });
+shot('fail45', [[11.3, 6.4], [12, 6.7]], 11.3, 12, { z: 1, at: [540, 900], side: 'l' });
+rise('<div class="s">Mais une seule lampe</div>', 10.05, 11.3, P('top:250px', 330, 'l'));
+slam(`<div class="g red" style="${gs(170, 150)}">ET C'EST FINI</div>`, 10.55, 11.3, P('top:370px', 440, 'l'));
+clipEvents('fail45', map7, 'spotted').forEach(e => sfx('alerte', e.vt));
+clipEvents('fail45', map7, 'hurt').forEach(e => sfx('tir', e.vt));
+sfx('glitch', 11.3);
+
+// ---- 12 → 16 : the boss ----
+plate('radial-gradient(1200px 1200px at 50% 45%,#2b2f6b 0%,#14163a 70%)', 12, 13);
+rise('<div class="s">Tous les 10 niveaux</div>', 12.05, 13, LAND ? `left:0;width:${W}px;text-align:center;top:330px` : `left:0;width:${W}px;text-align:center;top:760px`);
+slam(`<div class="g red" style="${gs(185, 210)}">LE COLOSSE</div>`, 12.3, 13, LAND ? `left:0;width:${W}px;text-align:center;top:450px` : `left:0;width:${W}px;text-align:center;top:880px`);
+sfx('impact', 12.3, 1);
+const map8 = [[13, 4.4], [16, 9.4]];
+shot('boss10', map8, 13, 16, { z: 1.55, ay: .62, side: 'r' });
+clipEvents('boss10', map8, 'kill').forEach(e => { flash(e.vt, .14, .55); sfx('lame', e.vt); });
+sfx('whoosh', 13, .6);
+if (LAND) rise('<div class="s">Il encaisse.<br>Il riposte.</div>', 13.3, 16, P('', 400, 'r'));
+
+// ---- 16 → 20 : 120 levels (counter over changing maps) ----
+[['lila33', 8], ['frost52', 6], ['mines27', 5], ['test12', 7.5]].forEach(([n, c], i) =>
+  shot(n, [[16 + i, c], [17 + i, c + 1]], 16 + i, 17 + i, { z: 1.05, at: [540, 1000], side: 'l' }));
+const band = mk('', LAND ? `left:${170 + PW + 60}px;top:300px;width:${W - PW - 330}px;height:480px;border-radius:40px;background:rgba(20,22,58,.82)`
+  : `left:0;top:1180px;width:${W}px;height:520px;background:linear-gradient(transparent,rgba(20,22,58,.92) 25%)`);
+cut(band, 16, 20);
+const compteur = mk(`<div class="g yel" style="${gs(300, 260)}">1</div>`, LAND ? `left:${170 + PW + 60}px;width:${W - PW - 330}px;text-align:center;top:330px` : `left:0;width:${W}px;text-align:center;top:1250px`, 'type');
+cut(compteur, 16, 20);
+compteur.tick = t => { compteur.el.firstChild.textContent = Math.max(1, Math.round(120 * E.out(clamp((t - 16.15) / 3.2)))); };
+rise(`<div class="g" style="${gs(110, 100)};-webkit-text-stroke:9px #1a0710">NIVEAUX</div>`, 16.2, 20, LAND ? `left:${170 + PW + 60}px;width:${W - PW - 330}px;text-align:center;top:620px` : `left:0;width:${W}px;text-align:center;top:1560px`);
+for (let k = 0; k < 14; k++) sfx('tic', 16.15 + 3.2 * (1 - Math.pow(1 - k / 14, 1 / 3)) , .6);
+sfx('impact', 19.4, .5);
+
+// ---- 20 → 22.5 : 10 assassins, drawn with the game's own art ----
+plate('radial-gradient(1300px 1300px at 50% 40%,#2b2f6b 0%,#14163a 75%)', 20, 22.5);
+const NOMS = ['kenji', 'nova', 'rex', 'lila', 'blaze', 'onyx', 'viper', 'frost', 'phantom', 'kami'];
+// portrait: rows of 3, 2, 3, 2 ; landscape: two rows of 5
+const SLOTS = LAND ? NOMS.map((_, i) => [140 + (i % 5) * 340, 300 + Math.floor(i / 5) * 360])
+  : [[60, 420], [390, 420], [720, 420], [225, 720], [555, 720], [60, 1020], [390, 1020], [720, 1020], [225, 1320], [555, 1320]];
+NOMS.forEach((n, i) => {
+  const [x, y] = SLOTS[i];
+  const o = mk(`<img src="../assets/assassins/${n}.png" style="width:100%">`, `left:${x}px;top:${y}px;width:300px`);
+  const t = 20.05 + i * .2;
+  cut(o, t, 22.5); o.def.o = 0; A(o, t, .3, { o: [0, 1], s: [.3, 1], r: [-25, 0] }, 'back');
+  sfx('pop', t, .7);
+});
+slam(`<div class="g" style="${gs(132, 150)}">10 <span class="yel">ASSASSINS</span></div>`, 20.1, 22.5, LAND ? `left:0;width:${W}px;text-align:center;top:70px` : `left:0;width:${W}px;text-align:center;top:180px`);
+
+// ---- 22.5 → 24 : Kami against the boss's guards ----
+const map11 = [[22.5, 1.1], [24, 2.3]];
+shot('boss10', map11, 22.5, 24, { z: 1.8, side: 'r' });
+clipEvents('boss10', map11, 'kill').forEach(e => { flash(e.vt, .12, .5); sfx('lame', e.vt); });
+sfx('impact', 22.5, .5);
+
+// ---- 24 → 27.25 : three plain facts, one per beat ----
+[['HORS LIGNE', 'mines27', 12, 24, 25, 'l'], ['SANS PUB', 'lila33', 11, 25, 26, 'r'], ['SANS ACHAT<br>INTÉGRÉ', 'frost52', 9.8, 26, 27.25, 'l']].forEach(([txt, n, c, a, b, side], i) => {
+  shot(n, [[a, c], [b, c + (b - a)]], a, b, { z: 1.25, side });
+  slam(`<div class="g" style="${gs(170, 150)}">${txt}</div>`, a, b, P(i === 1 ? 'top:1420px' : 'top:260px', 400, side));
+  sfx(i === 1 ? 'impact' : 'whoosh', a, .5);
+});
+shot('test12', [[27.25, 11.4], [28.5, 12.6]], 27.25, 28.5, { z: 1, at: [540, 900], side: 'r' });
+sfx('carillon', 27.4, .6);
+
+// ---- 28.5 → 30 : the music holds its breath ----
+plate('#0b0c22', 28.5, 32.6);
+const icon = mk('<img src="../../assets/icon-only.png" style="width:100%;height:100%;border-radius:130px;box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 10px #fff">',
+  LAND ? 'left:250px;top:260px;width:560px;height:560px' : 'left:265px;top:330px;width:550px;height:550px');
+cut(icon, 28.6, 32.6); icon.def.o = 0;
+A(icon, 28.6, 1.3, { o: [0, 1], s: [.82, .94] }, 'out'); A(icon, 30, .3, { s: [.94, 1] }, 'back');
+
+// ---- 30 → 32.6 : last hit, title ----
+const fond = plate('radial-gradient(1400px 1400px at 50% 40%,#ff4d5e 0%,#d0142f 50%,#5a0614 100%)', 30, 32.6);
+stage.insertBefore(fond.el, icon.el); // behind the icon
+const rays = mk('', `left:${W / 2 - 1300}px;top:${H * .4 - 1300}px;width:2600px;height:2600px;background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.08) 0 9deg,transparent 9deg 18deg)`);
+stage.insertBefore(rays.el, icon.el);
+cut(rays, 30, 32.6); rays.tick = t => { rays.el.style.transform = `rotate(${(t - 30) * 7}deg)`; };
+flash(30, .25, 1);
+slam(`<div class="g" style="${gs(190, 180)}">SHADOW</div>`, 30, 32.6, LAND ? 'left:900px;width:900px;text-align:left;top:300px' : `left:0;width:${W}px;text-align:center;top:960px`);
+slam(`<div class="g yel" style="${gs(190, 180)}">STRIKE</div>`, 30.12, 32.6, LAND ? 'left:900px;width:900px;text-align:left;top:470px' : `left:0;width:${W}px;text-align:center;top:1130px`);
+const badge = mk('<img src="../assets/google-play-badge-fr.png" style="width:100%">', LAND ? 'left:900px;top:700px;width:480px' : 'left:270px;top:1380px;width:540px');
+cut(badge, 30.6, 32.6); badge.def.o = 0; A(badge, 30.6, .35, { o: [0, 1], y: [50, 0] }, 'back');
+rise('<div class="s" style="font-size:64px">KamTech Studio</div>', 31.0, 32.6, LAND ? 'left:900px;width:800px;text-align:left;top:880px' : `left:0;width:${W}px;text-align:center;top:1650px`, 20);
+sfx('impact', 30, 1.2);
+
+window.PRET = true;
+</script>
+</body></html>

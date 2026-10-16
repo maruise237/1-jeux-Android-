@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<title>Shadow Strike — pub 9:16</title>
+<style>
+@font-face{font-family:L;src:url(../../www/fonts/lilita-one-latin.woff2)}
+@font-face{font-family:S;src:url(../fonts/InstrumentSerif-Italic.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{overflow:hidden;background:#14163a}
+#stage{position:relative;overflow:hidden;background:#14163a;font-family:L,sans-serif;color:#fff}
+.abs{position:absolute;will-change:transform,opacity;transform-origin:50% 50%}
+.type{left:0;width:1080px;text-align:center;line-height:.9}
+.g{font-size:210px;-webkit-text-stroke:14px #1a0710;paint-order:stroke fill;text-shadow:0 14px 0 rgba(26,7,16,.55)}
+.s{font-family:S;font-size:96px;text-shadow:0 4px 18px rgba(0,0,0,.75),0 2px 2px rgba(0,0,0,.8)}
+.red{color:#ff3a4c}.yel{color:#ffd84d}
+.pill{display:inline-block;padding:16px 40px;border-radius:999px;background:#fff;color:#b3122a;font-size:58px;box-shadow:0 10px 0 #5a0614}
+</style></head>
+<body><div id="stage"></div>
+<script src="../lib/scene.js"></script>
+<script>
+// Voice-over (Brian, ElevenLabs) placed at +0.15 s; word times measured with faster-whisper (mots_pub.json).
+const V = 0.15;
+const v = t => t + V;
+window.DUREE = 18.4;
+
+// ---- A. 0 → 3.6 : the careless run straight into the flashlight (real fail, level 45) ----
+const mapA = [[0, 1.0], [1.6, 2.6], [2.85, 2.72], [3.25, 2.72]];
+const A1 = clip('fail45', mapA, { cam: { z: t => t < 2.85 ? 1.5 : 1.5 + (t - 2.85) * .5, at: 'hero', ay: .55 } });
+cut(A1, 0, 3.25);
+clipEvents('fail45', [[0, 1.0], [1.6, 2.6]], 'tap').forEach(e => hand(A1, e));
+// the outcome, straight from the game: the "REPÉRÉ !" screen
+const A2 = clip('fail45', [[3.25, 6.4], [3.6, 6.6]], { cam: { z: 1 } });
+cut(A2, 3.25, 3.6);
+slam('<div class="g red">ERREUR</div>', v(0), v(1.5), 'top:250px');
+rise('<div class="s">classique</div>', v(.48), v(1.5), 'top:470px');
+rise('<div class="s">droit dans la</div>', v(1.65), 3.25, 'top:300px');
+slam('<div class="g yel">LAMPE</div>', v(2.7), 3.25, 'top:400px');
+// the freeze: a loupe ring on the hero caught in the light
+const loupe = mk('<div style="width:100%;height:100%;border-radius:50%;border:8px solid #fff;box-shadow:0 0 0 4000px rgba(10,6,20,.35)"></div>', 'width:420px;height:420px');
+cut(loupe, 2.85, 3.25); A(loupe, 2.85, .25, { s: [1.6, 1] }, 'expo');
+loupe.tick = t => { const [x, y] = onClip(A1, ...heroAt(CLIPS.fail45, A1.view.ct)); loupe.el.style.left = x - 210 + 'px'; loupe.el.style.top = y - 210 + 'px'; };
+
+// ---- B. 3.6 → 5.6 : guards only see in front of them ----
+const B1 = clip('test12', [[3.6, .3], [5.6, 2.3]], { cam: { z: t => 1.05 + (t - 3.6) * .06, at: [540, 1060] } });
+cut(B1, 3.6, 5.6);
+rise('<div class="s">ne voient que</div>', v(4.08), 5.6, 'top:1300px');
+slam('<div class="g">DEVANT</div>', v(4.6), 5.6, 'top:1420px');
+
+// ---- C. 5.6 → 7.0 : so you go behind ----
+const mapC = [[5.6, 2.95], [7.0, 3.95]];
+const C1 = clip('test12', mapC, { cam: { z: 1.7, at: 'hero', ay: .6 } });
+cut(C1, 5.6, 7.0);
+clipEvents('test12', mapC, 'tap').forEach(e => hand(C1, e, .45));
+slam('<div class="g yel">DERRIÈRE</div>', v(6.1), 7.0, 'top:240px');
+
+// ---- D. 7.0 → 10.2 : one, two, three (90 fps take, slowed down on each kill) ----
+const mapD = [[7.0, .25], [v(7.42), .633], [v(8.12), .967], [v(9.2), 1.311], [10.2, 1.75]];
+const D1 = clip('slow12', mapD, { cam: { z: t => 1.85 + (t - 7) * .05, at: 'hero', ay: .5 } });
+cut(D1, 7.0, 10.2);
+clipEvents('slow12', mapD, 'kill').forEach(e => flash(e.vt, .14, .7));
+[['1', v(7.42), 'top:230px;left:-250px'], ['2', v(8.12), 'top:230px;left:250px'], ['3', v(9.2), 'top:1380px']]
+  .forEach(([n, t, pos]) => slam(`<div class="g yel" style="font-size:330px">${n}</div>`, t, 10.2, pos, { from: 3 }));
+
+// ---- E. 10.2 → 12.6 : every ten levels, the Colossus ----
+const E1 = clip('boss10', [[10.2, .05], [10.75, .6]], { cam: { z: 1 } });
+cut(E1, 10.2, 10.75);
+const mapE = [[10.75, 4.5], [12.6, 7.4]];
+const E2 = clip('boss10', mapE, { cam: { z: 1.55, at: 'hero', ay: .62 } });
+cut(E2, 10.75, 12.6);
+rise('<div class="s">tous les 10 niveaux</div>', v(10.36), 12.6, 'top:1360px');
+slam('<div class="g red" style="font-size:165px">LE COLOSSE</div>', v(11.64), 12.6, 'top:260px', { from: 1.8 });
+
+// ---- F. 12.6 → 18.4 : end card ----
+plate('radial-gradient(1200px 1300px at 50% 38%,#ff4d5e 0%,#d0142f 50%,#5a0614 100%)', 12.6, 18.4);
+const rays = mk('', 'left:-460px;top:-160px;width:2000px;height:2000px;background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.07) 0 9deg,transparent 9deg 18deg)');
+cut(rays, 12.6, 18.4); rays.tick = t => { rays.el.style.transform = `rotate(${(t - 12.6) * 6}deg)`; };
+const icon = mk('<img src="../../assets/icon-only.png" style="width:100%;height:100%;border-radius:120px;box-shadow:0 30px 70px rgba(60,0,10,.6),0 0 0 10px #fff">', 'left:290px;top:230px;width:500px;height:500px');
+cut(icon, 12.6, 18.4); icon.def.o = 0; A(icon, 12.6, .45, { o: [0, 1], s: [.6, 1], r: [-8, 0] }, 'back');
+icon.tick = t => { if (t > 13.1) icon.el.style.transform += ` translateY(${Math.sin((t - 13.1) * 2.4) * 10}px)`; };
+slam('<div class="g" style="font-size:190px">SHADOW</div>', v(12.94), 18.4, 'top:800px');
+slam('<div class="g yel" style="font-size:190px">STRIKE</div>', v(13.3), 18.4, 'top:975px');
+[['GRATUIT', v(14.1), 330, 1190], ['HORS LIGNE', v(15.1), 735, 1190], ['ANDROID', v(15.96), 540, 1320]].forEach(([w, t, cx, y]) => {
+  const o = mk(`<span class="pill">${w}</span>`, `left:${cx - 300}px;width:600px;text-align:center;top:${y}px`);
+  cut(o, t, 18.4); o.def.o = 0;
+  A(o, t, .3, { o: [0, 1], s: [.5, 1] }, 'back');
+});
+const badge = mk('<img src="../assets/google-play-badge-fr.png" style="width:100%">', 'left:270px;top:1490px;width:540px');
+cut(badge, v(16.32), 18.4); badge.def.o = 0; A(badge, v(16.32), .35, { o: [0, 1], y: [60, 0] }, 'back');
+
+// ---- sound cues (actions you can see) ----
+clipEvents('fail45', [[0, 1.0], [1.6, 2.6]], 'tap').forEach(e => sfx('tap', e.vt));
+clipEvents('fail45', [[0, 1.0], [1.6, 2.6]], 'spotted').forEach(e => sfx('alerte', e.vt));
+clipEvents('fail45', [[0, 1.0], [1.6, 2.6]], 'hurt').forEach(e => sfx('tir', e.vt));
+clipEvents('fail45', [[0, 1.0], [1.6, 2.6]], 'kill').forEach(e => sfx('lame', e.vt, .7));
+sfx('riser', 2.25); sfx('impact', 2.85, .8); sfx('glitch', 3.25);
+sfx('whoosh', 5.25, .6);
+clipEvents('test12', mapC, 'tap').forEach(e => sfx('tap', e.vt));
+clipEvents('slow12', mapD, 'kill').forEach(e => { sfx('lame', e.vt); sfx('impact', e.vt, .55); });
+sfx('whoosh', 9.85, .7);
+clipEvents('boss10', mapE, 'kill').forEach(e => sfx('lame', e.vt));
+sfx('impact', v(11.64), .9);
+sfx('coupe', 12.6); sfx('impact', v(12.94), 1.1);
+[v(14.1), v(15.1), v(15.96)].forEach(t => sfx('pop', t));
+sfx('carillon', v(16.32), .8);
+
+window.PRET = true;
+</script>
+</body></html>
